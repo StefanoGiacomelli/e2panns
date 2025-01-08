@@ -16,6 +16,6 @@ eta_min = 1e-6
 # TRAINING CONSTANTS
 overall_training = True
 EPOCHS = 100
-PATIENCE = 25
+PATIENCE = 33
 CHECKPOINT_DIR = "./experiments/checkpoints"    # Created by the Lightning Trainer (init)
 RESULTS_DIR = "./experiments/model_results"     # Created by the Lightning Model (init)
