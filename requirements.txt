@@ -1,0 +1,23 @@
+# General Purpose
+tqdm
+ipython
+ipykernel
+
+# Profiling
+psutil
+
+# Computing
+numpy
+torch
+torchaudio
+pytorch-lightning
+torchmetrics
+epanns-inference
+scikit-learn
+
+# Visualization & Stats
+matplotlib
+matplotlib-inline
+seaborn
+pandas
+tensorboard
