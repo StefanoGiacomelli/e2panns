@@ -16,7 +16,7 @@ chunk_duration = 0.310      # Duration of audio chunks to be written (seconds)
 RANDOM_SEED = 42            
 DEVICE = "cpu"              
 output_threshold = 0.8      # Model's binary threshold (for inference probability)
-CHECKPOINT_PATH = "./model/checkpoints/epoch=0_epoch_val_accuracy=0.8454.ckpt"
+CHECKPOINT_PATH = "./experiments/2025-01-08_20-39/checkpoints/epoch=3_epoch_val_accuracy=0.8602.ckpt"
 CLASS_INDEX = 322           # Class-IDX of interest in AudioSet (322 = "Emergency vehicle")
 
 # Housekeeping logging parameters

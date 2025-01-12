@@ -2,7 +2,6 @@ import os
 import csv
 import time
 from datetime import datetime
-import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -292,16 +291,16 @@ class EPANNs_Binarized_Model(pl.LightningModule):
         self.val_precision(preds, y)
         self.val_recall(preds, y)
         self.val_f1(preds, y)
-
-        return loss
-
-
-    def on_validation_epoch_end(self):
+        
         self.log("epoch_val_accuracy", self.val_accuracy.compute(), prog_bar=True)
         self.log("epoch_val_precision", self.val_precision.compute(), prog_bar=True)
         self.log("epoch_val_recall", self.val_recall.compute(), prog_bar=True)
         self.log("epoch_val_f1", self.val_f1.compute(), prog_bar=True)
 
+        return loss
+
+
+    def on_validation_epoch_end(self):
         self.val_accuracy.reset()
         self.val_precision.reset()
         self.val_recall.reset()

@@ -62,7 +62,7 @@ checkpoint_callback = ModelCheckpoint(dirpath=CHECKPOINT_DIR,
 
 early_stopping = EarlyStopping(monitor="epoch_val_accuracy",
                                mode="max",
-                               patience=PATIENCE,  # Stop if no improvement for 3 val epochs
+                               patience=PATIENCE,
                                verbose=True)
 
 trainer = Trainer(max_epochs=EPOCHS,
