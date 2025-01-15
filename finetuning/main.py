@@ -8,7 +8,8 @@ from pytorch_lightning import seed_everything
 torch.set_float32_matmul_precision('high')
 
 from globals import *
-from models import AudioDataModule, EPANNs_Binarized_Model
+from dataloaders import AudioDataModule
+from models import EPANNs_Binarized_Model
 ################################################################################
 
 

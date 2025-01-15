@@ -1,3 +1,8 @@
+############################################################################################################
+#
+#  Hyper-Parameters Search Phase-1: finding the best HPs combination which maximizes validation accuracy
+#
+############################################################################################################
 import gc
 from itertools import product
 import csv
@@ -7,7 +12,8 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping
 
 from globals import Positives_csv, Positives, Negatives_csv, Negatives
-from models import AudioDataModule, EPANNs_Binarized_Model
+from dataloaders import AudioDataModule
+from models import EPANNs_Binarized_Model
 from pytorch_lightning import seed_everything
 torch.set_float32_matmul_precision('high')
 
@@ -52,7 +58,7 @@ class EarlyStoppingTracker(EarlyStopping):
 
 
 # Output file creation
-csv_file = "hp_search_results.csv"
+csv_file = "hp_search_phase1_results.csv"
 with open(csv_file, mode="w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["run", "overall_training", "batch_size", "threshold",
