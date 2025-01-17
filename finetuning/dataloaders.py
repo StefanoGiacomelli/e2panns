@@ -1,9 +1,10 @@
 import os
 import csv
 import pandas as pd
+import random
 import torch
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader, ConcatDataset, random_split
+from torch.utils.data import Dataset, DataLoader, Subset, ConcatDataset, random_split
 import torchaudio
 import pytorch_lightning as pl
 
@@ -135,15 +136,6 @@ class AudioSetEV_DataModule(pl.LightningDataModule):
 
 
 # ESC-50 Dataset ------------------------------------------------------------------------------------------------
-import os
-import pandas as pd
-import torch
-import torchaudio
-import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
-import pytorch_lightning as pl
-
-
 class ESC50_TestDataset(Dataset):
     def __init__(self, file_path, folder_path, target_size=160000, target_sr=32000):
         self.cwd = os.getcwd()
@@ -228,3 +220,111 @@ class ESC50_DataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return list(self.test_loaders.values())
+
+
+# sireNNet Dataset ------------------------------------------------------------------------------------------------
+class sireNNet_TestDataset(Dataset):
+    def __init__(self, folder_path, target_size=96000, target_sr=32000):
+        self.folder_path = os.path.abspath(folder_path)
+        self.target_size = target_size
+        self.target_sr = target_sr
+        self.file_paths, self.labels = self._load_files()
+        self.skipped_files = []
+
+    def __len__(self):
+        return len(self.file_paths)
+
+    def _load_files(self):
+        labels_map = {"ambulance": 1,
+                      "firetruck": 1,
+                      "police": 1,
+                      "traffic": 0}
+        file_paths = []
+        labels = []
+
+        for category, label in labels_map.items():
+            category_path = os.path.join(self.folder_path, category)
+            if os.path.exists(category_path):
+                for file_name in os.listdir(category_path):
+                    if file_name.endswith('.wav'):
+                        file_paths.append(os.path.join(category_path, file_name))
+                        labels.append(label)
+
+        return file_paths, labels
+
+    def __getitem__(self, idx):
+        file_path = self.file_paths[idx]
+        label = self.labels[idx]
+
+        try:
+            waveform, sr = torchaudio.load(file_path)
+
+            # Resample to target_sr if necessary
+            if sr != self.target_sr:
+                resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
+                waveform = resampler(waveform)
+
+            # Pad or truncate waveform to target_size
+            current_size = waveform.size(1)
+            if current_size < self.target_size:
+                padding = self.target_size - current_size
+                waveform = F.pad(waveform, (0, padding), "constant", 0)
+            elif current_size > self.target_size:
+                waveform = waveform[:, :self.target_size]
+        except Exception as e:
+            self.skipped_files.append((idx, file_path))
+            print(f"Skipping Error loading {file_path}: {e}")
+            return None
+
+        return waveform, label
+
+
+class sireNNet_DataModule(pl.LightningDataModule):
+    def __init__(self, folder_path, batch_size=32, target_size=96000, target_sr=32000):
+        super().__init__()
+        self.folder_path = folder_path
+        self.batch_size = batch_size
+        self.target_size = target_size
+        self.target_sr = target_sr
+
+        # Sizes for multiple random balanced subsets (fractions of the dataset)
+        self.sizes = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.0]
+
+    def setup(self, stage=None):
+        self.dataset = sireNNet_TestDataset(folder_path=self.folder_path,
+                                            target_size=self.target_size,
+                                            target_sr=self.target_sr)
+
+    def get_balanced_subset(self, fraction):
+        # Find indices of positive (1) and negative (0) samples
+        indices_1s = [i for i, label in enumerate(self.dataset.labels) if label == 1]
+        indices_0s = [i for i, label in enumerate(self.dataset.labels) if label == 0]
+
+        # Determine the number of samples per class for the given fraction
+        num_samples_per_class = int(len(self.dataset) * fraction // 2)
+
+        # Shuffle and select the required number of samples
+        random.shuffle(indices_1s)
+        random.shuffle(indices_0s)
+
+        selected_indices_1s = indices_1s[:num_samples_per_class]
+        selected_indices_0s = indices_0s[:num_samples_per_class]
+
+        # Combine and shuffle the selected indices
+        balanced_indices = selected_indices_1s + selected_indices_0s
+        random.shuffle(balanced_indices)
+
+        # Create a subset
+        return Subset(self.dataset, balanced_indices)
+
+    def test_dataloader(self):
+        dataloaders = []
+        for fraction in self.sizes:
+            subset = self.get_balanced_subset(fraction)
+            loader = DataLoader(subset, batch_size=self.batch_size, shuffle=True, num_workers=2)
+            dataloaders.append(loader)
+
+        return dataloaders
+
+
+# LSSiren Dataset ------------------------------------------------------------------------------------------------

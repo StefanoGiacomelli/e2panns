@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 # Initialize DataModule
 data_module = ESC50_DataModule(file_path="./datasets/ESC-50/esc50.csv",
                                folder_path="./datasets/ESC-50/cross_val_folds/",
-                               target_size=160000,
+                               target_size=160000,                                      # 5-second audio samples
                                target_sr=32000,
                                batch_size=32)
 
