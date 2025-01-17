@@ -8,7 +8,7 @@ from pytorch_lightning import seed_everything
 torch.set_float32_matmul_precision('high')
 
 from globals import *
-from dataloaders import AudioDataModule
+from dataloaders import AudioSetEV_DataModule
 from models import EPANNs_Binarized_Model
 ################################################################################
 
@@ -30,11 +30,11 @@ start_tensorboard(logger.log_dir)
 
 
 # -------------- Data Module -------------
-data_module = AudioDataModule(TP_file=Positives_csv,
-                              TP_folder=Positives,
-                              TN_file=Negatives_csv,
-                              TN_folder=Negatives,
-                              batch_size=batch_size)
+data_module = AudioSetEV_DataModule(TP_file=Positives_csv,
+                                    TP_folder=Positives,
+                                    TN_file=Negatives_csv,
+                                    TN_folder=Negatives,
+                                    batch_size=batch_size)
 data_module.setup()
 print('--------------------------------------------------------------------------')
 print("\n" * 2, end="")

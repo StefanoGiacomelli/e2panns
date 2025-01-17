@@ -1,5 +1,6 @@
 import os
 import csv
+import pandas as pd
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, ConcatDataset, random_split
@@ -7,8 +8,8 @@ import torchaudio
 import pytorch_lightning as pl
 
 
-# Dataset ------------------------------------------------------------------------------------------------
-class AudioDataset(Dataset):
+# AudioSet_EV Dataset ------------------------------------------------------------------------------------------------
+class AudioSetEV_Dataset(Dataset):
     def __init__(self, file_path, folder_path, target_size=320000, binary_label=1):
         self.cwd = os.getcwd()
         self.file_path = os.path.abspath(os.path.join(self.cwd, file_path))
@@ -43,7 +44,7 @@ class AudioDataset(Dataset):
 
         return waveform_tensor, self.label
 
-def test_collate_fn(batch):
+def custom_collate_fn(batch):
     """
     Custom collate function to filter out None values from a torch.Dataset batch.
     """
@@ -54,7 +55,7 @@ def test_collate_fn(batch):
     return torch.utils.data.default_collate(batch)
 
 
-class AudioDataModule(pl.LightningDataModule):
+class AudioSetEV_DataModule(pl.LightningDataModule):
     def __init__(self, TP_file, TP_folder, TN_file, TN_folder, batch_size=32, split_ratios=(0.8, 0.1, 0.1), shuffle=True):
         super().__init__()
         self.pos_folder = TP_folder
@@ -71,8 +72,8 @@ class AudioDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         # Load the full datasets for TP and TN
-        pos_dataset = AudioDataset(self.pos_file, self.pos_folder, binary_label=1)
-        neg_dataset = AudioDataset(self.neg_file, self.neg_folder, binary_label=0)
+        pos_dataset = AudioSetEV_Dataset(self.pos_file, self.pos_folder, binary_label=1)
+        neg_dataset = AudioSetEV_Dataset(self.neg_file, self.neg_folder, binary_label=0)
 
         # Combine datasets
         combined_dataset = ConcatDataset([pos_dataset, neg_dataset])
@@ -90,21 +91,21 @@ class AudioDataModule(pl.LightningDataModule):
     def train_dataloader(self):
         return DataLoader(self.train_dataset,
                           batch_size=self.batch_size,
-                          collate_fn=test_collate_fn,
+                          collate_fn=custom_collate_fn,
                           shuffle=self.train_shuffle,
                           num_workers=2)
 
     def val_dataloader(self):
         return DataLoader(self.dev_dataset,
                           batch_size=self.batch_size,
-                          collate_fn=test_collate_fn,
+                          collate_fn=custom_collate_fn,
                           shuffle=False,
                           num_workers=2)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset,
                           batch_size=self.batch_size,
-                          collate_fn=test_collate_fn,
+                          collate_fn=custom_collate_fn,
                           shuffle=False,
                           num_workers=2)
 
@@ -119,7 +120,7 @@ class AudioDataModule(pl.LightningDataModule):
                 if hasattr(subdataset, "skipped_files"):
                     for file_idx, filename in subdataset.skipped_files:
                         skipped_details.append({"split": split_name,
-                                                "dataset": "TPs" if isinstance(subdataset, AudioDataset) and subdataset.label == 1 else "TNs",
+                                                "dataset": "TPs" if isinstance(subdataset, AudioSetEV_Dataset) and subdataset.label == 1 else "TNs",
                                                 "batch_idx": idx // self.batch_size,
                                                 "sample_idx": file_idx % self.batch_size,
                                                 "filepath": filename})
@@ -131,3 +132,99 @@ class AudioDataModule(pl.LightningDataModule):
             writer.writerows(skipped_details)
 
         print(f"Skipped files saved to {file_path}")
+
+
+# ESC-50 Dataset ------------------------------------------------------------------------------------------------
+import os
+import pandas as pd
+import torch
+import torchaudio
+import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
+import pytorch_lightning as pl
+
+
+class ESC50_TestDataset(Dataset):
+    def __init__(self, file_path, folder_path, target_size=160000, target_sr=32000):
+        self.cwd = os.getcwd()
+        self.file_path = os.path.abspath(os.path.join(self.cwd, file_path))
+        self.folder_path = os.path.abspath(os.path.join(self.cwd, folder_path))
+        self.target_size = target_size
+        self.target_sr = target_sr
+        self.filenames, self.labels = self.filter_filenames()
+        self.skipped_files = []
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def filter_filenames(self):
+        df = pd.read_csv(self.file_path)
+
+        # Filter relevant categories and assign binary labels
+        relevant_labels = ["siren", "helicopter", "chainsaw", "car_horn", "engine", "train", "church_bells", "airplane"]
+        siren_label = 1
+        other_labels = 0
+        filenames = []
+        labels = []
+
+        for _, row in df.iterrows():
+            if row["category"] == "siren":
+                filenames.append(os.path.join(self.folder_path, f"fold_{row['fold']}", row["filename"]))
+                labels.append(siren_label)
+            elif row["category"] in relevant_labels:
+                filenames.append(os.path.join(self.folder_path, f"fold_{row['fold']}", row["filename"]))
+                labels.append(other_labels)
+
+        return filenames, labels
+
+    def __getitem__(self, idx):
+        file_path = self.filenames[idx]
+        label = self.labels[idx]
+
+        try:
+            waveform, sr = torchaudio.load(file_path)
+
+            # Resample to target sample rate if necessary
+            if sr != self.target_sr:
+                resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
+                waveform = resampler(waveform)
+
+            # Pad or truncate waveform to target_size
+            current_size = waveform.size(1)
+            if current_size < self.target_size:
+                padding = self.target_size - current_size
+                waveform = F.pad(waveform, (0, padding), "constant", 0)
+            elif current_size > self.target_size:
+                waveform = waveform[:, :self.target_size]
+        except Exception as e:
+            self.skipped_files.append((idx, file_path))
+            print(f"Skipping Error loading {file_path}: {e}")
+            return None
+
+        return waveform, label
+
+
+class ESC50_DataModule(pl.LightningDataModule):
+    def __init__(self, file_path, folder_path, target_size=160000, target_sr=32000, batch_size=32):
+        super().__init__()
+        self.file_path = file_path
+        self.folder_path = folder_path
+        self.target_size = target_size
+        self.target_sr = target_sr
+        self.batch_size = batch_size
+
+    def setup(self, stage=None):
+        self.dataset = ESC50_TestDataset(file_path=self.file_path,
+                                         folder_path=self.folder_path,
+                                         target_size=self.target_size,
+                                         target_sr=self.target_sr)
+
+        # Prepare dataloaders for all folds
+        self.test_loaders = {}
+        for fold in range(1, 6):
+            fold_indices = [i for i, file in enumerate(self.dataset.filenames) if f"fold_{fold}" in file]
+            fold_subset = torch.utils.data.Subset(self.dataset, fold_indices)
+            self.test_loaders[f"fold_{fold}"] = DataLoader(fold_subset, batch_size=self.batch_size, shuffle=False, num_workers=2)
+
+    def test_dataloader(self):
+        return list(self.test_loaders.values())

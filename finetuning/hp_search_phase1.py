@@ -12,7 +12,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping
 
 from globals import Positives_csv, Positives, Negatives_csv, Negatives
-from dataloaders import AudioDataModule
+from dataloaders import AudioSetEV_DataModule
 from models import EPANNs_Binarized_Model
 from pytorch_lightning import seed_everything
 torch.set_float32_matmul_precision('high')
@@ -94,9 +94,9 @@ for params in param_combinations:
                                    t_max=t_max,
                                    eta_min=eta_min)
     
-    data_module = AudioDataModule(TP_file=Positives_csv, TP_folder=Positives,
-                                  TN_file=Negatives_csv, TN_folder=Negatives,
-                                  batch_size=batch_size)
+    data_module = AudioSetEV_DataModule(TP_file=Positives_csv, TP_folder=Positives,
+                                        TN_file=Negatives_csv, TN_folder=Negatives,
+                                        batch_size=batch_size)
     data_module.setup()
 
     # Train the model
