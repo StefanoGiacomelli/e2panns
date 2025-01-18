@@ -45,10 +45,8 @@ class AudioSetEV_Dataset(Dataset):
 
         return waveform_tensor, self.label
 
+
 def custom_collate_fn(batch):
-    """
-    Custom collate function to filter out None values from a torch.Dataset batch.
-    """
     batch = [item for item in batch if item is not None]
     if not batch:
         return None, None
@@ -423,5 +421,113 @@ class LSSiren_DataModule(pl.LightningDataModule):
         return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=False, num_workers=2, collate_fn=lssiren_custom_collate_fn)
 
 
-# X Dataset ------------------------------------------------------------------------------------------------
+# UrbanSound8K Dataset ------------------------------------------------------------------------------------------------
+class UrbanSound8K_TestDataset(Dataset):
+    def __init__(self, folder_path, metadata_path, target_sr=32000, min_length=32000, fold=None):
+        self.folder_path = os.path.abspath(folder_path)
+        self.metadata_path = os.path.abspath(metadata_path)
+        self.target_sr = target_sr
+        self.min_length = min_length
+        self.fold = fold
+        self.file_paths, self.labels = self._load_files()
+        self.skipped_files = []
+
+    def _load_files(self):
+        # Load metadata CSV
+        metadata = pd.read_csv(self.metadata_path)
+
+        # Filter by fold if specified
+        if self.fold is not None:
+            metadata = metadata[metadata["fold"] == self.fold]
+
+        # Assign labels
+        file_paths = []
+        labels = []
+
+        for _, row in metadata.iterrows():
+            file_path = os.path.join(self.folder_path, f"fold{row['fold']}", row["slice_file_name"])
+            label = 1 if row["class"] == "siren" else 0
+            file_paths.append(file_path)
+            labels.append(label)
+
+        return file_paths, labels
+
+    def __len__(self):
+        return len(self.file_paths)
+
+    def __getitem__(self, idx):
+        file_path = self.file_paths[idx]
+        label = self.labels[idx]
+
+        try:
+            waveform, sr = torchaudio.load(file_path)
+
+            # Stereo to mono: Sum channels and normalize
+            if waveform.size(0) > 1:
+                waveform = waveform.mean(dim=0, keepdim=True)
+
+            # Resample to target sample rate if necessary
+            if sr != self.target_sr:
+                resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
+                waveform = resampler(waveform)
+
+            # Zero-pad if waveform is shorter than 1 second
+            current_size = waveform.size(1)
+            if current_size < self.min_length:
+                padding = self.min_length - current_size
+                waveform = F.pad(waveform, (0, padding), "constant", 0)
+
+        except Exception as e:
+            self.skipped_files.append((idx, file_path))
+            print(f"Skipping Error loading {file_path}: {e}")
+            return None
+
+        return waveform, label
+
+
+def urbansound8k_collate_fn(batch):
+    batch = [item for item in batch if item is not None]
+
+    if not batch:
+        raise ValueError("All samples in the batch are invalid.")
+
+    waveforms, labels = zip(*batch)
+
+    # Find the maximum length in the batch
+    max_length = max(waveform.size(1) for waveform in waveforms)
+
+    # Pad all waveforms to the maximum length
+    padded_waveforms = torch.stack([F.pad(waveform, (0, max_length - waveform.size(1)), "constant", 0) for waveform in waveforms])
+
+    # Convert labels to a tensor
+    labels = torch.tensor(labels, dtype=torch.long)
+
+    return padded_waveforms, labels
+
+
+class UrbanSound8K_DataModule(pl.LightningDataModule):
+    def __init__(self, folder_path, metadata_path, batch_size=32, target_sr=32000, min_length=32000):
+        super().__init__()
+        self.folder_path = folder_path
+        self.metadata_path = metadata_path
+        self.batch_size = batch_size
+        self.target_sr = target_sr
+        self.min_length = min_length
+
+    def setup(self):
+        self.datasets = {fold: UrbanSound8K_TestDataset(folder_path=self.folder_path,
+                                                        metadata_path=self.metadata_path,
+                                                        target_sr=self.target_sr,
+                                                        min_length=self.min_length,
+                                                        fold=fold) for fold in range(1, 11)}
+        
+        self.test_loaders = {fold: DataLoader(dataset,
+                                         batch_size=self.batch_size,
+                                         shuffle=False,
+                                         num_workers=2,
+                                         collate_fn=urbansound8k_collate_fn) for fold, dataset in self.datasets.items()}
+
+    def test_dataloaders(self):
+        return list(self.test_loaders.values())
+
 

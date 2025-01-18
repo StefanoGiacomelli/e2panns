@@ -15,4 +15,4 @@ test_loader = data_module.test_dataloader()
 for batch_idx, (waveforms, labels) in enumerate(test_loader):
     print(f"Batch {batch_idx}: Wave Shape: {waveforms.shape}, Labels: {labels}")
 
-# Strange behavior: printing an error unknown about the hardware nont compatible (but it's working good)
+# Strange behavior: printing an error unknown about the hardware non-compatible (but it's working good)

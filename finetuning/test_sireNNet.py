@@ -18,6 +18,6 @@ for run in range(num_runs):
             num_ones += (labels == 1).sum().item()
             num_zeros += (labels == 0).sum().item()
         # Print label counts for the current fraction
-        print(f"  Fraction: {fraction*100:.2f}% - 1s: {num_ones}, 0s: {num_zeros}")
+        print(f"  Fraction: {fraction*100:.2f}% - 1s: {num_ones}, 0s: {num_zeros}")         # Some fractions cannot be balanced
         print(f"  TOT Samples: {len(loader.dataset)}")
     print('\n'*2)
