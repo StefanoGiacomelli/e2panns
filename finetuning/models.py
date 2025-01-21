@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from scheduler import CyclicCosineDecayLR
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -21,34 +22,56 @@ class EPANNs_Binarized_Model(pl.LightningModule):
                  threshold=0.5,
                  output_mode='bin_raw',
                  overall_training=False,
-                 learning_rate=1e-3,
+                 eta_max=1e-3,
+                 eta_min=1e-6,
+                 decay_epochs=50,
+                 restart_eta=1e-5,
+                 restart_interval=10,
+                 warmup_epochs=10,
+                 warmup_eta=1e-4,
                  weight_decay=1e-6,
-                 t_max=50,
-                 eta_min=1e-4,
                  f_beta=0.8):
         """
         :param model: Base-model to fine-tune.
         :param threshold: Probabilities Threshold for binary classification.
         :param output_mode: 'bin_only' for binary output only, 'bin_raw' for full output.
         :param overall_training: full model or last stages fine-tuning condition.
-        :param learning_rate: Initial learning rate.
+        :param eta_max: Maximum learning rate.
+        :param eta_min: Minimum learning rate.
+        :param decay_epochs: Number of epochs for Cosine Annealing scheduler.
+        :param restart_eta: Restart learning rate.
+        :param restart_interval: Restart interval (in epochs) for learning rate.
+        :param warmup_epochs: Number of epochs for warm-up.
+        :param warmup_eta: Warm-up learning rate.
         :param weight_decay: Weight decay (for Adam optimizer).
-        :param t_max: Maximum number of epochs for Cosine Annealing scheduler.
-        :param eta_min: Minimum learning rate for Cosine Annealing scheduler.
         :param f_beta: Beta value for F-beta score.
         """
         super(EPANNs_Binarized_Model, self).__init__()
+        
+        # Model parameters
         self.model = model
+        self.class_idx = 322
         self.threshold = threshold
-        self.beta = f_beta
-        self.learning_rate = learning_rate
-        self.weight_decay = weight_decay
-        self.t_max = t_max
-        self.eta_min = eta_min
-        self.output_mode = output_mode  # 'bin_only' or 'bin_raw'
+        self.output_mode = output_mode      # 'bin_only' or 'bin_raw'
         self.overall = overall_training
-
-        # Prepare embedding and last layers for training
+        
+        self.beta = f_beta
+        
+        # Learning Rate Scheduler parameters
+        self.decay_epochs = decay_epochs
+        self.eta_min = eta_min
+        self.eta_max = eta_max
+        self.restart_interval = restart_interval 
+        self.restart_eta = restart_eta
+        self.warmup_epochs = warmup_epochs
+        self.warmup_eta = warmup_eta
+        
+        # Adam parameters
+        self.weight_decay = weight_decay
+        self.betas=(0.9, 0.999) 
+        self.eps=1e-08
+        
+        # Put (parts of) model on training
         self.setup_model()
 
         # Loss function
@@ -74,9 +97,9 @@ class EPANNs_Binarized_Model(pl.LightningModule):
             print('finetuning')
             for name, param in self.model.named_parameters():
                 if name.startswith("fc1") or name.startswith("fc_audioset"):
-                    param.requires_grad = True  # Enable training
+                    param.requires_grad = True      # Enable training
                 else:
-                    param.requires_grad = False  # Freeze weights
+                    param.requires_grad = False     # Freeze weights
 
 
     def init_metrics(self):
@@ -105,7 +128,7 @@ class EPANNs_Binarized_Model(pl.LightningModule):
 
     def forward(self, x):
         logits = self.model(x.float().squeeze())['clipwise_output']
-        emergency_prob = logits[:, 322]  # Extract Emergency Vehicle probability
+        emergency_prob = logits[:, self.class_idx]  # Extract Emergency Vehicle probability
         return emergency_prob
 
 
@@ -189,14 +212,14 @@ class EPANNs_Binarized_Model(pl.LightningModule):
         if output_mode == "bin_only":
             emergency_prob = self(x)
             preds = (emergency_prob >= self.threshold).float()
-        # Extract FULL classification set & Data-TPs probabilities (for task-specific profiling)
+        # Extract Full classification set & Data-TPs probabilities (for task-specific profiling)
         elif output_mode == "bin_raw":  
             start_time = time.perf_counter()
             full_preds_set = self.model(x.float().squeeze())['clipwise_output']
             end_time = time.perf_counter()
             inference_time = end_time - start_time
 
-            preds = (full_preds_set[:, 322] >= self.threshold).float()
+            preds = (full_preds_set[:, self.class_idx] >= self.threshold).float()
         else:
             raise ValueError(f"Invalid output_mode: {output_mode}. Use 'bin_only' or 'bin_raw'.")
 
@@ -248,12 +271,19 @@ class EPANNs_Binarized_Model(pl.LightningModule):
     # ---------------- Optimization and Scheduler ----------------
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), 
-                               lr=self.learning_rate, 
+                               lr=self.eta_max, 
                                weight_decay=self.weight_decay,
-                               betas=(0.9, 0.999), 
-                               eps=1e-08,
+                               betas=self.betas, 
+                               eps=self.eps,
                                amsgrad=True)
-        scheduler = CosineAnnealingLR(optimizer, T_max=self.t_max, eta_min=self.eta_min)
+        #scheduler = CosineAnnealingLR(optimizer, T_max=self.decay_epochs, eta_min=self.eta_min)
+        scheduler = CyclicCosineDecayLR(optimizer, 
+                                        init_decay_epochs=self.decay_epochs, 
+                                        min_decay_lr=self.eta_min, 
+                                        restart_interval=self.restart_interval, 
+                                        restart_lr=self.restart_eta, 
+                                        warmup_epochs=self.warmup_epochs, 
+                                        warmup_start_lr=self.warmup_eta)
         return [optimizer], [scheduler]
 
 

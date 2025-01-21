@@ -1,0 +1,188 @@
+Test Training w. WarmUp Only
+
+GLOBALS
+
+# DATASET
+Positives_csv = './datasets/AudioSet_EV/EV_Positives.csv'
+Positives = "./datasets/AudioSet_EV/Positive_files/"
+Negatives_csv = './datasets/AudioSet_EV/EV_Negatives.csv'
+Negatives = "./datasets/AudioSet_EV/Negative_files/"
+
+# MODEL PARAMETERS
+batch_size = 32
+threshold = 0.5
+output_mode = "bin_raw"
+learning_rate = 1e-3                            # warmup start (5 Epochs) from 1e-5, Cyclical scheduler 1e-4 (best) -> 1e-6
+weight_decay = 1e-6
+t_max = 100                                     # 100 Epochs w. Cyclical-LR every 10 Epochs                      
+eta_min = 1e-6
+
+# TRAINING CONSTANTS
+overall_training = True
+EPOCHS = 1000
+PATIENCE = 50
+CHECKPOINT_DIR = "./experiments/checkpoints"    # Created by the Lightning Trainer (init)
+RESULTS_DIR = "./experiments/model_results"     # Created by the Lightning Model (init)
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+CONSOLE OUTPUTS
+
+Seed set to 42
+Logs will be saved in:  ./experiments/tb_logs/EPANNs_Binarized/version_0
+Starting TensorBoard at log directory: ./experiments/tb_logs/EPANNs_Binarized/version_0
+--------------------------------------------------------------------------
+
+
+TensorFlow installation not found - running with reduced feature set.
+--2025-01-19 22:07:25--  https://github.com/StefanoGiacomelli/epanns_inference/raw/main/epanns_inference/models/checkpoint_closeto_.44.pt
+Risoluzione di github.com (github.com)... 140.82.121.4
+Connessione a github.com (github.com)|140.82.121.4|:443... connesso.
+Richiesta HTTP inviata, in attesa di risposta... 
+NOTE: Using experimental fast data loading logic. To disable, pass
+    "--load_fast=false" and report issues on GitHub. More details:
+    https://github.com/tensorflow/tensorboard/issues/4784
+
+I0119 22:07:25.653470 140545322104512 plugin.py:429] Monitor runs begin
+TensorBoard 2.18.0 at http://0.0.0.0:6012/ (Press CTRL+C to quit)
+302 Found
+Posizione: https://raw.githubusercontent.com/StefanoGiacomelli/epanns_inference/main/epanns_inference/models/checkpoint_closeto_.44.pt [segue]
+--2025-01-19 22:07:26--  https://raw.githubusercontent.com/StefanoGiacomelli/epanns_inference/main/epanns_inference/models/checkpoint_closeto_.44.pt
+Risoluzione di raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.111.133, 185.199.110.133, 185.199.109.133, ...
+Connessione a raw.githubusercontent.com (raw.githubusercontent.com)|185.199.111.133|:443... connesso.
+Richiesta HTTP inviata, in attesa di risposta... 200 OK
+Lunghezza: 97207494 (93M) [application/octet-stream]
+Salvataggio in: «./checkpoint_closeto_.44.pt»
+
+./checkpoint_closeto_.44.pt                     100%[=====================================================================================================>]  92,70M  28,9MB/s    in 3,2s    
+
+2025-01-19 22:07:32 (29,1 MB/s) - «./checkpoint_closeto_.44.pt» salvato [97207494/97207494]
+
+/home/user/Documenti/e2panns/.venv/lib/python3.11/site-packages/epanns_inference/models/models.py:191: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  checkpoint = torch.load('./checkpoint_closeto_.44.pt', map_location=lambda storage, loc: storage)
+--------------------------------------------------------------------------
+
+
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Training Model...
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/home/user/Documenti/e2panns/.venv/lib/python3.11/site-packages/torch/optim/lr_scheduler.py:62: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+
+   | Name                  | Type                   | Params | Mode 
+--------------------------------------------------------------------------
+0  | model                 | Cnn14_pruned           | 24.3 M | train
+1  | criterion             | BCELoss                | 0      | train
+2  | train_accuracy        | BinaryAccuracy         | 0      | train
+3  | val_accuracy          | BinaryAccuracy         | 0      | train
+4  | val_precision         | BinaryPrecision        | 0      | train
+5  | val_recall            | BinaryRecall           | 0      | train
+6  | val_f1                | BinaryF1Score          | 0      | train
+7  | test_accuracy         | BinaryAccuracy         | 0      | train
+8  | test_confusion_matrix | BinaryConfusionMatrix  | 0      | train
+9  | test_precision        | BinaryPrecision        | 0      | train
+10 | test_recall           | BinaryRecall           | 0      | train
+11 | test_f1               | BinaryF1Score          | 0      | train
+12 | test_specificity      | BinarySpecificity      | 0      | train
+13 | test_auroc            | BinaryAUROC            | 0      | train
+14 | test_auprc            | BinaryAveragePrecision | 0      | train
+15 | test_mcc              | BinaryMatthewsCorrCoef | 0      | train
+16 | test_fbeta            | BinaryFBetaScore       | 0      | train
+17 | test_stat_scores      | BinaryStatScores       | 0      | train
+--------------------------------------------------------------------------
+23.2 M    Trainable params
+1.1 M     Non-trainable params
+24.3 M    Total params
+97.157    Total estimated model params size (MB)
+59        Modules in train mode
+0         Modules in eval mode
+Sanity Checking DataLoader 0:   0%|                                                                                                                                     | 0/2 [00:00<?, ?it/s]/home/user/Documenti/e2panns/.venv/lib/python3.11/site-packages/epanns_inference/models/models.py:241: UserWarning: Implicit dimension choice for softmax has been deprecated. Change the call to include dim=X as an argument.
+  clipwise_output = nn.functional.softmax(self.fc_audioset(x))
+Epoch 0: 100%|█| 351/351 [01:01<00:00,  5.75it/s, v_num=0, train_loss_step=3.840, train_accuracy_step=0.350, val_loss=1.760, epoch_val_accuracy=0.461, epoch_val_precision=0.361, epoch_val_reMetric epoch_val_accuracy improved. New best score: 0.461                                                                                                                                     
+Epoch 0, global step 351: 'epoch_val_accuracy' reached 0.46137 (best 0.46137), saving model to '/home/user/Documenti/e2panns/experiments/checkpoints/epoch=0_epoch_val_accuracy=0.4614.ckpt' as top 1
+Epoch 1: 100%|█| 351/351 [01:01<00:00,  5.74it/s, v_num=0, train_loss_step=0.884, train_accuracy_step=0.850, val_loss=0.705, epoch_val_accuracy=0.796, epoch_val_precision=0.976, epoch_val_reMetric epoch_val_accuracy improved by 0.335 >= min_delta = 0.0. New best score: 0.796                                                                                                         
+Epoch 1, global step 702: 'epoch_val_accuracy' reached 0.79647 (best 0.79647), saving model to '/home/user/Documenti/e2panns/experiments/checkpoints/epoch=1_epoch_val_accuracy=0.7965.ckpt' as top 1
+Epoch 2:  22%|▏| 76/351 [00:12<00:46,  5.94it/s, v_num=0, train_loss_step=0.352, train_accuracy_step=0.875, val_loss=0.705, epoch_val_accuracy=0.796, epo                                     Epoch 2:  22%|▏| 77/351 [00:12<00:45,  5.98it/s, v_num=0, train_loss_step=0.352, train_accuracy_step=0.875, val_loss=0.705, epoch_val_accuracy=0.796, epo                                     Epoch 2:  79%|▊| 279/351 [00:46<00:11,  6.01it/s, v_num=0, train_loss_step=0.462, train_accuracy_step=0.781, val_loss=0.705, epoch_val_accuracy=0.796, ep                                     Epoch 2:  79%|▊| 279/351 [00:46<00:12,  6.00it/s, v_num=0, train_loss_step=0.310, train_accuracy_step=0.844, val_loss=0.705, epoch_val_accuracy=0.796, ep                                     Epoch 2: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.221, train_accuracy_step=0.900, val_loss=0.383, epoch_val_accuracy=0.844, epoch_val_precision=0.867, epoch_val_reMetric epoch_val_accuracy improved by 0.048 >= min_delta = 0.0. New best score: 0.844                                                                                                         
+Epoch 2, global step 1053: 'epoch_val_accuracy' reached 0.84404 (best 0.84404), saving model to '/home/user/Documenti/e2panns/experiments/checkpoints/epoch=2_epoch_val_accuracy=0.8440.ckpt' as top 1
+Epoch 3: 100%|█| 351/351 [01:01<00:00,  5.69it/s, v_num=0, train_loss_step=0.320, train_accuracy_step=0.750, val_loss=0.364, epoch_val_accuracy=0.834, epoch_val_precision=0.849, epoch_val_reEpoch 3, global step 1404: 'epoch_val_accuracy' was not in top 1                                                                                                                              
+Epoch 4: 100%|█| 351/351 [01:01<00:00,  5.68it/s, v_num=0, train_loss_step=0.201, train_accuracy_step=0.850, val_loss=0.348, epoch_val_accuracy=0.834, epoch_val_precision=0.857, epoch_val_reEpoch 4, global step 1755: 'epoch_val_accuracy' was not in top 1                                                                                                                              
+Epoch 5: 100%|█| 351/351 [01:01<00:00,  5.69it/s, v_num=0, train_loss_step=0.395, train_accuracy_step=0.850, val_loss=0.333, epoch_val_accuracy=0.854, epoch_val_precision=0.919, epoch_val_reMetric epoch_val_accuracy improved by 0.010 >= min_delta = 0.0. New best score: 0.854                                                                                                         
+Epoch 5, global step 2106: 'epoch_val_accuracy' reached 0.85355 (best 0.85355), saving model to '/home/user/Documenti/e2panns/experiments/checkpoints/epoch=5_epoch_val_accuracy=0.8535.ckpt' as top 1
+Epoch 6: 100%|█| 351/351 [01:01<00:00,  5.68it/s, v_num=0, train_loss_step=0.115, train_accuracy_step=1.000, val_loss=0.324, epoch_val_accuracy=0.857, epoch_val_precision=0.919, epoch_val_reMetric epoch_val_accuracy improved by 0.004 >= min_delta = 0.0. New best score: 0.857                                                                                                         
+Epoch 6, global step 2457: 'epoch_val_accuracy' reached 0.85712 (best 0.85712), saving model to '/home/user/Documenti/e2panns/experiments/checkpoints/epoch=6_epoch_val_accuracy=0.8571.ckpt' as top 1
+Epoch 7: 100%|█| 351/351 [01:01<00:00,  5.67it/s, v_num=0, train_loss_step=0.377, train_accuracy_step=0.800, val_loss=0.324, epoch_val_accuracy=0.855, epoch_val_precision=0.937, epoch_val_reEpoch 7, global step 2808: 'epoch_val_accuracy' was not in top 1                                                                                                                              
+Epoch 8: 100%|█| 351/351 [01:01<00:00,  5.69it/s, v_num=0, train_loss_step=0.264, train_accuracy_step=0.900, val_loss=0.326, epoch_val_accuracy=0.846, epoch_val_precision=0.911, epoch_val_reEpoch 8, global step 3159: 'epoch_val_accuracy' was not in top 1                                                                                                                              
+Epoch 9: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.235, train_accuracy_step=0.900, val_loss=0.331, epoch_val_accuracy=0.848, epoch_val_precision=0.910, epoch_val_reEpoch 9, global step 3510: 'epoch_val_accuracy' was not in top 1                                                                                                                              
+Epoch 10: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.290, train_accuracy_step=0.850, val_loss=0.330, epoch_val_accuracy=0.841, epoch_val_precision=0.893, epoch_val_rEpoch 10, global step 3861: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 11: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.402, train_accuracy_step=0.800, val_loss=0.348, epoch_val_accuracy=0.838, epoch_val_precision=0.873, epoch_val_rEpoch 11, global step 4212: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 12: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.131, train_accuracy_step=0.950, val_loss=0.371, epoch_val_accuracy=0.836, epoch_val_precision=0.865, epoch_val_rEpoch 12, global step 4563: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 13: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.484, train_accuracy_step=0.800, val_loss=0.402, epoch_val_accuracy=0.802, epoch_val_precision=0.794, epoch_val_rEpoch 13, global step 4914: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 14: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.174, train_accuracy_step=0.950, val_loss=0.387, epoch_val_accuracy=0.809, epoch_val_precision=0.799, epoch_val_rEpoch 14, global step 5265: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 15: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.305, train_accuracy_step=0.900, val_loss=0.411, epoch_val_accuracy=0.841, epoch_val_precision=0.884, epoch_val_rEpoch 15, global step 5616: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 16: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.146, train_accuracy_step=0.900, val_loss=0.438, epoch_val_accuracy=0.828, epoch_val_precision=0.858, epoch_val_rEpoch 16, global step 5967: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 17: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.261, train_accuracy_step=0.850, val_loss=0.406, epoch_val_accuracy=0.826, epoch_val_precision=0.863, epoch_val_rEpoch 17, global step 6318: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 18: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0912, train_accuracy_step=0.950, val_loss=0.441, epoch_val_accuracy=0.819, epoch_val_precision=0.810, epoch_val_Epoch 18, global step 6669: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 19: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0675, train_accuracy_step=1.000, val_loss=0.525, epoch_val_accuracy=0.814, epoch_val_precision=0.811, epoch_val_Epoch 19, global step 7020: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 20: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.103, train_accuracy_step=0.950, val_loss=0.458, epoch_val_accuracy=0.825, epoch_val_precision=0.836, epoch_val_rEpoch 20, global step 7371: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 21: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0981, train_accuracy_step=0.950, val_loss=0.492, epoch_val_accuracy=0.830, epoch_val_precision=0.856, epoch_val_Epoch 21, global step 7722: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 22: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.278, train_accuracy_step=0.850, val_loss=0.507, epoch_val_accuracy=0.798, epoch_val_precision=0.780, epoch_val_rEpoch 22, global step 8073: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 23: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0162, train_accuracy_step=1.000, val_loss=0.562, epoch_val_accuracy=0.818, epoch_val_precision=0.826, epoch_val_Epoch 23, global step 8424: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 24: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.0773, train_accuracy_step=0.950, val_loss=0.570, epoch_val_accuracy=0.831, epoch_val_precision=0.854, epoch_val_Epoch 24, global step 8775: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 25: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0209, train_accuracy_step=1.000, val_loss=0.689, epoch_val_accuracy=0.796, epoch_val_precision=0.805, epoch_val_Epoch 25, global step 9126: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 26: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0604, train_accuracy_step=1.000, val_loss=0.653, epoch_val_accuracy=0.830, epoch_val_precision=0.826, epoch_val_Epoch 26, global step 9477: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 27: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.0968, train_accuracy_step=0.950, val_loss=0.626, epoch_val_accuracy=0.810, epoch_val_precision=0.809, epoch_val_Epoch 27, global step 9828: 'epoch_val_accuracy' was not in top 1                                                                                                                             
+Epoch 28: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.0133, train_accuracy_step=1.000, val_loss=0.682, epoch_val_accuracy=0.826, epoch_val_precision=0.847, epoch_val_Epoch 28, global step 10179: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 29: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.102, train_accuracy_step=0.950, val_loss=0.630, epoch_val_accuracy=0.824, epoch_val_precision=0.829, epoch_val_rEpoch 29, global step 10530: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 30: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.122, train_accuracy_step=0.950, val_loss=0.632, epoch_val_accuracy=0.806, epoch_val_precision=0.816, epoch_val_rEpoch 30, global step 10881: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 31: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.158, train_accuracy_step=0.950, val_loss=0.696, epoch_val_accuracy=0.806, epoch_val_precision=0.806, epoch_val_rEpoch 31, global step 11232: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 32: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.0573, train_accuracy_step=0.950, val_loss=0.624, epoch_val_accuracy=0.798, epoch_val_precision=0.801, epoch_val_Epoch 32, global step 11583: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 33: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.0275, train_accuracy_step=1.000, val_loss=0.636, epoch_val_accuracy=0.820, epoch_val_precision=0.830, epoch_val_Epoch 33, global step 11934: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 34: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.0355, train_accuracy_step=1.000, val_loss=0.798, epoch_val_accuracy=0.818, epoch_val_precision=0.826, epoch_val_Epoch 34, global step 12285: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 35: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.0118, train_accuracy_step=1.000, val_loss=0.838, epoch_val_accuracy=0.792, epoch_val_precision=0.780, epoch_val_Epoch 35, global step 12636: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 36: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.00143, train_accuracy_step=1.000, val_loss=0.808, epoch_val_accuracy=0.812, epoch_val_precision=0.823, epoch_valEpoch 36, global step 12987: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 37: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.00749, train_accuracy_step=1.000, val_loss=0.775, epoch_val_accuracy=0.809, epoch_val_precision=0.814, epoch_valEpoch 37, global step 13338: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 38: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.141, train_accuracy_step=0.950, val_loss=0.760, epoch_val_accuracy=0.823, epoch_val_precision=0.837, epoch_val_rEpoch 38, global step 13689: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 39: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.0393, train_accuracy_step=1.000, val_loss=0.844, epoch_val_accuracy=0.817, epoch_val_precision=0.844, epoch_val_Epoch 39, global step 14040: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 40: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.00734, train_accuracy_step=1.000, val_loss=0.797, epoch_val_accuracy=0.824, epoch_val_precision=0.837, epoch_valEpoch 40, global step 14391: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 41: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.089, train_accuracy_step=0.950, val_loss=0.900, epoch_val_accuracy=0.822, epoch_val_precision=0.824, epoch_val_rEpoch 41, global step 14742: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 42: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.00104, train_accuracy_step=1.000, val_loss=0.901, epoch_val_accuracy=0.821, epoch_val_precision=0.832, epoch_valEpoch 42, global step 15093: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 43: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.294, train_accuracy_step=0.950, val_loss=0.901, epoch_val_accuracy=0.827, epoch_val_precision=0.841, epoch_val_rEpoch 43, global step 15444: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 44: 100%|█| 351/351 [01:01<00:00,  5.71it/s, v_num=0, train_loss_step=0.257, train_accuracy_step=0.900, val_loss=0.802, epoch_val_accuracy=0.822, epoch_val_precision=0.830, epoch_val_rEpoch 44, global step 15795: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 45: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.152, train_accuracy_step=0.950, val_loss=0.918, epoch_val_accuracy=0.813, epoch_val_precision=0.818, epoch_val_rEpoch 45, global step 16146: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 46: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.00145, train_accuracy_step=1.000, val_loss=0.851, epoch_val_accuracy=0.824, epoch_val_precision=0.847, epoch_valEpoch 46, global step 16497: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 47: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.00297, train_accuracy_step=1.000, val_loss=0.885, epoch_val_accuracy=0.818, epoch_val_precision=0.824, epoch_valEpoch 47, global step 16848: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 48: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0351, train_accuracy_step=1.000, val_loss=0.911, epoch_val_accuracy=0.817, epoch_val_precision=0.827, epoch_val_Epoch 48, global step 17199: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 49: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0247, train_accuracy_step=1.000, val_loss=0.901, epoch_val_accuracy=0.824, epoch_val_precision=0.827, epoch_val_Epoch 49, global step 17550: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 50: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.0181, train_accuracy_step=1.000, val_loss=0.889, epoch_val_accuracy=0.795, epoch_val_precision=0.796, epoch_val_Epoch 50, global step 17901: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 51: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.123, train_accuracy_step=0.950, val_loss=0.985, epoch_val_accuracy=0.821, epoch_val_precision=0.841, epoch_val_rEpoch 51, global step 18252: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 52: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.000972, train_accuracy_step=1.000, val_loss=1.090, epoch_val_accuracy=0.811, epoch_val_precision=0.809, epoch_vaEpoch 52, global step 18603: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 53: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=8.52e-5, train_accuracy_step=1.000, val_loss=0.911, epoch_val_accuracy=0.819, epoch_val_precision=0.830, epoch_valEpoch 53, global step 18954: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 54: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.00845, train_accuracy_step=1.000, val_loss=0.959, epoch_val_accuracy=0.819, epoch_val_precision=0.834, epoch_valEpoch 54, global step 19305: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 55: 100%|█| 351/351 [01:01<00:00,  5.72it/s, v_num=0, train_loss_step=0.0115, train_accuracy_step=1.000, val_loss=0.903, epoch_val_accuracy=0.832, epoch_val_precision=0.843, epoch_val_Epoch 55, global step 19656: 'epoch_val_accuracy' was not in top 1                                                                                                                            
+Epoch 56: 100%|█| 351/351 [01:01<00:00,  5.73it/s, v_num=0, train_loss_step=0.000503, train_accuracy_step=1.000, val_loss=0.977, epoch_val_accuracy=0.815, epoch_val_precision=0.824, epoch_vaMonitored metric epoch_val_accuracy did not improve in the last 50 records. Best score: 0.857. Signaling Trainer to stop.                                                                     
+Epoch 56, global step 20007: 'epoch_val_accuracy' was not in top 1
+Epoch 56: 100%|█| 351/351 [01:02<00:00,  5.63it/s, v_num=0, train_loss_step=0.000503, train_accuracy_step=1.000, val_loss=0.977, epoch_val_accuracy=0.815, epoch_val_precision=0.824, epoch_va
+--------------------------------------------------------------------------
+
+
+Testing Model...
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Testing DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 44/44 [00:02<00:00, 17.21it/s]Test metrics saved to: ./experiments/2025-01-19_22-07/model_results/test_metrics.csv
+Testing DataLoader 0: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 44/44 [00:03<00:00, 12.60it/s]
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+         Test metric                   DataLoader 0
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        Test_Accuracy               0.9715099930763245
+          Test_AuPRC                0.9541122913360596
+          Test_AuROC                0.9714375138282776
+      Test_F-beta_score             0.9699015617370605
+        Test_F1_score               0.9719887971878052
+           Test_MCC                 0.9431965947151184
+        Test_Precision              0.962552011013031
+         Test_Recall                0.9816124439239502
+Test_Sensitivity (TP-Accuracy)      0.9816124439239502
+Test_Specificity (TN-Accuracy)      0.9612625241279602
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+EOF

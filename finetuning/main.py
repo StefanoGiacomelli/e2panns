@@ -8,7 +8,7 @@ from pytorch_lightning import seed_everything
 torch.set_float32_matmul_precision('high')
 
 from globals import *
-from dataloaders import AudioSetEV_DataModule
+from dataloaders import AudioSetEV_Aug_DataModule, AudioSetEV_DataModule
 from models import EPANNs_Binarized_Model
 ################################################################################
 
@@ -30,25 +30,40 @@ start_tensorboard(logger.log_dir)
 
 
 # -------------- Data Module -------------
-data_module = AudioSetEV_DataModule(TP_file=Positives_csv,
-                                    TP_folder=Positives,
-                                    TN_file=Negatives_csv,
-                                    TN_folder=Negatives,
-                                    batch_size=batch_size)
+if augmentation:
+    data_module = AudioSetEV_Aug_DataModule(TP_file=Positives_csv,
+                                            TP_folder=Positives,
+                                            TN_file=Negatives_csv,
+                                            TN_folder=Negatives,
+                                            split_ratios=split_ratios,
+                                            batch_size=batch_size,
+                                            aug_prob=0.5)
+else:
+    data_module = AudioSetEV_DataModule(TP_file=Positives_csv,
+                                        TP_folder=Positives,
+                                        TN_file=Negatives_csv,
+                                        TN_folder=Negatives,
+                                        split_ratios=split_ratios,
+                                        batch_size=batch_size)
 data_module.setup()
 print('--------------------------------------------------------------------------')
 print("\n" * 2, end="")
 
 # ---------------- Model -----------------
 base_model = models.Cnn14_pruned(pre_trained=True)
-model = EPANNs_Binarized_Model(model=base_model,
+model = EPANNs_Binarized_Model(base_model,
                                threshold=threshold,
                                output_mode=output_mode,
                                overall_training=overall_training,
-                               learning_rate=learning_rate,
+                               eta_max=eta_max,
+                               eta_min=eta_min,
+                               decay_epochs=decay_epochs,
+                               restart_eta=restart_eta,
+                               restart_interval=restart_interval,
+                               warmup_epochs=warmup_epochs,
+                               warmup_eta=warmup_eta,
                                weight_decay=weight_decay,
-                               t_max=t_max,
-                               eta_min=eta_min)
+                               f_beta=f_beta)
 print('--------------------------------------------------------------------------')
 print("\n" * 2, end="")
 
