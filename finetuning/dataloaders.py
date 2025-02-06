@@ -267,7 +267,7 @@ class ESC50_TestDataset(Dataset):
         df = pd.read_csv(self.file_path)
 
         # Filter relevant categories and assign binary labels
-        relevant_labels = ["siren", "helicopter", "chainsaw", "car_horn", "engine", "train", "church_bells", "airplane"]
+        relevant_labels = ["siren", "helicopter", "chainsaw", "car_horn", "engine", "train", "church_bells", "airplane", "clock_alarm"]
         siren_label = 1
         other_labels = 0
         filenames = []
@@ -645,3 +645,66 @@ class UrbanSound8K_DataModule(pl.LightningDataModule):
 
     def test_dataloaders(self):
         return list(self.test_loaders.values())
+
+
+# FreeSound-50K Dataset -----------------------------------------------------------------------------------------------
+def fsd50k_collate_fn(batch):
+    batch = [item for item in batch if item is not None]
+    if not batch:
+        raise ValueError("All samples in the batch are invalid.")
+    
+    waveforms, labels = zip(*batch)
+    max_length = max(waveform.size(1) for waveform in waveforms)
+    padded_waveforms = torch.stack([F.pad(waveform, (0, max_length - waveform.size(1)), "constant", 0) for waveform in waveforms])
+    labels = torch.tensor(labels, dtype=torch.long)
+    
+    return padded_waveforms, labels
+
+
+class FSD50K_TestDataset(Dataset):
+    def __init__(self, csv_file, folder_path, target_sr=16000, label=1):
+        self.folder_path = os.path.abspath(folder_path)
+        self.data = pd.read_csv(csv_file)
+        self.target_sr = target_sr
+        self.label = label
+        self.skipped_files = []
+        self.resampler = torchaudio.transforms.Resample(orig_freq=44100, new_freq=self.target_sr)  # Will set dynamically
+    
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        file_name = str(self.data.iloc[idx, 0]) + ".wav"
+        file_path = os.path.join(self.folder_path, file_name)
+        
+        try:
+            waveform, sample_rate = torchaudio.load(file_path)
+            if sample_rate != self.target_sr:
+                self.resampler.orig_freq = sample_rate
+                waveform = self.resampler(waveform)
+        except Exception as e:
+            self.skipped_files.append((idx, file_path))
+            print(f"Skipping file {file_path} due to error: {e}")
+            return None
+        
+        return waveform, self.label
+
+
+class FSD50K_DataModule(pl.LightningDataModule):
+    def __init__(self, pos_csv, neg_csv, folder_path, batch_size=32, target_sr=16000):
+        super().__init__()
+        self.pos_csv = pos_csv
+        self.neg_csv = neg_csv
+        self.folder_path = folder_path
+        self.batch_size = batch_size
+        self.target_sr = target_sr
+        self.test_dataset = None
+    
+    def setup(self, stage=None):
+        pos_dataset = FSD50K_TestDataset(self.pos_csv, self.folder_path, target_sr=self.target_sr, label=1)
+        neg_dataset = FSD50K_TestDataset(self.neg_csv, self.folder_path, target_sr=self.target_sr, label=0)
+        
+        self.test_dataset = torch.utils.data.ConcatDataset([pos_dataset, neg_dataset])
+    
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, collate_fn=fsd50k_collate_fn, shuffle=False, num_workers=2)
