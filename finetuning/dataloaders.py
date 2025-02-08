@@ -691,10 +691,10 @@ class FSD50K_TestDataset(Dataset):
 
 
 class FSD50K_DataModule(pl.LightningDataModule):
-    def __init__(self, pos_csv, neg_csv, folder_path, batch_size=32, target_sr=16000):
+    def __init__(self, pos_file, neg_file, folder_path, batch_size=32, target_sr=16000):
         super().__init__()
-        self.pos_csv = pos_csv
-        self.neg_csv = neg_csv
+        self.pos_csv = pos_file
+        self.neg_csv = neg_file
         self.folder_path = folder_path
         self.batch_size = batch_size
         self.target_sr = target_sr
