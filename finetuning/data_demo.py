@@ -110,7 +110,7 @@ if __name__ == "__main__":
     process_dataloader(test_dls, sample_rate=32000, dataset_name="sireNNet")
     print("--------------------------------------------------------")
 
-    # LSSiren DataModule (native SR = 48000, native samples duration = [3, 15]sec.)
+    # LSSiren DataModule (native SR = 48000?, native samples duration = [3, 15]sec.)
     lssiren_dm = LSSiren_DataModule(folder_path="./datasets/Large-Scale_Audio_Dataset_for_Emergency_Vehicle_Sirens_and_Road_Noises/",
                                     target_sr=32000,
                                     min_length=32000,
