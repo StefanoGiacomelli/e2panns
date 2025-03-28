@@ -250,36 +250,68 @@ class AudioSetEV_Aug_DataModule(pl.LightningDataModule):
 
 
 # ESC-50 Dataset ------------------------------------------------------------------------------------------------
-class ESC50_TestDataset(Dataset):
-    def __init__(self, file_path, folder_path, target_size=160000, target_sr=32000):
-        self.cwd = os.getcwd()
-        self.file_path = os.path.abspath(os.path.join(self.cwd, file_path))
-        self.folder_path = os.path.abspath(os.path.join(self.cwd, folder_path))
+class ESC50_Dataset(Dataset):
+    def __init__(self,
+                 file_path: str,
+                 folder_path: str,
+                 target_size: int = 160000,
+                 target_sr: int = 32000):
+        """
+        :param file_path: Path to the ESC-50 CSV (or a modified CSV).
+        :param folder_path: Root folder containing subfolders fold_1, fold_2, etc.
+        :param target_size: Desired number of audio samples (e.g. 160k for ~5s at 32kHz).
+        :param target_sr: Desired sample rate for audio (e.g. 32 kHz).
+        """
+        super().__init__()
+        self.file_path = os.path.abspath(file_path)
+        self.folder_path = os.path.abspath(folder_path)
         self.target_size = target_size
         self.target_sr = target_sr
-        self.filenames, self.labels = self.filter_filenames()
+
+        # The old approach singled out 'siren' as label=1, others as 0 (from relevant_labels).
+        # We'll keep that logic here.
+        self.filenames, self.labels = self._collect_filenames_and_labels()
+
+        # Track any files that fail to load
         self.skipped_files = []
 
     def __len__(self):
         return len(self.filenames)
 
-    def filter_filenames(self):
+    def _collect_filenames_and_labels(self):
+        """
+        Reads the CSV (with columns like 'filename', 'fold', 'category'),
+        merges all folds into one big list, then uses the old 'siren vs. others' logic.
+        """
         df = pd.read_csv(self.file_path)
 
-        # Filter relevant categories and assign binary labels
-        relevant_labels = ["siren", "helicopter", "chainsaw", "car_horn", "engine", "train", "church_bells", "airplane", "clock_alarm"]
+        # Categories we consider "other" (label 0), plus "siren" (label 1).
+        relevant_labels = ["siren",        # label=1
+                           "helicopter", "chainsaw", "car_horn", "engine", "train", "church_bells", "airplane", "clock_alarm"]
         siren_label = 1
-        other_labels = 0
+        other_label = 0
+
         filenames = []
         labels = []
 
         for _, row in df.iterrows():
-            if row["category"] == "siren":
-                filenames.append(os.path.join(self.folder_path, f"fold_{row['fold']}", row["filename"]))
-                labels.append(siren_label)
-            elif row["category"] in relevant_labels:
-                filenames.append(os.path.join(self.folder_path, f"fold_{row['fold']}", row["filename"]))
-                labels.append(other_labels)
+            cat = row["category"]
+            if cat not in relevant_labels:
+                continue  # skip categories not in our relevant set
+
+            # Build full path: folder_path/fold_X/filename.wav
+            audio_path = os.path.join(self.folder_path,
+                                      f"fold_{row['fold']}",
+                                      row["filename"])
+
+            if not os.path.exists(audio_path):
+                # Optionally log or skip
+                continue
+
+            # "siren" => label=1, everything else => label=0
+            label = siren_label if cat == "siren" else other_label
+            filenames.append(audio_path)
+            labels.append(label)
 
         return filenames, labels
 
@@ -290,18 +322,19 @@ class ESC50_TestDataset(Dataset):
         try:
             waveform, sr = torchaudio.load(file_path)
 
-            # Resample to target sample rate if necessary
+            # Resample if needed
             if sr != self.target_sr:
                 resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
                 waveform = resampler(waveform)
 
-            # Pad or truncate waveform to target_size
+            # Pad or truncate to target_size
             current_size = waveform.size(1)
             if current_size < self.target_size:
                 padding = self.target_size - current_size
                 waveform = F.pad(waveform, (0, padding), "constant", 0)
             elif current_size > self.target_size:
                 waveform = waveform[:, :self.target_size]
+
         except Exception as e:
             self.skipped_files.append((idx, file_path))
             print(f"Skipping Error loading {file_path}: {e}")
@@ -311,34 +344,82 @@ class ESC50_TestDataset(Dataset):
 
 
 class ESC50_DataModule(pl.LightningDataModule):
-    def __init__(self, file_path, folder_path, target_size=160000, target_sr=32000, batch_size=32):
+    def __init__(self,
+                 file_path: str,
+                 folder_path: str,
+                 batch_size: int = 32,
+                 split_ratios: tuple = (0.8, 0.1, 0.1),
+                 shuffle: bool = True,
+                 target_size: int = 160000,
+                 target_sr: int = 32000):
+        """
+        A DataModule aligned with AudioSetEV_DataModule style,
+        but merges all official ESC-50 folds into one dataset, then
+        randomly splits them into train/dev/test sets.
+        
+        :param file_path: Path to the ESC-50 CSV (with columns like fold, category, filename).
+        :param folder_path: Directory containing fold_1, fold_2, etc.
+        :param batch_size: Batch size for DataLoaders.
+        :param split_ratios: (train_ratio, dev_ratio, test_ratio).
+        :param shuffle: Whether to shuffle in train_dataloader().
+        :param target_size: Number of samples (e.g. 160k for ~5s at 32kHz).
+        :param target_sr: Sample rate to resample audio to (e.g. 32kHz).
+        """
         super().__init__()
         self.file_path = file_path
         self.folder_path = folder_path
+        self.batch_size = batch_size
+        self.split_ratios = split_ratios
+        self.train_shuffle = shuffle
         self.target_size = target_size
         self.target_sr = target_sr
-        self.batch_size = batch_size
+
+        self.train_dataset = None
+        self.dev_dataset   = None
+        self.test_dataset  = None
 
     def setup(self, stage=None):
-        self.dataset = ESC50_TestDataset(file_path=self.file_path,
-                                         folder_path=self.folder_path,
-                                         target_size=self.target_size,
-                                         target_sr=self.target_sr)
+        """
+        Build the full ESC-50 dataset, then split by ratio for train/dev/test.
+        """
+        # 1) Create the combined dataset from all folds
+        full_dataset = ESC50_Dataset(file_path=self.file_path,
+                                     folder_path=self.folder_path,
+                                     target_size=self.target_size,
+                                     target_sr=self.target_sr)
 
-        # Prepare dataloaders for all folds
-        self.test_loaders = {}
-        for fold in range(1, 6):
-            fold_indices = [i for i, file in enumerate(self.dataset.filenames) if f"fold_{fold}" in file]
-            fold_subset = torch.utils.data.Subset(self.dataset, fold_indices)
-            self.test_loaders[f"fold_{fold}"] = DataLoader(fold_subset, batch_size=self.batch_size, shuffle=False, num_workers=2)
+        # 2) Compute the split sizes
+        total_len = len(full_dataset)
+        train_len = int(self.split_ratios[0] * total_len)
+        dev_len   = int(self.split_ratios[1] * total_len)
+        test_len  = total_len - train_len - dev_len
+
+        # 3) Use random_split to get train/dev/test subsets
+        self.train_dataset, self.dev_dataset, self.test_dataset = random_split(full_dataset, [train_len, dev_len, test_len])
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=self.train_shuffle,
+                          num_workers=2)
+
+    def val_dataloader(self):
+        return DataLoader(self.dev_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2)
 
     def test_dataloader(self):
-        return list(self.test_loaders.values())
+        return DataLoader(self.test_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2)
 
 
 # sireNNet Dataset ------------------------------------------------------------------------------------------------
-class sireNNet_TestDataset(Dataset):
+class sireNNet_Dataset(Dataset):
     def __init__(self, folder_path, target_size=96000, target_sr=32000):
+        super().__init__()
         self.folder_path = os.path.abspath(folder_path)
         self.target_size = target_size
         self.target_sr = target_sr
@@ -355,7 +436,6 @@ class sireNNet_TestDataset(Dataset):
                       "traffic": 0}
         file_paths = []
         labels = []
-
         for category, label in labels_map.items():
             category_path = os.path.join(self.folder_path, category)
             if os.path.exists(category_path):
@@ -373,81 +453,100 @@ class sireNNet_TestDataset(Dataset):
         try:
             waveform, sr = torchaudio.load(file_path)
 
-            # Resample to target_sr if necessary
+            # Resample if needed
             if sr != self.target_sr:
                 resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
                 waveform = resampler(waveform)
             
-            # Stereo to Mono: Sum channels and normalize
+            # Stereo to mono and normalize
             if waveform.size(0) > 1:
                 waveform = waveform.mean(dim=0, keepdim=True)
 
-            # Pad or truncate waveform to target_size
+            # Pad or truncate
             current_size = waveform.size(1)
             if current_size < self.target_size:
                 padding = self.target_size - current_size
                 waveform = F.pad(waveform, (0, padding), "constant", 0)
             elif current_size > self.target_size:
                 waveform = waveform[:, :self.target_size]
+
         except Exception as e:
             self.skipped_files.append((idx, file_path))
             print(f"Skipping Error loading {file_path}: {e}")
-            return None
+            raise e
 
         return waveform, label
 
 
 class sireNNet_DataModule(pl.LightningDataModule):
-    def __init__(self, folder_path, batch_size=32, target_size=96000, target_sr=32000):
+    def __init__(self,
+                 folder_path: str,
+                 batch_size: int = 32,
+                 split_ratios: tuple = (0.8, 0.1, 0.1),
+                 shuffle: bool = True,
+                 target_size: int = 96000,
+                 target_sr: int = 32000):
+        """
+        A DataModule that follows the structure of AudioSetEV_DataModule
+        but uses sireNNet_Dataset for train/dev/test splits.
+
+        :param folder_path: Root folder for subfolders: [ambulance, firetruck, police, traffic].
+        :param batch_size: Batch size for each DataLoader.
+        :param split_ratios: (train_ratio, dev_ratio, test_ratio).
+        :param shuffle: Whether to shuffle in the train DataLoader.
+        :param target_size: Target audio length (in samples).
+        :param target_sr: Target sample rate.
+        """
         super().__init__()
         self.folder_path = folder_path
         self.batch_size = batch_size
+        self.split_ratios = split_ratios
+        self.train_shuffle = shuffle
         self.target_size = target_size
         self.target_sr = target_sr
 
-        # Sizes for multiple random balanced subsets (fractions of the dataset)
-        self.sizes = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.0]
+        self.train_dataset = None
+        self.dev_dataset = None
+        self.test_dataset = None
 
     def setup(self, stage=None):
-        self.dataset = sireNNet_TestDataset(folder_path=self.folder_path,
-                                            target_size=self.target_size,
-                                            target_sr=self.target_sr)
+        # Init sireNNet Dataset
+        full_dataset = sireNNet_Dataset(folder_path=self.folder_path,
+                                        target_size=self.target_size,
+                                        target_sr=self.target_sr)
 
-    def get_balanced_subset(self, fraction):
-        # Find indices of positive (1) and negative (0) samples
-        indices_1s = [i for i, label in enumerate(self.dataset.labels) if label == 1]
-        indices_0s = [i for i, label in enumerate(self.dataset.labels) if label == 0]
+        # Compute split sizes
+        total_size = len(full_dataset)
+        train_size = int(self.split_ratios[0] * total_size)
+        dev_size   = int(self.split_ratios[1] * total_size)
+        test_size  = total_size - train_size - dev_size
 
-        # Determine the number of samples per class for the given fraction
-        num_samples_per_class = int(len(self.dataset) * fraction // 2)
+        # Perform the splits
+        self.train_dataset, self.dev_dataset, self.test_dataset = random_split(full_dataset, [train_size, dev_size, test_size])
 
-        # Shuffle and select the required number of samples
-        random.shuffle(indices_1s)
-        random.shuffle(indices_0s)
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=self.train_shuffle,
+                          num_workers=2)
 
-        selected_indices_1s = indices_1s[:num_samples_per_class]
-        selected_indices_0s = indices_0s[:num_samples_per_class]
-
-        # Combine and shuffle the selected indices
-        balanced_indices = selected_indices_1s + selected_indices_0s
-        random.shuffle(balanced_indices)
-
-        # Create a subset
-        return Subset(self.dataset, balanced_indices)
+    def val_dataloader(self):
+        return DataLoader(self.dev_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2)
 
     def test_dataloader(self):
-        dataloaders = []
-        for fraction in self.sizes:
-            subset = self.get_balanced_subset(fraction)
-            loader = DataLoader(subset, batch_size=self.batch_size, shuffle=True, num_workers=2)
-            dataloaders.append(loader)
-
-        return dataloaders
+        return DataLoader(self.test_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2)
 
 
 # LSSiren Dataset ------------------------------------------------------------------------------------------------
-class LSSiren_TestDataset(Dataset):
-    def __init__(self, folder_path, target_sr=32000, min_length=32000):
+class LSSiren_Dataset(Dataset):
+    def __init__(self, folder_path: str, target_sr: int = 32000, min_length: int = 32000):
+        super().__init__()
         self.folder_path = os.path.abspath(folder_path)
         self.target_sr = target_sr
         self.min_length = min_length
@@ -455,7 +554,8 @@ class LSSiren_TestDataset(Dataset):
         self.skipped_files = []
 
     def _load_files(self):
-        labels_map = {"Ambulance_data": 1, "Road_Noises": 0}
+        labels_map = {"Ambulance_data": 1,
+                      "Road_Noises": 0}
         file_paths = []
         labels = []
 
@@ -466,7 +566,6 @@ class LSSiren_TestDataset(Dataset):
                     if file_name.endswith('.wav'):
                         file_paths.append(os.path.join(category_path, file_name))
                         labels.append(label)
-
         return file_paths, labels
 
     def __len__(self):
@@ -479,25 +578,24 @@ class LSSiren_TestDataset(Dataset):
         try:
             waveform, sr = torchaudio.load(file_path)
 
-            # Stereo 2 mono: sum channels and normalize
-            if waveform.size(0) > 1:  # More than 1 channel (stereo)
+            # Stereo -> Mono (sum channels)
+            if waveform.size(0) > 1:
                 waveform = waveform.mean(dim=0, keepdim=True)
 
-            # Resample to target sample rate if necessary
+            # Resample to target_sr if necessary
             if sr != self.target_sr:
                 resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
                 waveform = resampler(waveform)
 
-            # Zero-pad if waveform is shorter than 1 second
+            # Ensure at least min_length samples (pad if shorter)
             current_size = waveform.size(1)
             if current_size < self.min_length:
                 padding = self.min_length - current_size
                 waveform = F.pad(waveform, (0, padding), "constant", 0)
-        
+
         except Exception as e:
-            # Log and skip problematic files
             self.skipped_files.append((idx, file_path))
-            print(f"Skipping Error loading {file_path}: {e}")
+            print(f"Skipping file {file_path} due to error: {e}")
             return None
 
         return waveform, label
@@ -525,49 +623,122 @@ def lssiren_custom_collate_fn(batch):
 
 
 class LSSiren_DataModule(pl.LightningDataModule):
-    def __init__(self, folder_path, batch_size=32, target_sr=32000, min_length=32000):
+    def __init__(self,
+                 folder_path: str,
+                 batch_size: int = 32,
+                 split_ratios: tuple = (0.8, 0.1, 0.1),
+                 shuffle: bool = True,
+                 target_sr: int = 32000,
+                 min_length: int = 32000):
+        """
+        DataModule mirroring AudioSetEV_DataModule structure,
+        but for LSSiren with a custom collate function.
+
+        :param folder_path: Root folder path (containing subfolders Ambulance_data, Road_Noises)
+        :param batch_size: Batch size for DataLoaders
+        :param split_ratios: (train_ratio, dev_ratio, test_ratio)
+        :param shuffle: Whether to shuffle the training DataLoader
+        :param target_sr: Target sampling rate
+        :param min_length: Minimum length (in samples) to pad waveforms
+        """
         super().__init__()
         self.folder_path = folder_path
         self.batch_size = batch_size
+        self.split_ratios = split_ratios
+        self.train_shuffle = shuffle
         self.target_sr = target_sr
         self.min_length = min_length
 
+        self.train_dataset = None
+        self.dev_dataset = None
+        self.test_dataset = None
+
     def setup(self, stage=None):
-        self.dataset = LSSiren_TestDataset(folder_path=self.folder_path,
-                                           target_sr=self.target_sr,
-                                           min_length=self.min_length)
+        # 1) Create the full dataset
+        full_dataset = LSSiren_Dataset(folder_path=self.folder_path,
+                                       target_sr=self.target_sr,
+                                       min_length=self.min_length)
+
+        # 2) Determine split sizes
+        total_size = len(full_dataset)
+        train_size = int(self.split_ratios[0] * total_size)
+        dev_size   = int(self.split_ratios[1] * total_size)
+        test_size  = total_size - train_size - dev_size
+
+        # 3) Randomly split into train/dev/test subsets
+        self.train_dataset, self.dev_dataset, self.test_dataset = random_split(full_dataset, [train_size, dev_size, test_size])
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=self.train_shuffle,
+                          num_workers=2,
+                          collate_fn=lssiren_custom_collate_fn)
+
+    def val_dataloader(self):
+        return DataLoader(self.dev_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2,
+                          collate_fn=lssiren_custom_collate_fn)
 
     def test_dataloader(self):
-        return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=False, num_workers=2, collate_fn=lssiren_custom_collate_fn)
+        return DataLoader(self.test_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2,
+                          collate_fn=lssiren_custom_collate_fn)
 
 
 # UrbanSound8K Dataset ------------------------------------------------------------------------------------------------
-class UrbanSound8K_TestDataset(Dataset):
-    def __init__(self, folder_path, metadata_path, target_sr=32000, min_length=32000, fold=None):
+class UrbanSound8K_Dataset(Dataset):
+    def __init__(self,
+                 folder_path: str,
+                 metadata_path: str,
+                 target_sr: int = 32000,
+                 min_length: int = 32000):
+        """
+        :param folder_path: Root folder containing subfolders: fold1, fold2, ..., fold10
+        :param metadata_path: CSV with columns (fold, slice_file_name, class, etc.)
+        :param target_sr: Target sample rate for audio
+        :param min_length: Minimum length (in samples) for zero-padding
+        """
+        super().__init__()
         self.folder_path = os.path.abspath(folder_path)
         self.metadata_path = os.path.abspath(metadata_path)
         self.target_sr = target_sr
         self.min_length = min_length
-        self.fold = fold
-        self.file_paths, self.labels = self._load_files()
+
+        # Build the list of file paths and labels from all folds
+        self.file_paths, self.labels = self._load_all_files()
+
+        # Track any files that fail to load
         self.skipped_files = []
 
-    def _load_files(self):
-        # Load metadata CSV
+    def _load_all_files(self):
+        """
+        Read the entire metadata CSV, gather file paths for fold1..fold10.
+        If row["class"] == "siren", label=1, else 0.
+        """
         metadata = pd.read_csv(self.metadata_path)
 
-        # Filter by fold if specified
-        if self.fold is not None:
-            metadata = metadata[metadata["fold"] == self.fold]
-
-        # Assign labels
         file_paths = []
         labels = []
 
         for _, row in metadata.iterrows():
-            file_path = os.path.join(self.folder_path, f"fold{row['fold']}", row["slice_file_name"])
-            label = 1 if row["class"] == "siren" else 0
-            file_paths.append(file_path)
+            fold_num = row["fold"]  # 1..10
+            slice_name = row["slice_file_name"]
+            category   = row["class"]
+
+            audio_path = os.path.join(self.folder_path, f"fold{fold_num}", slice_name)
+            label = 1 if category == "siren" else 0
+
+            # Optionally check file exists
+            if not os.path.exists(audio_path):
+                # Could log or skip
+                continue
+
+            file_paths.append(audio_path)
             labels.append(label)
 
         return file_paths, labels
@@ -576,30 +747,30 @@ class UrbanSound8K_TestDataset(Dataset):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
-        file_path = self.file_paths[idx]
+        audio_path = self.file_paths[idx]
         label = self.labels[idx]
 
         try:
-            waveform, sr = torchaudio.load(file_path)
+            waveform, sr = torchaudio.load(audio_path)
 
-            # Stereo to mono: Sum channels and normalize
+            # Stereo -> mono
             if waveform.size(0) > 1:
                 waveform = waveform.mean(dim=0, keepdim=True)
 
-            # Resample to target sample rate if necessary
+            # Resample if needed
             if sr != self.target_sr:
                 resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
                 waveform = resampler(waveform)
 
-            # Zero-pad if waveform is shorter than 1 second
+            # Zero-pad if shorter than min_length
             current_size = waveform.size(1)
             if current_size < self.min_length:
                 padding = self.min_length - current_size
                 waveform = F.pad(waveform, (0, padding), "constant", 0)
 
         except Exception as e:
-            self.skipped_files.append((idx, file_path))
-            print(f"Skipping Error loading {file_path}: {e}")
+            self.skipped_files.append((idx, audio_path))
+            print(f"Skipping file {audio_path} due to error: {e}")
             return None
 
         return waveform, label
@@ -626,32 +797,119 @@ def urbansound8k_collate_fn(batch):
 
 
 class UrbanSound8K_DataModule(pl.LightningDataModule):
-    def __init__(self, folder_path, metadata_path, batch_size=32, target_sr=32000, min_length=32000):
+    def __init__(self,
+                 folder_path: str,
+                 metadata_path: str,
+                 batch_size: int = 32,
+                 split_ratios: tuple = (0.8, 0.1, 0.1),
+                 shuffle: bool = True,
+                 target_sr: int = 32000,
+                 min_length: int = 32000):
+        """
+        DataModule aligned with AudioSetEV_DataModule, but merges all
+        UrbanSound8K folds (1..10) into one dataset, then random-splits
+        them into train/dev/test.
+
+        :param folder_path: Path to the root UrbanSound8K folder,
+                            containing subfolders: fold1, fold2, ..., fold10.
+        :param metadata_path: Path to UrbanSound8K metadata CSV
+        :param batch_size: Batch size for the DataLoader
+        :param split_ratios: (train_ratio, dev_ratio, test_ratio)
+        :param shuffle: Whether to shuffle the training DataLoader
+        :param target_sr: Sample rate to resample (e.g., 32000)
+        :param min_length: Minimum length in samples to pad waveforms
+        """
         super().__init__()
         self.folder_path = folder_path
         self.metadata_path = metadata_path
         self.batch_size = batch_size
+        self.split_ratios = split_ratios
+        self.train_shuffle = shuffle
         self.target_sr = target_sr
         self.min_length = min_length
 
-    def setup(self):
-        self.datasets = {fold: UrbanSound8K_TestDataset(folder_path=self.folder_path,
-                                                        metadata_path=self.metadata_path,
-                                                        target_sr=self.target_sr,
-                                                        min_length=self.min_length,
-                                                        fold=fold) for fold in range(1, 11)}
-        
-        self.test_loaders = {fold: DataLoader(dataset,
-                                         batch_size=self.batch_size,
-                                         shuffle=False,
-                                         num_workers=2,
-                                         collate_fn=urbansound8k_collate_fn) for fold, dataset in self.datasets.items()}
+        self.train_dataset = None
+        self.dev_dataset   = None
+        self.test_dataset  = None
 
-    def test_dataloaders(self):
-        return list(self.test_loaders.values())
+    def setup(self, stage=None):
+        # 1) Build the full dataset (merging fold1..fold10)
+        full_dataset = UrbanSound8K_Dataset(folder_path=self.folder_path,
+                                            metadata_path=self.metadata_path,
+                                            target_sr=self.target_sr,
+                                            min_length=self.min_length)
+
+        # 2) Compute sizes for each split
+        total_len = len(full_dataset)
+        train_len = int(self.split_ratios[0] * total_len)
+        dev_len   = int(self.split_ratios[1] * total_len)
+        test_len  = total_len - train_len - dev_len
+
+        # 3) random_split
+        self.train_dataset, self.dev_dataset, self.test_dataset = random_split(full_dataset, [train_len, dev_len, test_len])
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=self.train_shuffle,
+                          num_workers=2,
+                          collate_fn=urbansound8k_collate_fn)
+
+    def val_dataloader(self):
+        return DataLoader(self.dev_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2,
+                          collate_fn=urbansound8k_collate_fn)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2,
+                          collate_fn=urbansound8k_collate_fn)
 
 
 # FreeSound-50K Dataset -----------------------------------------------------------------------------------------------
+class FSD50K_Dataset(Dataset):
+    def __init__(self, csv_file, folder_path, target_sr=16000, label=1):
+        super().__init__()
+        self.csv_file = os.path.abspath(csv_file)
+        self.folder_path = os.path.abspath(folder_path)
+        self.target_sr = target_sr
+        self.label = label
+
+        # Read the CSV
+        self.data = pd.read_csv(self.csv_file)
+
+        # We keep a resampler object that we can adjust if the file sr differs
+        self.resampler = torchaudio.transforms.Resample(orig_freq=44100, new_freq=self.target_sr)
+        self.skipped_files = []
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        # CSV is assumed to have an ID column in row 0. We append ".wav".
+        file_id = str(self.data.iloc[idx, 0])  # e.g. "12345"
+        file_name = file_id + ".wav"
+        file_path = os.path.join(self.folder_path, file_name)
+
+        try:
+            waveform, sample_rate = torchaudio.load(file_path)
+
+            if sample_rate != self.target_sr:
+                self.resampler.orig_freq = sample_rate
+                waveform = self.resampler(waveform)
+
+        except Exception as e:
+            self.skipped_files.append((idx, file_path))
+            print(f"Skipping file {file_path} due to error: {e}")
+            return None
+
+        return waveform, self.label
+
+
 def fsd50k_collate_fn(batch):
     batch = [item for item in batch if item is not None]
     if not batch:
@@ -665,50 +923,104 @@ def fsd50k_collate_fn(batch):
     return padded_waveforms, labels
 
 
-class FSD50K_TestDataset(Dataset):
-    def __init__(self, csv_file, folder_path, target_sr=16000, label=1):
-        self.folder_path = os.path.abspath(folder_path)
-        self.data = pd.read_csv(csv_file)
-        self.target_sr = target_sr
-        self.label = label
-        self.skipped_files = []
-        self.resampler = torchaudio.transforms.Resample(orig_freq=44100, new_freq=self.target_sr)  # Will set dynamically
-    
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, idx):
-        file_name = str(self.data.iloc[idx, 0]) + ".wav"
-        file_path = os.path.join(self.folder_path, file_name)
-        
-        try:
-            waveform, sample_rate = torchaudio.load(file_path)
-            if sample_rate != self.target_sr:
-                self.resampler.orig_freq = sample_rate
-                waveform = self.resampler(waveform)
-        except Exception as e:
-            self.skipped_files.append((idx, file_path))
-            print(f"Skipping file {file_path} due to error: {e}")
-            return None
-        
-        return waveform, self.label
-
-
 class FSD50K_DataModule(pl.LightningDataModule):
-    def __init__(self, pos_file, neg_file, folder_path, batch_size=32, target_sr=16000):
+    def __init__(self,
+                 pos_dev_csv: str,
+                 neg_dev_csv: str,
+                 dev_folder_path: str,
+                 pos_eval_csv: str,
+                 neg_eval_csv: str,
+                 eval_folder_path: str,
+                 batch_size: int = 32,
+                 split_ratios: tuple = (0.9, 0.1),
+                 target_sr: int = 16000,
+                 shuffle: bool = True):
+        """
+        :param pos_dev_csv: CSV file for positive dev samples
+        :param neg_dev_csv: CSV file for negative dev samples
+        :param dev_folder_path: Folder with dev WAV files
+        :param pos_eval_csv: CSV file for positive eval samples
+        :param neg_eval_csv: CSV file for negative eval samples
+        :param eval_folder_path: Folder with eval WAV files
+        :param batch_size: Batch size for DataLoader
+        :param split_ratios: (train_ratio, val_ratio), e.g. (0.9, 0.1)
+        :param target_sr: Target sample rate for resampling
+        :param num_workers: Number of worker processes for DataLoader
+        :param shuffle: Whether to shuffle in the train DataLoader
+        """
         super().__init__()
-        self.pos_csv = pos_file
-        self.neg_csv = neg_file
-        self.folder_path = folder_path
+        self.pos_dev_csv = pos_dev_csv
+        self.neg_dev_csv = neg_dev_csv
+        self.dev_folder_path = dev_folder_path
+
+        self.pos_eval_csv = pos_eval_csv
+        self.neg_eval_csv = neg_eval_csv
+        self.eval_folder_path = eval_folder_path
+
         self.batch_size = batch_size
+        self.split_ratios = split_ratios
         self.target_sr = target_sr
-        self.test_dataset = None
-    
+        self.shuffle = shuffle
+
+        # We'll create these in .setup()
+        self.train_dataset = None
+        self.val_dataset   = None
+        self.test_dataset  = None
+
     def setup(self, stage=None):
-        pos_dataset = FSD50K_TestDataset(self.pos_csv, self.folder_path, target_sr=self.target_sr, label=1)
-        neg_dataset = FSD50K_TestDataset(self.neg_csv, self.folder_path, target_sr=self.target_sr, label=0)
+        """
+        Build dev (pos+neg), split into train/val, 
+        then build eval (pos+neg) for test.
+        """
+        # 1) Dev set: Concat positive + negative
+        pos_dev_dataset = FSD50K_Dataset(csv_file=self.pos_dev_csv,
+                                         folder_path=self.dev_folder_path,
+                                         target_sr=self.target_sr,
+                                         label=1)
         
-        self.test_dataset = torch.utils.data.ConcatDataset([pos_dataset, neg_dataset])
-    
+        neg_dev_dataset = FSD50K_Dataset(csv_file=self.neg_dev_csv,
+                                         folder_path=self.dev_folder_path,
+                                         target_sr=self.target_sr,
+                                         label=0)
+        
+        full_dev_dataset = ConcatDataset([pos_dev_dataset, neg_dev_dataset])
+
+        # 2) Split dev dataset into train/val
+        total_len = len(full_dev_dataset)
+        train_len = int(self.split_ratios[0] * total_len)
+        val_len   = total_len - train_len
+
+        self.train_dataset, self.val_dataset = random_split(full_dev_dataset, [train_len, val_len])
+
+        # 3) Eval set: Concat positive + negative
+        pos_eval_dataset = FSD50K_Dataset(csv_file=self.pos_eval_csv,
+                                          folder_path=self.eval_folder_path,
+                                          target_sr=self.target_sr,
+                                          label=1)
+        neg_eval_dataset = FSD50K_Dataset(csv_file=self.neg_eval_csv,
+                                          folder_path=self.eval_folder_path,
+                                          target_sr=self.target_sr,
+                                          label=0)
+        
+        self.test_dataset = ConcatDataset([pos_eval_dataset, neg_eval_dataset])
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=self.shuffle,
+                          num_workers=2,
+                          collate_fn=fsd50k_collate_fn)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2,
+                          collate_fn=fsd50k_collate_fn)
+
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, collate_fn=fsd50k_collate_fn, shuffle=False, num_workers=2)
+        return DataLoader(self.test_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          num_workers=2,
+                          collate_fn=fsd50k_collate_fn)

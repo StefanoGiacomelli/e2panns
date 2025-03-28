@@ -1,10 +1,11 @@
 from torch.utils.data import DataLoader
-from dataloaders import (AudioSetEV_DataModule,
-                         ESC50_DataModule,
-                         sireNNet_DataModule,
-                         LSSiren_DataModule,
-                         UrbanSound8K_DataModule,
-                         FSD50K_DataModule)
+from test_dataloaders import (AudioSetEV_DataModule,
+                              ESC50_DataModule,
+                              sireNNet_DataModule,
+                              LSSiren_DataModule,
+                              UrbanSound8K_DataModule,
+                              FSD50K_DataModule)
+
 
 def compute_stats_from_dataloader(dl: DataLoader, sample_rate: int):
     """
@@ -36,6 +37,7 @@ def compute_stats_from_dataloader(dl: DataLoader, sample_rate: int):
     avg_duration_per_batch = (total_duration_sec / total_batches) if total_batches > 0 else 0
     total_duration_min = total_duration_sec / 60.0
     return total_samples, total_duration_min, avg_duration_per_batch, total_positives, total_negatives
+
 
 def process_dataloader(dl, sample_rate: int, dataset_name: str):
     """
