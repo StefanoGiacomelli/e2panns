@@ -377,6 +377,10 @@ class sireNNet_TestDataset(Dataset):
             if sr != self.target_sr:
                 resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
                 waveform = resampler(waveform)
+            
+            # Stereo to Mono: Sum channels and normalize
+            if waveform.size(0) > 1:
+                waveform = waveform.mean(dim=0, keepdim=True)
 
             # Pad or truncate waveform to target_size
             current_size = waveform.size(1)

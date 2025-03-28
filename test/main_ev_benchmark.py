@@ -25,7 +25,9 @@ from model import E2PANNs_Model
 from EV_benchmark_factory import (get_audioset_ev_aug_testloaders,
                                   get_sirennet_testloaders,
                                   get_lssiren_testloader,
-                                  get_fsd50k_testloader)
+                                  get_fsd50k_testloader,
+                                  get_esc50_testloaders,
+                                  get_urbansound8k_testloaders)
 
 # Ensure reproducibility
 seed_everything(42)
@@ -34,7 +36,7 @@ seed_everything(42)
 # PARAMETERS
 ###############################################################################
 CHECKPOINT_PATH = "experiments/2025-01-20_20-36_lr_fix_aug/checkpoints/epoch=64_epoch_val_accuracy=0.8480.ckpt"
-RESULTS_DIR_ROOT = "./test_results"
+RESULTS_DIR_ROOT = "./test_results_lr_fix_aug"
 CLASS_IDX = 322
 THRESHOLD = 0.5
 OUTPUT_MODE = 'bin_raw'
@@ -70,6 +72,20 @@ test_dl_fsd50k = get_fsd50k_testloader(pos_csv="./datasets/FSD50K/FSD-eval_posit
                                        folder_path="./datasets/FSD50K/FSD50K.eval_audio/",
                                        batch_size=32,
                                        target_sr=32000)
+
+# 6) ESC-50 (5 folds)
+test_dls_esc50 = get_esc50_testloaders(csv_path="./datasets/ESC-50/esc50.csv",
+                                       wavs_folder="./datasets/ESC-50/cross_val_folds/",
+                                       batch_size=32,
+                                       target_size=160000,
+                                       target_sr=32000)
+
+# 7) UrbanSound8K (10 folds)
+test_dls_urbansound8k = get_urbansound8k_testloaders(folder_path="./datasets/UrbanSound8K/audio/",
+                                                     metadata_path="./datasets/UrbanSound8K/metadata/UrbanSound8K.csv",
+                                                     batch_size=32,
+                                                     target_sr=32000,
+                                                     min_length=32000)
 
 ###############################################################################
 # SET UP
@@ -142,6 +158,29 @@ model.results_path = sub_results_dir + '/'
 print(f"\n--- Testing on {dataset_name} ---")
 trainer.test(model, dataloaders=test_dl_fsd50k)
 print(f"Results saved to: {sub_results_dir}")
+
+# 6) ESC-50
+dataset_name = "esc50"
+for fold_idx, esc50_dl in enumerate(test_dls_esc50, start=1):
+    fold_subdir = os.path.join(RESULTS_DIR_ROOT, dataset_name, f"fold_{fold_idx}")
+    os.makedirs(fold_subdir, exist_ok=True)
+    model.results_path = fold_subdir + '/'
+    print(f"\n--- Testing on {dataset_name} [fold_{fold_idx}] ---")
+    trainer.test(model, dataloaders=esc50_dl)
+    print(f"Results saved to: {fold_subdir}")
+
+# 7) UrbanSound8K
+dataset_name = "urbansound8k"
+for fold_idx, urban_dl in enumerate(test_dls_urbansound8k, start=1):
+    fold_subdir = os.path.join(RESULTS_DIR_ROOT, dataset_name, f"fold_{fold_idx}")
+    os.makedirs(fold_subdir, exist_ok=True)
+    
+    # Set results path so the current fold's files go here
+    model.results_path = fold_subdir + '/'
+    
+    print(f"\n--- Testing on {dataset_name} [fold_{fold_idx}] ---")
+    trainer.test(model, dataloaders=urban_dl)
+    print(f"Results saved to: {fold_subdir}")
 
 print("\nAll testing complete!")
 print("Check the subfolders under:")
