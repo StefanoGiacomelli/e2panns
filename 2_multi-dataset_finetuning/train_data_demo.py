@@ -5,25 +5,6 @@ from dataloaders import (AudioSetEV_DataModule,
                          ESC50_DataModule,
                          UrbanSound8K_DataModule,
                          FSD50K_DataModule)
-    
-
-def count_pos_neg(dataset):
-    """
-    Iterate through the dataset items, count how many have label=1 (pos) vs. label=0 (neg).
-    Returns (num_positives, num_negatives).
-    """
-    pos_count = 0
-    neg_count = 0
-    for i in range(len(dataset)):
-        sample = dataset[i]
-        if sample is None:
-            continue
-        wave, label = sample
-        if label == 1:
-            pos_count += 1
-        else:
-            neg_count += 1
-    return pos_count, neg_count
 
 
 # Ensure reproducibility
@@ -49,17 +30,8 @@ test_loader  = dm.test_dataloader()
 
 print("AudioSetEV Dataloaders")
 print("Train set size:", len(train_loader.dataset))
-train_pos, train_neg = count_pos_neg(train_loader.dataset)
-print(f"Train positives: {train_pos}, negatives: {train_neg}")
-
 print("Val set size:", len(val_loader.dataset))
-val_pos, val_neg = count_pos_neg(val_loader.dataset)
-print(f"Val positives: {val_pos}, negatives: {val_neg}")
-
 print("Test set size:", len(test_loader.dataset))
-test_pos, test_neg = count_pos_neg(test_loader.dataset)
-print(f"Test positives: {test_pos}, negatives: {test_neg}")
-
 print("\n" * 2)
 
 # ----------------------------------------------------------------------------------------------
@@ -78,18 +50,9 @@ val_loader   = dm.val_dataloader()
 test_loader  = dm.test_dataloader()
 
 print("SireNNet Dataloaders")
-print("Train samples:", len(train_loader.dataset))
-train_pos, train_neg = count_pos_neg(train_loader.dataset)
-print(f"Train positives: {train_pos}, negatives: {train_neg}")
-
-print("Val samples:", len(val_loader.dataset))
-val_pos, val_neg = count_pos_neg(val_loader.dataset)
-print(f"Val positives: {val_pos}, negatives: {val_neg}")
-
-print("Test samples:", len(test_loader.dataset))
-test_pos, test_neg = count_pos_neg(test_loader.dataset)
-print(f"Test positives: {test_pos}, negatives: {test_neg}")
-
+print("Train set size:", len(train_loader.dataset))
+print("Val set size:", len(val_loader.dataset))
+print("Test set size:", len(test_loader.dataset))
 print("\n" * 2)
 
 # ----------------------------------------------------------------------------------------------
@@ -108,18 +71,9 @@ val_loader   = dm.val_dataloader()
 test_loader  = dm.test_dataloader()
 
 print("LSSiren Dataloaders")
-print("Train samples:", len(train_loader.dataset))
-train_pos, train_neg = count_pos_neg(train_loader.dataset)
-print(f"Train positives: {train_pos}, negatives: {train_neg}")
-
-print("Val samples:", len(val_loader.dataset))
-val_pos, val_neg = count_pos_neg(val_loader.dataset)
-print(f"Val positives: {val_pos}, negatives: {val_neg}")
-
-print("Test samples:", len(test_loader.dataset))
-test_pos, test_neg = count_pos_neg(test_loader.dataset)
-print(f"Test positives: {test_pos}, negatives: {test_neg}")
-
+print("Train set size:", len(train_loader.dataset))
+print("Val set size:", len(val_loader.dataset))
+print("Test set size:", len(test_loader.dataset))
 print("\n" * 2)
 
 # ----------------------------------------------------------------------------------------------
@@ -140,17 +94,8 @@ test_loader  = dm.test_dataloader()
 
 print("ESC50 Dataloaders")
 print("Train set size:", len(train_loader.dataset))
-train_pos, train_neg = count_pos_neg(train_loader.dataset)
-print(f"Train positives: {train_pos}, negatives: {train_neg}")
-
 print("Val set size:", len(val_loader.dataset))
-val_pos, val_neg = count_pos_neg(val_loader.dataset)
-print(f"Val positives: {val_pos}, negatives: {val_neg}")
-
 print("Test set size:", len(test_loader.dataset))
-test_pos, test_neg = count_pos_neg(test_loader.dataset)
-print(f"Test positives: {test_pos}, negatives: {test_neg}")
-
 print("\n" * 2)
 
 # ----------------------------------------------------------------------------------------------
@@ -171,17 +116,8 @@ test_loader  = dm.test_dataloader()
 
 print("UrbanSound8K Dataloaders")
 print("Train set size:", len(train_loader.dataset))
-train_pos, train_neg = count_pos_neg(train_loader.dataset)
-print(f"Train positives: {train_pos}, negatives: {train_neg}")
-
 print("Val set size:", len(val_loader.dataset))
-val_pos, val_neg = count_pos_neg(val_loader.dataset)
-print(f"Val positives: {val_pos}, negatives: {val_neg}")
-
 print("Test set size:", len(test_loader.dataset))
-test_pos, test_neg = count_pos_neg(test_loader.dataset)
-print(f"Test positives: {test_pos}, negatives: {test_neg}")
-
 print("\n" * 2)
 
 # ----------------------------------------------------------------------------------------------
@@ -205,13 +141,5 @@ test_loader  = dm.test_dataloader()
 
 print("FSD50K Dataloaders")
 print("Train set size:", len(train_loader.dataset))
-train_pos, train_neg = count_pos_neg(train_loader.dataset)
-print(f"Train positives: {train_pos}, negatives: {train_neg}")
-
 print("Val set size:", len(val_loader.dataset))
-val_pos, val_neg = count_pos_neg(val_loader.dataset)
-print(f"Val positives: {val_pos}, negatives: {val_neg}")
-
 print("Test set size:", len(test_loader.dataset))
-test_pos, test_neg = count_pos_neg(test_loader.dataset)
-print(f"Test positives: {test_pos}, negatives: {test_neg}")

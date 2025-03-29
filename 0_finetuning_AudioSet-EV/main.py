@@ -9,7 +9,7 @@ torch.set_float32_matmul_precision('high')
 
 from globals import *
 from dataloaders import AudioSetEV_Aug_DataModule, AudioSetEV_DataModule
-from models import EPANNs_Binarized_Model
+from model import EPANNs_Binarized_Model
 ################################################################################
 
 

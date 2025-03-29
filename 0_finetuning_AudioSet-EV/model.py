@@ -5,7 +5,6 @@ from datetime import datetime
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingLR
 from scheduler import CyclicCosineDecayLR
 import numpy as np
 import matplotlib.pyplot as plt
