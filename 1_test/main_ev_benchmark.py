@@ -43,7 +43,7 @@ RESULTS_DIR_ROOT = "./test_results_multi_unified"
 CLASS_IDX = 322
 THRESHOLD = 0.5
 OUTPUT_MODE = 'bin_raw'
-F_BETA = 0.8
+F_BETA = 2.0
 
 ###############################################################################
 # TEST DATALOADERS
