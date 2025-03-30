@@ -615,3 +615,311 @@ class E2PANNs_Model(pl.LightningModule):
             warmup_start_lr=self.warmup_eta
         )
         return [optimizer], [scheduler]
+
+
+class E2PANNs_Model_DatasetAware(pl.LightningModule):
+    """
+    E2PANNs model with:
+      - F1-based dataset weighting logic (update_dataset_weight_by_f1).
+      - A history of dataset weights, appended after each update (dataset_weights_over_time).
+      - plot_dataset_weights_history(...) to create a single black-and-white line plot
+        with distinct linestyles for each dataset.
+    """
+    def __init__(self,
+                 model,
+                 threshold=0.5,
+                 output_mode='bin_raw',
+                 overall_training=False,
+                 eta_max=1e-3,
+                 eta_min=1e-6,
+                 decay_epochs=50,
+                 restart_eta=1e-5,
+                 restart_interval=10,
+                 warmup_epochs=10,
+                 warmup_eta=1e-4,
+                 weight_decay=1e-6,
+                 f_beta=0.8,
+                 num_datasets=6):
+        super().__init__()
+        self.save_hyperparameters(ignore=["model"])
+
+        # Base model
+        self.model = model.cpu()
+        self.class_idx = 322
+        self.threshold = threshold
+        self.output_mode = output_mode
+        self.overall = overall_training
+
+        # F-beta
+        self.beta = f_beta
+
+        # Scheduler / Optim
+        self.decay_epochs = decay_epochs
+        self.eta_min = eta_min
+        self.eta_max = eta_max
+        self.restart_interval = restart_interval
+        self.restart_eta = restart_eta
+        self.warmup_epochs = warmup_epochs
+        self.warmup_eta = warmup_eta
+        self.weight_decay = weight_decay
+        self.betas = (0.9, 0.999)
+        self.eps = 1e-08
+
+        # Freeze/unfreeze base model layers
+        self.setup_model()
+
+        # Loss function
+        self.criterion = nn.BCELoss()
+
+        # Metrics
+        self.init_metrics()
+
+        # Buffers for training & validation
+        self.train_step_outputs = []
+        self.val_step_outputs   = []
+
+        # We won't do test here, so no test buffers needed. 
+        # But if you want them for future expansions, you can keep them:
+        self.preds = []
+        self.targets = []
+        self.all_preds_storage = []
+        self.tot_inference_time = 0.0
+
+        # Output path
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        self.model_results_path = f"./experiments/{current_time}/model_results/"
+        os.makedirs(self.model_results_path, exist_ok=True)
+
+        # === Dataset Weights & Tracking ===
+        self.dataset_weights = nn.Parameter(torch.ones(num_datasets), requires_grad=False)
+        self.current_dataset_idx = 0  # which dataset is currently training
+
+        # If we want an F1-based weighting approach:
+        self.prev_val_f1 = [0.0] * num_datasets
+
+        # Keep track of the entire weight vector at each update
+        self.dataset_weights_over_time = []
+        self.dataset_weights_over_time.append(self.dataset_weights.clone().detach().cpu().tolist())
+
+    def setup_model(self):
+        """
+        Freeze or unfreeze depending on 'overall_training'.
+        """
+        if not self.overall:
+            print('Finetuning only the last layers of base model.')
+            for name, param in self.model.named_parameters():
+                if name.startswith("fc1") or name.startswith("fc_audioset"):
+                    param.requires_grad = True
+                else:
+                    param.requires_grad = False
+        else:
+            print('Full model training (all parameters un-frozen).')
+            for _, param in self.model.named_parameters():
+                param.requires_grad = True
+
+    def init_metrics(self):
+        """
+        Train and Val metrics for binary classification with threshold self.threshold.
+        """
+        # TRAIN METRICS
+        self.train_accuracy = Accuracy(task="binary", num_classes=2, threshold=self.threshold)
+
+        # VAL METRICS
+        self.val_accuracy  = Accuracy(task="binary", num_classes=2, threshold=self.threshold)
+        self.val_precision = Precision(task="binary", num_classes=2, threshold=self.threshold)
+        self.val_recall    = Recall(task="binary", num_classes=2, threshold=self.threshold)
+        self.val_f1        = F1Score(task="binary", num_classes=2, threshold=self.threshold)
+
+    # ----------------------------------------------------------------
+    #                  LOAD TRAINED WEIGHTS (from .ckpt)
+    # ----------------------------------------------------------------
+    def load_trained_weights(self, checkpoint_path: str, verbose: bool = False, validate_updates: bool = True):
+        """
+        Load a Lightning .ckpt into self.model parameters on CPU using 'load_lightning2pt'.
+        :param checkpoint_path: Path to the Lightning checkpoint.
+        :param verbose: Print detailed info if True.
+        :param validate_updates: Compare old vs new params to see which changed.
+        :return: List of updated layers (if validate_updates=True), else None.
+        """
+        self.model, updated_layers = load_lightning2pt(
+            checkpoint_path=checkpoint_path,
+            model=self.model,
+            verbose=verbose,
+            validate_updates=validate_updates
+        )
+
+        print(f'Model correctly loaded from checkpoint: {checkpoint_path}')
+
+        return updated_layers
+    
+    # ----------------------------------------------------------------
+    #   DATASET-WEIGHTING LOGIC (F1-based)
+    # ----------------------------------------------------------------
+    def set_current_dataset_idx(self, idx: int):
+        """
+        Indicate which dataset is active in training_step.
+        """
+        self.current_dataset_idx = idx
+
+    def update_dataset_weight_by_f1(self, dataset_idx: int, new_val_f1: float,
+                                small_threshold=0.0005, large_threshold=0.005):
+        improvement = new_val_f1 - self.prev_val_f1[dataset_idx]
+
+        if improvement < small_threshold:
+            self.dataset_weights[dataset_idx] *= 1.05
+        elif improvement > large_threshold:
+            self.dataset_weights[dataset_idx] *= 0.95
+
+        # Clamp the new weight
+        self.dataset_weights.data[dataset_idx] = torch.clamp(self.dataset_weights[dataset_idx], 0.1, 10.0)
+
+        # Print a console log of this update
+        print(
+            f"[UPDATE DATASET {dataset_idx}]"
+            f" prev_F1={self.prev_val_f1[dataset_idx]:.4f}, new_F1={new_val_f1:.4f},"
+            f" improvement={improvement:.4f},"
+            f" updated_weight={self.dataset_weights[dataset_idx].item():.4f}"
+        )
+
+        # Store the new F1 and snapshot of the entire weight vector
+        self.prev_val_f1[dataset_idx] = new_val_f1
+        self.dataset_weights_over_time.append(self.dataset_weights.clone().detach().cpu().tolist())
+
+    # ----------------------------------------------------------------
+    #                       FORWARD
+    # ----------------------------------------------------------------
+    def forward(self, x):
+        logits_dict = self.model(x.float().squeeze())
+        logits = logits_dict['clipwise_output']
+        return logits[:, self.class_idx]
+
+    # ----------------------------------------------------------------
+    #                      TRAINING STEP
+    # ----------------------------------------------------------------
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        emergency_prob = self(x)
+
+        bce_loss = self.criterion(emergency_prob, y.float())
+        ds_weight = self.dataset_weights[self.current_dataset_idx]
+        loss = ds_weight * bce_loss
+
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+
+        preds = (emergency_prob >= self.threshold).float()
+        self.train_accuracy(preds, y)
+        self.log("train_accuracy", self.train_accuracy, on_epoch=True, prog_bar=True)
+
+        self.train_step_outputs.append({"preds": preds, "targets": y})
+
+        # Log LR
+        current_lr = self.trainer.optimizers[0].param_groups[0]['lr']
+        self.log("learning_rate", current_lr, on_step=True, on_epoch=False)
+
+        return loss
+
+    def on_train_epoch_end(self):
+        self.log("epoch_train_accuracy", self.train_accuracy.compute(), prog_bar=True)
+        self.train_accuracy.reset()
+        self.train_step_outputs.clear()
+
+    # ----------------------------------------------------------------
+    #                     VALIDATION STEP
+    # ----------------------------------------------------------------
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        emergency_prob = self(x)
+        loss = self.criterion(emergency_prob, y.float())
+
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
+        preds = (emergency_prob >= self.threshold).float()
+        self.val_step_outputs.append({"preds": preds, "targets": y})
+
+        self.val_accuracy(preds, y)
+        self.val_precision(preds, y)
+        self.val_recall(preds, y)
+        self.val_f1(preds, y)
+
+        self.log("epoch_val_accuracy", self.val_accuracy.compute(), prog_bar=True)
+        self.log("epoch_val_precision", self.val_precision.compute(), prog_bar=True)
+        self.log("epoch_val_recall", self.val_recall.compute(), prog_bar=True)
+        self.log("epoch_val_f1", self.val_f1.compute(), prog_bar=True)
+
+        return loss
+
+    def on_validation_epoch_end(self):
+        self.val_accuracy.reset()
+        self.val_precision.reset()
+        self.val_recall.reset()
+        self.val_f1.reset()
+        self.val_step_outputs.clear()
+
+    # ----------------------------------------------------------------
+    # PLOT the DATASET WEIGHTS HISTORY
+    # ----------------------------------------------------------------
+    def plot_dataset_weights_history(self, save_dir, dataset_names=None):
+        """
+        Single black-and-white line plot of dataset weights over time, 
+        with distinct linestyles for each dataset.
+        """
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        weight_array = np.array(self.dataset_weights_over_time)  # shape: (updates, num_datasets)
+        num_updates, num_ds = weight_array.shape
+        x_axis = np.arange(num_updates)
+
+        # Some B&W linestyles
+        line_styles = ["-", "--", "-.", ":", (0, (5, 2, 1, 2)), (0, (1, 1))]
+
+        fig, ax = plt.subplots(figsize=(7, 4))
+        for d in range(num_ds):
+            if dataset_names and d < len(dataset_names):
+                label = dataset_names[d]
+            else:
+                label = f"Dataset {d+1}"
+
+            style = line_styles[d % len(line_styles)]
+            ax.plot(
+                x_axis,
+                weight_array[:, d],
+                color="black",
+                linestyle=style,
+                linewidth=1.5,
+                label=label
+            )
+
+        ax.set_title("Dataset Weights Over Time", fontsize=13)
+        ax.set_xlabel("Update Step")
+        ax.set_ylabel("Weight Value")
+        ax.grid(True, linestyle='--', color='grey', alpha=0.6)
+        ax.legend(loc="best")
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, "dataset_weights_history.svg"), format="svg")
+        plt.savefig(os.path.join(save_dir, "dataset_weights_history.png"), format="png")
+        plt.close()
+
+    # ----------------------------------------------------------------
+    #                OPTIMIZER & LR SCHEDULER
+    # ----------------------------------------------------------------
+    def configure_optimizers(self):
+        optimizer = optim.Adam(
+            self.model.parameters(),
+            lr=self.eta_max,
+            weight_decay=self.weight_decay,
+            betas=self.betas,
+            eps=self.eps,
+            amsgrad=True
+        )
+        scheduler = CyclicCosineDecayLR(
+            optimizer,
+            init_decay_epochs=self.decay_epochs,
+            min_decay_lr=self.eta_min,
+            restart_interval=self.restart_interval,
+            restart_lr=self.restart_eta,
+            warmup_epochs=self.warmup_epochs,
+            warmup_start_lr=self.warmup_eta
+        )
+        return [optimizer], [scheduler]
