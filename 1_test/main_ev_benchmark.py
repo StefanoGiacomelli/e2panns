@@ -22,7 +22,8 @@ from pytorch_lightning import seed_everything
 # Your model + data loading
 from epanns_inference import models
 from model import E2PANNs_Model
-from EV_benchmark_factory import (get_audioset_ev_aug_testloaders,
+from EV_benchmark_factory import (get_audioset_ev_testloaders,
+                                  get_audioset_ev_aug_testloaders,
                                   get_sirennet_testloaders,
                                   get_lssiren_testloader,
                                   get_fsd50k_testloader,
@@ -35,8 +36,10 @@ seed_everything(42)
 ###############################################################################
 # PARAMETERS
 ###############################################################################
-CHECKPOINT_PATH = "experiments/2025-01-20_20-36_lr_fix_aug/checkpoints/epoch=64_epoch_val_accuracy=0.8480.ckpt"
-RESULTS_DIR_ROOT = "./test_results_lr_fix_aug"
+#CHECKPOINT_PATH = "experiments/2025-01-20_20-36_lr_fix_aug/checkpoints/epoch=64_epoch_val_accuracy=0.8480.ckpt"
+#RESULTS_DIR_ROOT = "./test_results_lr_fix_aug"
+CHECKPOINT_PATH = "2_multi-dataset_results/2025-03-29_13-21_unified/checkpoints/epoch=119_epoch_val_accuracy=0.8831.ckpt"
+RESULTS_DIR_ROOT = "./test_results_multi_unified"
 CLASS_IDX = 322
 THRESHOLD = 0.5
 OUTPUT_MODE = 'bin_raw'
@@ -45,6 +48,14 @@ F_BETA = 0.8
 ###############################################################################
 # TEST DATALOADERS
 ###############################################################################
+# AudioSet-EV (Standard)
+test_dl_audioset_ev = get_audioset_ev_testloaders(TP_file="./datasets/AudioSet_EV/EV_Positives.csv",
+                                                  TP_folder="./datasets/AudioSet_EV/Positive_files/",
+                                                  TN_file="./datasets/AudioSet_EV/EV_Negatives.csv",
+                                                  TN_folder="./datasets/AudioSet_EV/Negative_files/",
+                                                  batch_size=32,
+                                                  split_ratios=(0.8, 0.1, 0.1))
+
 # AudioSet-EV (w. Augmentations)
 test_dl_audioset_ev_aug = get_audioset_ev_aug_testloaders(TP_file="./datasets/AudioSet_EV/EV_Positives.csv",
                                                           TP_folder="./datasets/AudioSet_EV/Positive_files/",
@@ -121,6 +132,15 @@ if not os.path.exists(CHECKPOINT_PATH):
     exit(0)
 
 print(f"\n=== Using checkpoint: {CHECKPOINT_PATH} ===")
+
+# 1) AudioSet-EV Standard
+dataset_name = "audioset_ev_standard"
+sub_results_dir = os.path.join(RESULTS_DIR_ROOT, dataset_name)
+os.makedirs(sub_results_dir, exist_ok=True)
+model.results_path = sub_results_dir + '/'
+print(f"\n--- Testing on {dataset_name} ---")
+trainer.test(model, dataloaders=test_dl_audioset_ev)
+print(f"Results saved to: {sub_results_dir}")
 
 # 2) AudioSet-EV Augmented
 dataset_name = "audioset_ev_aug"

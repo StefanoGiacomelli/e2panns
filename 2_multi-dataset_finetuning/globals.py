@@ -1,20 +1,21 @@
 # DATASET
-batch_size = 32
+batch_size = 16
 
 # MODEL
+pre_trained = False
 threshold = 0.5
 output_mode = "bin_raw"
 overall_training= True
 f_beta = 0.8
 
 # LEARNING RATE (ETA)
-eta_max = 1e-3
-eta_min = 1e-3
+eta_max = 1e-4
+eta_min = 1e-4
 decay_epochs = 1
-restart_eta = 1e-3
+restart_eta = 1e-4
 restart_interval = 1
 warmup_epochs = 1
-warmup_eta = 1e-3
+warmup_eta = 1e-4
 weight_decay = 1e-6
 
 # OPTIMIZER (Adam)
@@ -24,6 +25,7 @@ eps = 1e-08
                             
 # TRAINING CONSTANTS
 EPOCHS = 1000
-PATIENCE = 50                       
+PATIENCE = 50
+CHECKPOINT_PATH = "0_finetuning_results/2025-01-20_20-36_lr_fix_aug/checkpoints/epoch=64_epoch_val_accuracy=0.8480.ckpt"                       
 CHECKPOINT_DIR = "./experiments/checkpoints"    # Created by the Lightning Trainer (init)
 RESULTS_DIR = "./experiments/model_results"     # Created by the Lightning Model (init)

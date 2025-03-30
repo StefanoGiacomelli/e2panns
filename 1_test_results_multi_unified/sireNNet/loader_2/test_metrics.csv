@@ -1,0 +1,2 @@
+Accuracy,Precision,Recall,F1_Score,F_Beta_Score,Sensitivity (TP-Accuracy),Specificity (TN-Accuracy),AUROC,AUPRC,MCC
+1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1

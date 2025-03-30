@@ -1,0 +1,2 @@
+Accuracy,Precision,Recall,F1_Score,F_Beta_Score,Sensitivity (TP-Accuracy),Specificity (TN-Accuracy),AUROC,AUPRC,MCC
+0.96875,1.0,0.9375,0.9677419066429138,0.9746434688568115,0.9375,1.0,0.96875,0.96875,0.9393364191055298
