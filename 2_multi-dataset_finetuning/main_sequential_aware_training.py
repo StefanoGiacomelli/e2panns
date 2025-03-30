@@ -141,14 +141,9 @@ if __name__ == "__main__":
         num_datasets=num_datasets
     )
 
-    # If needed, load old .ckpt:
     model.load_trained_weights(checkpoint_path=CHECKPOINT_PATH, verbose=False, validate_updates=False)
 
-    # We'll do multiple "rounds." 
-    num_rounds = ROUNDS
-    epochs_per_dataset = EPOCHS
-
-    # Single EarlyStopping (we do not test here, so it monitors epoch_val_accuracy during training/val)
+    # Single EarlyStopping
     early_stopping = EarlyStopping(
         monitor="epoch_val_accuracy",
         mode="max",
@@ -159,10 +154,10 @@ if __name__ == "__main__":
     # -------------------------------
     #  SEQUENTIAL TRAINING
     # -------------------------------
-    for round_idx in range(num_rounds):
-        print(f"\n========== ROUND {round_idx+1}/{num_rounds} ==========\n")
+    for round_idx in range(ROUNDS):
+        print(f"\n========== ROUND {round_idx+1}/{ROUNDS} ==========\n")
         for i, dm_i in enumerate(all_datamodules):
-            print(f"=== TRAIN on Dataset {i+1}/{num_datasets}: {dataset_names[i]} for {epochs_per_dataset} epochs ===")
+            print(f"=== TRAIN on Dataset {i+1}/{num_datasets}: {dataset_names[i]} for {EPOCHS} epochs ===")
 
             # Create a ModelCheckpoint that keeps only the best checkpoint for dataset i
             checkpoint_callback = ModelCheckpoint(
@@ -177,7 +172,7 @@ if __name__ == "__main__":
 
             # Create a Trainer specifically for this dataset
             trainer = Trainer(
-                max_epochs=epochs_per_dataset,
+                max_epochs=EPOCHS,
                 accelerator="auto",
                 devices=1,
                 precision=32,
