@@ -170,5 +170,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# PyTorch (Lightning) large files
 *.ckpt
 *.pt
