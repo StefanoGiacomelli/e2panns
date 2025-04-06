@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks import EarlyStopping
 
 from globals import Positives_csv, Positives, Negatives_csv, Negatives
 from dataloaders import AudioSetEV_DataModule
-from models import EPANNs_Binarized_Model
+from model import EPANNs_Binarized_Model
 from pytorch_lightning import seed_everything
 torch.set_float32_matmul_precision('high')
 
