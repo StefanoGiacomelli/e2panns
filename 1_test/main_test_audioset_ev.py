@@ -20,7 +20,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
 
 from epanns_inference import models
-from EV_benchmark_factory import get_audioset_ev_testloaders
+from EV_benchmark_test_factory import get_audioset_ev_testloaders
 from model import E2PANNs_Model
 
 # Ensure reproducibility

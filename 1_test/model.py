@@ -5,10 +5,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
-import torch.nn.functional as F
-from torchmetrics import (Accuracy, ConfusionMatrix, Precision, Recall, F1Score,
-                          Specificity, AUROC, AveragePrecision, MatthewsCorrCoef,
-                          FBetaScore, StatScores)
+import seaborn as sns
+from torchmetrics import (Accuracy, ConfusionMatrix, Precision, Recall, F1Score,Specificity, AUROC, 
+                          AveragePrecision, MatthewsCorrCoef, FBetaScore, StatScores)
 from sklearn.metrics import roc_curve, precision_recall_curve, auc
 import pytorch_lightning as pl
 
@@ -121,18 +120,18 @@ class E2PANNs_Model(pl.LightningModule):
                  f_beta=0.8,
                  results_path=None):
         """
-        :param model: Base-model (e.g., EPANNs) that returns a dict with 'clipwise_output'.
-        :param threshold: Probability threshold for positive class (EV).
-        :param output_mode: 'bin_only' uses just EV probability for decision;
-                            'bin_raw' also collects entire clipwise output array.
-        :param class_idx: Index of "Emergency Vehicle" class in model's output dimension.
+        :param model: base-model (EPANNs) that returns a dict with 'clipwise_output'.
+        :param threshold: Probability threshold for the selected positive class.
+        :param output_mode: 'bin_only', binary EV probability for decision;
+                            'bin_raw', collects entire ["clipwise output"] 527 probabilities array.
+        :param class_idx: Index of "Emergency vehicle" class in model's output tensor (322, AudioSet Onthology).
         :param f_beta: Beta for F-beta metric.
         :param results_path: Directory to store test metrics, plots, and CSV logs.
         """
         super().__init__()
-        # Don't save entire submodel in hparams
         self.save_hyperparameters(ignore=["model"])
 
+        # Model and hyperparameters
         self.model = model
         self.threshold = threshold
         self.output_mode = output_mode
@@ -191,10 +190,6 @@ class E2PANNs_Model(pl.LightningModule):
 
     # --------------------- FORWARD --------------------------
     def forward(self, x):
-        """
-        Compute EV probability => clipwise_output[:, class_idx].
-        'x' is a batch of waveforms (BxCxT).
-        """
         logits_dict = self.model(x.float().squeeze())  # e.g. {'clipwise_output': [B x #classes], ...}
         logits = logits_dict['clipwise_output']
         emergency_prob = logits[:, self.class_idx]
@@ -202,9 +197,6 @@ class E2PANNs_Model(pl.LightningModule):
 
     # --------------------- TEST STEP ------------------------
     def test_step(self, batch, batch_idx):
-        """
-        Inference on each test batch. Optionally store raw clipwise outputs.
-        """
         x, y = batch
 
         if self.output_mode == "bin_only":
@@ -232,12 +224,6 @@ class E2PANNs_Model(pl.LightningModule):
         self.targets.append(y.float())
 
     def on_test_epoch_end(self):
-        """
-        After all test batches:
-          - Aggregate predictions
-          - Compute metrics
-          - Save plots & CSV
-        """
         # Aggregate
         preds = torch.cat(self.preds, dim=0)
         targets = torch.cat(self.targets, dim=0).squeeze()
@@ -273,9 +259,6 @@ class E2PANNs_Model(pl.LightningModule):
 
     # --------------------- METRICS + LOGGING ----------------
     def compute_metrics(self, preds, targets):
-        """
-        Compute all test metrics from aggregated preds & targets.
-        """
         self.test_acc_val = self.test_accuracy(preds, targets)
         self.test_conf_matrix = self.test_confusion_matrix(preds, targets)
         self.test_precision_val = self.test_precision(preds, targets)
@@ -290,9 +273,6 @@ class E2PANNs_Model(pl.LightningModule):
         self.test_tp_acc = tp / (tp + fn) if (tp + fn) > 0 else 0.0
 
     def log_metrics(self):
-        """
-        Log final test metrics to Lightning's default logger (if any).
-        """
         self.log("Test_Accuracy", self.test_acc_val)
         self.log("Test_Precision", self.test_precision_val)
         self.log("Test_Recall", self.test_recall_val)
@@ -305,9 +285,6 @@ class E2PANNs_Model(pl.LightningModule):
         self.log("Test_MCC", self.test_mcc_val)
 
     def save_test_metrics_to_csv(self, csv_path):
-        """
-        Save final test metrics to a CSV file.
-        """
         metrics = {"Accuracy": self.test_acc_val.item(),
                    "Precision": self.test_precision_val.item(),
                    "Recall": self.test_recall_val.item(),
@@ -328,8 +305,6 @@ class E2PANNs_Model(pl.LightningModule):
 
     # --------------------- PLOTTING UTILS -------------------
     def plot_confusion_matrix(self, targets, predictions, save_dir):
-        import seaborn as sns
-
         tp = ((predictions.int() == 1) & (targets.int() == 1)).sum().item()
         fp = ((predictions.int() == 1) & (targets.int() == 0)).sum().item()
         tn = ((predictions.int() == 0) & (targets.int() == 0)).sum().item()
@@ -365,8 +340,6 @@ class E2PANNs_Model(pl.LightningModule):
         plt.close()
 
     def plot_precision_recall_f1_fbeta(self, precision, recall, f1_score, f_beta, save_dir):
-        import numpy as np
-
         metrics = ["Precision", "Recall", "$F_1$", f"$F_{{{self.beta}}}$"]
         values = [precision.cpu(), recall.cpu(), f1_score.cpu(), f_beta.cpu()]
 
@@ -394,8 +367,6 @@ class E2PANNs_Model(pl.LightningModule):
         plt.close()
 
     def plot_roc_pr_det_curves(self, targets, predictions, save_dir):
-        import numpy as np
-
         fpr, tpr, _ = roc_curve(targets.cpu().numpy(), predictions.cpu().numpy())
         roc_auc = auc(fpr, tpr)
 

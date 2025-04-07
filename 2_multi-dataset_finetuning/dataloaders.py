@@ -3,7 +3,7 @@ import pandas as pd
 import random
 import torch
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader, Subset, ConcatDataset, random_split
+from torch.utils.data import Dataset, DataLoader, ConcatDataset, random_split
 import torchaudio
 import pytorch_lightning as pl
 
@@ -285,8 +285,8 @@ class ESC50_Dataset(Dataset):
         """
         df = pd.read_csv(self.file_path)
 
-        # Categories we consider "other" (label 0), plus "siren" (label 1).
-        relevant_labels = ["siren",        # label=1
+        # Categories we consider "other" (label 0), "siren" (label 1).
+        relevant_labels = ["siren",
                            "helicopter", "chainsaw", "car_horn", "engine", "train", "church_bells", "airplane", "clock_alarm"]
         siren_label = 1
         other_label = 0
@@ -353,9 +353,7 @@ class ESC50_DataModule(pl.LightningDataModule):
                  target_size: int = 160000,
                  target_sr: int = 32000):
         """
-        A DataModule aligned with AudioSetEV_DataModule style,
-        but merges all official ESC-50 folds into one dataset, then
-        randomly splits them into train/dev/test sets.
+        A DataModule that merges all official ESC-50 folds into one dataset, then randomly splits them into train/dev/test sets.
         
         :param file_path: Path to the ESC-50 CSV (with columns like fold, category, filename).
         :param folder_path: Directory containing fold_1, fold_2, etc.
@@ -487,8 +485,7 @@ class sireNNet_DataModule(pl.LightningDataModule):
                  target_size: int = 96000,
                  target_sr: int = 32000):
         """
-        A DataModule that follows the structure of AudioSetEV_DataModule
-        but uses sireNNet_Dataset for train/dev/test splits.
+        A DataModule that uses sireNNet Dataset for train/dev/test splits.
 
         :param folder_path: Root folder for subfolders: [ambulance, firetruck, police, traffic].
         :param batch_size: Batch size for each DataLoader.
@@ -631,8 +628,7 @@ class LSSiren_DataModule(pl.LightningDataModule):
                  target_sr: int = 32000,
                  min_length: int = 32000):
         """
-        DataModule mirroring AudioSetEV_DataModule structure,
-        but for LSSiren with a custom collate function.
+        DataModule for LSSiren with a custom collate function.
 
         :param folder_path: Root folder path (containing subfolders Ambulance_data, Road_Noises)
         :param batch_size: Batch size for DataLoaders
@@ -806,12 +802,9 @@ class UrbanSound8K_DataModule(pl.LightningDataModule):
                  target_sr: int = 32000,
                  min_length: int = 32000):
         """
-        DataModule aligned with AudioSetEV_DataModule, but merges all
-        UrbanSound8K folds (1..10) into one dataset, then random-splits
-        them into train/dev/test.
+        DataModule that merges all UrbanSound8K folds into one dataset, then random-splits into train/dev/test.
 
-        :param folder_path: Path to the root UrbanSound8K folder,
-                            containing subfolders: fold1, fold2, ..., fold10.
+        :param folder_path: Path to the root UrbanSound8K folder, containing subfolders: fold1, fold2, ..., fold10.
         :param metadata_path: Path to UrbanSound8K metadata CSV
         :param batch_size: Batch size for the DataLoader
         :param split_ratios: (train_ratio, dev_ratio, test_ratio)
@@ -882,7 +875,7 @@ class FSD50K_Dataset(Dataset):
         # Read the CSV
         self.data = pd.read_csv(self.csv_file)
 
-        # We keep a resampler object that we can adjust if the file sr differs
+        # Keep a resampler object adjustable if the input file's SR differs
         self.resampler = torchaudio.transforms.Resample(orig_freq=44100, new_freq=self.target_sr)
         self.skipped_files = []
 

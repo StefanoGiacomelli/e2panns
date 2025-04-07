@@ -11,6 +11,7 @@ from torchmetrics import (Accuracy, ConfusionMatrix, Precision, Recall, F1Score,
 from sklearn.metrics import roc_curve, precision_recall_curve, auc
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import pytorch_lightning as pl
 from scheduler import CyclicCosineDecayLR
 
@@ -37,10 +38,8 @@ def load_lightning2pt(checkpoint_path, model, verbose=False, validate_updates=Tr
         raise ValueError(f"Failed to load checkpoint: {e}")
 
     if "state_dict" not in checkpoint:
-        raise ValueError(
-            f"Checkpoint does not contain a 'state_dict'. "
-            f"Keys found: {list(checkpoint.keys())}"
-        )
+        raise ValueError(f"Checkpoint does not contain a 'state_dict'. "
+                         f"Keys found: {list(checkpoint.keys())}")
 
     lightning_state_dict = checkpoint["state_dict"]
 
@@ -52,10 +51,7 @@ def load_lightning2pt(checkpoint_path, model, verbose=False, validate_updates=Tr
             break
 
     if prefix:
-        stripped_state_dict = {
-            key.replace(prefix, ""): value
-            for key, value in lightning_state_dict.items()
-        }
+        stripped_state_dict = {key.replace(prefix, ""): value for key, value in lightning_state_dict.items()}
         if verbose:
             print(f"Detected prefix '{prefix}'. Stripped from state_dict keys.")
     else:
@@ -111,10 +107,6 @@ def load_lightning2pt(checkpoint_path, model, verbose=False, validate_updates=Tr
 
 
 class E2PANNs_Model(pl.LightningModule):
-    """
-    A refined E2PANNs model that supports TRAIN/DEV/TEST phases 
-    and integrates the test-specific logic from the original testing-only variant.
-    """
     def __init__(self,
                  model,
                  threshold=0.5,
@@ -130,7 +122,7 @@ class E2PANNs_Model(pl.LightningModule):
                  weight_decay=1e-6,
                  f_beta=0.8):
         """
-        :param model: Base-model to fine-tune (e.g. the audio classifier).
+        :param model: base-model to fine-tune.
         :param threshold: Probability threshold for predicting the positive class.
         :param output_mode: 'bin_only' => return only the EV prob; 'bin_raw' => store full clipwise output.
         :param overall_training: If False, only last layers are trainable; if True, entire model is trainable.
@@ -195,7 +187,6 @@ class E2PANNs_Model(pl.LightningModule):
         os.makedirs(self.model_results_path, exist_ok=True)
 
     def setup_model(self):
-        """ Freeze or unfreeze layers depending on overall_training flag. """
         if not self.overall:
             print('Finetuning only the last layers.')
             for name, param in self.model.named_parameters():
@@ -209,9 +200,6 @@ class E2PANNs_Model(pl.LightningModule):
                 param.requires_grad = True
 
     def init_metrics(self):
-        """
-        Initialize all needed metrics: train, val, and test ones.
-        """
         # ------------------ TRAIN METRICS ------------------
         self.train_accuracy = Accuracy(task="binary", num_classes=2, threshold=self.threshold)
 
@@ -240,30 +228,24 @@ class E2PANNs_Model(pl.LightningModule):
     def load_trained_weights(self, checkpoint_path: str, verbose: bool = False, validate_updates: bool = True):
         """
         Load a Lightning .ckpt into self.model parameters on CPU using 'load_lightning2pt'.
+        
         :param checkpoint_path: Path to the Lightning checkpoint.
         :param verbose: Print detailed info if True.
         :param validate_updates: Compare old vs new params to see which changed.
         :return: List of updated layers (if validate_updates=True), else None.
         """
-        self.model, updated_layers = load_lightning2pt(
-            checkpoint_path=checkpoint_path,
-            model=self.model,
-            verbose=verbose,
-            validate_updates=validate_updates
-        )
+        self.model, updated_layers = load_lightning2pt(checkpoint_path=checkpoint_path,
+                                                       model=self.model,
+                                                       verbose=verbose,
+                                                       validate_updates=validate_updates)
 
         print(f'Model correctly loaded from checkpoint: {checkpoint_path}')
-
         return updated_layers
 
     # ----------------------------------------------------------------
     #                       FORWARD PASS
     # ----------------------------------------------------------------
     def forward(self, x):
-        """
-        Forward pass. Returns the "Emergency Vehicle" probability at index `self.class_idx`.
-        """
-        # model is already on the correct device by the time forward is called
         logits_dict = self.model(x.float().squeeze())  # e.g., {'clipwise_output': [B x #classes]}
         logits = logits_dict['clipwise_output']
         emergency_prob = logits[:, self.class_idx]
@@ -339,11 +321,6 @@ class E2PANNs_Model(pl.LightningModule):
     #                         TEST LOOP
     # ----------------------------------------------------------------
     def test_step(self, batch, batch_idx):
-        """
-        Unified test logic from 'testing-only' model. 
-        Collect predictions, store raw outputs if output_mode='bin_raw',
-        and optionally measure test loss.
-        """
         x, y = batch
         if self.output_mode == "bin_only":
             start_time = time.perf_counter()
@@ -352,7 +329,7 @@ class E2PANNs_Model(pl.LightningModule):
             self.tot_inference_time += (end_time - start_time)
             preds = (emergency_prob >= self.threshold).float()
 
-            # We can compute test loss as well
+            # Test Loss
             loss = self.criterion(emergency_prob, y.float())
             self.log("test_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
 
@@ -366,7 +343,7 @@ class E2PANNs_Model(pl.LightningModule):
             preds = (emergency_prob >= self.threshold).float()
             self.all_preds_storage.append(full_out.detach().cpu())
 
-            # We can compute test loss as well
+            # Test Loss
             loss = self.criterion(emergency_prob, y.float())
             self.log("test_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         else:
@@ -377,10 +354,6 @@ class E2PANNs_Model(pl.LightningModule):
         self.targets.append(y.float())
 
     def on_test_epoch_end(self):
-        """
-        After all test batches, aggregate predictions, compute and log metrics,
-        save CSV, create plots, and clear buffers.
-        """
         # Aggregate predictions
         preds = torch.cat(self.preds, dim=0)
         targets = torch.cat(self.targets, dim=0).squeeze()
@@ -388,11 +361,9 @@ class E2PANNs_Model(pl.LightningModule):
         # If we used 'bin_raw', save entire clipwise outputs
         if self.all_preds_storage:
             test_set_logits = torch.cat(self.all_preds_storage, dim=0).numpy()
-            np.savez_compressed(
-                os.path.join(self.model_results_path, "test_full_predictions.npz"),
-                logits=test_set_logits,
-                tot_inference_time_sec=self.tot_inference_time
-            )
+            np.savez_compressed(os.path.join(self.model_results_path, "test_full_predictions.npz"),
+                                logits=test_set_logits,
+                                tot_inference_time_sec=self.tot_inference_time)
 
         # Compute final test metrics
         self.compute_metrics(preds, targets)
@@ -401,13 +372,11 @@ class E2PANNs_Model(pl.LightningModule):
 
         # Generate plots
         self.plot_confusion_matrix(targets, preds, save_dir=self.model_results_path)
-        self.plot_precision_recall_f1_fbeta(
-            self.test_precision_val,
-            self.test_recall_val,
-            self.test_f1_val,
-            self.test_fbeta_val,
-            save_dir=self.model_results_path
-        )
+        self.plot_precision_recall_f1_fbeta(self.test_precision_val,
+                                            self.test_recall_val,
+                                            self.test_f1_val,
+                                            self.test_fbeta_val,
+                                            save_dir=self.model_results_path)
         self.plot_roc_pr_det_curves(targets, preds, save_dir=self.model_results_path)
 
         # Clear buffers
@@ -446,30 +415,28 @@ class E2PANNs_Model(pl.LightningModule):
         self.log("Test_MCC", self.test_mcc_val)
 
     def save_test_metrics_to_csv(self, csv_path):
-        metrics = {
-            "Accuracy": self.test_acc_val.item(),
-            "Precision": self.test_precision_val.item(),
-            "Recall": self.test_recall_val.item(),
-            "F1_Score": self.test_f1_val.item(),
-            "F_Beta_Score": self.test_fbeta_val.item(),
-            "Sensitivity (TP-Accuracy)": self.test_tp_acc.item(),
-            "Specificity (TN-Accuracy)": self.test_specificity_val.item(),
-            "AUROC": self.test_auroc_val.item(),
-            "AUPRC": self.test_auprc_val.item(),
-            "MCC": self.test_mcc_val.item()
-        }
+        metrics = {"Accuracy": self.test_acc_val.item(),
+                   "Precision": self.test_precision_val.item(),
+                   "Recall": self.test_recall_val.item(),
+                   "F1_Score": self.test_f1_val.item(),
+                   "F_Beta_Score": self.test_fbeta_val.item(),
+                   "Sensitivity (TP-Accuracy)": self.test_tp_acc.item(),
+                   "Specificity (TN-Accuracy)": self.test_specificity_val.item(),
+                   "AUROC": self.test_auroc_val.item(),
+                   "AUPRC": self.test_auprc_val.item(),
+                   "MCC": self.test_mcc_val.item()}
+        
         with open(csv_path, mode="w", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=metrics.keys())
             writer.writeheader()
             writer.writerow(metrics)
+        
         print(f"Test metrics saved to: {csv_path}")
 
     # ----------------------------------------------------------------
     #                            PLOTTING
     # ----------------------------------------------------------------
     def plot_confusion_matrix(self, targets, predictions, save_dir):
-        import seaborn as sns
-
         tp = ((predictions.int() == 1) & (targets.int() == 1)).sum().item()
         fp = ((predictions.int() == 1) & (targets.int() == 0)).sum().item()
         tn = ((predictions.int() == 0) & (targets.int() == 0)).sum().item()
@@ -479,20 +446,16 @@ class E2PANNs_Model(pl.LightningModule):
         cm_normalized = conf_matrix.astype('float') / conf_matrix.sum(axis=1, keepdims=True)
 
         plt.figure(figsize=(6, 5))
-        ax = sns.heatmap(
-            cm_normalized, annot=True, fmt=".2f", cmap="flare",
-            cbar=True, annot_kws={"size": 12}, square=True,
-            linewidths=1.5, linecolor="black"
-        )
+        ax = sns.heatmap(cm_normalized, annot=True, fmt=".2f", cmap="flare",
+                         cbar=True, annot_kws={"size": 12}, square=True,
+                         linewidths=1.5, linecolor="black")
 
         cell_labels = np.array([["TP", "FN"], ["FP", "TN"]])
         for i in range(2):
             for j in range(2):
-                ax.text(
-                    j + 0.5, i + 0.3, cell_labels[i, j],
-                    ha="center", va="center", color="black",
-                    fontsize=10, fontweight="bold"
-                )
+                ax.text(j + 0.5, i + 0.3, cell_labels[i, j],
+                        ha="center", va="center", color="black",
+                        fontsize=10, fontweight="bold")
 
         plt.xlabel("Ground Truth", labelpad=10)
         plt.ylabel("Predictions", labelpad=10)
@@ -509,8 +472,6 @@ class E2PANNs_Model(pl.LightningModule):
         plt.close()
 
     def plot_precision_recall_f1_fbeta(self, precision, recall, f1_score, f_beta, save_dir):
-        import numpy as np
-
         metrics = ["Precision", "Recall", "$F_1$", f"$F_{{{self.beta}}}$"]
         values = [precision.cpu(), recall.cpu(), f1_score.cpu(), f_beta.cpu()]
 
@@ -523,11 +484,9 @@ class E2PANNs_Model(pl.LightningModule):
         ax.grid(True, which='minor', axis='y', linestyle='--', linewidth=0.5, color='grey', zorder=0)
 
         for bar, value in zip(bars, values):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2, bar.get_height() / 2,
-                f"{value * 100:.2f}%", ha="center", va="center",
-                fontsize=10, fontweight="bold", color="black"
-            )
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() / 2,
+                    f"{value * 100:.2f}%", ha="center", va="center",
+                    fontsize=10, fontweight="bold", color="black")
 
         ax.set_ylim(0, 1)
         ax.set_ylabel("Score (Normalized)")
@@ -540,14 +499,10 @@ class E2PANNs_Model(pl.LightningModule):
         plt.close()
 
     def plot_roc_pr_det_curves(self, targets, predictions, save_dir):
-        import numpy as np
-
         fpr, tpr, _ = roc_curve(targets.cpu().numpy(), predictions.cpu().numpy())
         roc_auc = auc(fpr, tpr)
 
-        precision, recall, _ = precision_recall_curve(
-            targets.cpu().numpy(), predictions.cpu().numpy()
-        )
+        precision, recall, _ = precision_recall_curve(targets.cpu().numpy(), predictions.cpu().numpy())
         pr_auc = auc(recall, precision)
 
         fnr = 1 - tpr
@@ -573,7 +528,7 @@ class E2PANNs_Model(pl.LightningModule):
         ax2.legend(loc="lower left", fontsize=10)
         ax2.grid(True, linestyle='--', color='grey', alpha=0.6)
 
-        # DET (FNR vs FPR)
+        # DET
         ax3.plot(fpr, fnr, color="black", lw=1.5)
         ax3.set_xscale("log")
         ax3.set_yscale("log")
@@ -597,23 +552,21 @@ class E2PANNs_Model(pl.LightningModule):
     #                 OPTIMIZER & LR SCHEDULER
     # ----------------------------------------------------------------
     def configure_optimizers(self):
-        optimizer = optim.Adam(
-            self.model.parameters(),
-            lr=self.eta_max,
-            weight_decay=self.weight_decay,
-            betas=self.betas,
-            eps=self.eps,
-            amsgrad=True
-        )
-        scheduler = CyclicCosineDecayLR(
-            optimizer,
-            init_decay_epochs=self.decay_epochs,
-            min_decay_lr=self.eta_min,
-            restart_interval=self.restart_interval,
-            restart_lr=self.restart_eta,
-            warmup_epochs=self.warmup_epochs,
-            warmup_start_lr=self.warmup_eta
-        )
+        optimizer = optim.Adam(self.model.parameters(),
+                               lr=self.eta_max,
+                               weight_decay=self.weight_decay,
+                               betas=self.betas,
+                               eps=self.eps,
+                               amsgrad=True)
+        
+        scheduler = CyclicCosineDecayLR(optimizer,
+                                        init_decay_epochs=self.decay_epochs,
+                                        min_decay_lr=self.eta_min,
+                                        restart_interval=self.restart_interval,
+                                        restart_lr=self.restart_eta,
+                                        warmup_epochs=self.warmup_epochs,
+                                        warmup_start_lr=self.warmup_eta)
+        
         return [optimizer], [scheduler]
 
 
@@ -678,8 +631,7 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
         self.train_step_outputs = []
         self.val_step_outputs   = []
 
-        # We won't do test here, so no test buffers needed. 
-        # But if you want them for future expansions, you can keep them:
+        # Test Buffers
         self.preds = []
         self.targets = []
         self.all_preds_storage = []
@@ -694,7 +646,7 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
         self.dataset_weights = nn.Parameter(torch.ones(num_datasets), requires_grad=False)
         self.current_dataset_idx = 0  # which dataset is currently training
 
-        # If we want an F1-based weighting approach:
+        # F1-based weighting approach:
         self.prev_val_f1 = [0.0] * num_datasets
 
         # Keep track of the entire weight vector at each update
@@ -702,9 +654,6 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
         self.dataset_weights_over_time.append(self.dataset_weights.clone().detach().cpu().tolist())
 
     def setup_model(self):
-        """
-        Freeze or unfreeze depending on 'overall_training'.
-        """
         if not self.overall:
             print('Finetuning only the last layers of base model.')
             for name, param in self.model.named_parameters():
@@ -718,9 +667,6 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
                 param.requires_grad = True
 
     def init_metrics(self):
-        """
-        Train and Val metrics for binary classification with threshold self.threshold.
-        """
         # TRAIN METRICS
         self.train_accuracy = Accuracy(task="binary", num_classes=2, threshold=self.threshold)
 
@@ -741,15 +687,12 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
         :param validate_updates: Compare old vs new params to see which changed.
         :return: List of updated layers (if validate_updates=True), else None.
         """
-        self.model, updated_layers = load_lightning2pt(
-            checkpoint_path=checkpoint_path,
-            model=self.model,
-            verbose=verbose,
-            validate_updates=validate_updates
-        )
+        self.model, updated_layers = load_lightning2pt(checkpoint_path=checkpoint_path,
+                                                       model=self.model,
+                                                       verbose=verbose,
+                                                       validate_updates=validate_updates)
 
         print(f'Model correctly loaded from checkpoint: {checkpoint_path}')
-
         return updated_layers
     
     # ----------------------------------------------------------------
@@ -761,8 +704,7 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
         """
         self.current_dataset_idx = idx
 
-    def update_dataset_weight_by_f1(self, dataset_idx: int, new_val_f1: float,
-                                small_threshold=0.0005, large_threshold=0.005):
+    def update_dataset_weight_by_f1(self, dataset_idx: int, new_val_f1: float, small_threshold=0.0005, large_threshold=0.005):
         improvement = new_val_f1 - self.prev_val_f1[dataset_idx]
 
         if improvement < small_threshold:
@@ -774,12 +716,10 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
         self.dataset_weights.data[dataset_idx] = torch.clamp(self.dataset_weights[dataset_idx], 0.1, 10.0)
 
         # Print a console log of this update
-        print(
-            f"[UPDATE DATASET {dataset_idx}]"
-            f" prev_F1={self.prev_val_f1[dataset_idx]:.4f}, new_F1={new_val_f1:.4f},"
-            f" improvement={improvement:.4f},"
-            f" updated_weight={self.dataset_weights[dataset_idx].item():.4f}"
-        )
+        print(f"[UPDATE DATASET {dataset_idx}]"
+              f" prev_F1={self.prev_val_f1[dataset_idx]:.4f}, new_F1={new_val_f1:.4f},"
+              f" improvement={improvement:.4f},"
+              f" updated_weight={self.dataset_weights[dataset_idx].item():.4f}")
 
         # Store the new F1 and snapshot of the entire weight vector
         self.prev_val_f1[dataset_idx] = new_val_f1
@@ -856,21 +796,18 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
         self.val_step_outputs.clear()
 
     # ----------------------------------------------------------------
-    # PLOT the DATASET WEIGHTS HISTORY
+    # PLOTs
     # ----------------------------------------------------------------
     def plot_dataset_weights_history(self, save_dir, dataset_names=None):
         """
         Single black-and-white line plot of dataset weights over time, 
         with distinct linestyles for each dataset.
         """
-        import numpy as np
-        import matplotlib.pyplot as plt
-
         weight_array = np.array(self.dataset_weights_over_time)  # shape: (updates, num_datasets)
         num_updates, num_ds = weight_array.shape
         x_axis = np.arange(num_updates)
 
-        # Some B&W linestyles
+        # Linestyles
         line_styles = ["-", "--", "-.", ":", (0, (5, 2, 1, 2)), (0, (1, 1))]
 
         fig, ax = plt.subplots(figsize=(7, 4))
@@ -881,14 +818,7 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
                 label = f"Dataset {d+1}"
 
             style = line_styles[d % len(line_styles)]
-            ax.plot(
-                x_axis,
-                weight_array[:, d],
-                color="black",
-                linestyle=style,
-                linewidth=1.5,
-                label=label
-            )
+            ax.plot(x_axis, weight_array[:, d], color="black", linestyle=style, linewidth=1.5, label=label)
 
         ax.set_title("Dataset Weights Over Time", fontsize=13)
         ax.set_xlabel("Update Step")
@@ -905,21 +835,19 @@ class E2PANNs_Model_DatasetAware(pl.LightningModule):
     #                OPTIMIZER & LR SCHEDULER
     # ----------------------------------------------------------------
     def configure_optimizers(self):
-        optimizer = optim.Adam(
-            self.model.parameters(),
-            lr=self.eta_max,
-            weight_decay=self.weight_decay,
-            betas=self.betas,
-            eps=self.eps,
-            amsgrad=True
-        )
-        scheduler = CyclicCosineDecayLR(
-            optimizer,
-            init_decay_epochs=self.decay_epochs,
-            min_decay_lr=self.eta_min,
-            restart_interval=self.restart_interval,
-            restart_lr=self.restart_eta,
-            warmup_epochs=self.warmup_epochs,
-            warmup_start_lr=self.warmup_eta
-        )
+        optimizer = optim.Adam(self.model.parameters(),
+                               lr=self.eta_max,
+                               weight_decay=self.weight_decay,
+                               betas=self.betas,
+                               eps=self.eps,
+                               amsgrad=True)
+        
+        scheduler = CyclicCosineDecayLR(optimizer,
+                                        init_decay_epochs=self.decay_epochs,
+                                        min_decay_lr=self.eta_min,
+                                        restart_interval=self.restart_interval,
+                                        restart_lr=self.restart_eta,
+                                        warmup_epochs=self.warmup_epochs,
+                                        warmup_start_lr=self.warmup_eta)
+        
         return [optimizer], [scheduler]

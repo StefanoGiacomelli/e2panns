@@ -26,7 +26,7 @@ params_grid = {"overall_training": [True, False],
                "weight_decay": [1e-6],
                "t_max": [EPOCHS],
                "eta_min": [1e-6]}
-param_combinations = list(product(*params_grid.values()))   # Generate all combinations
+param_combinations = list(product(*params_grid.values()))       # Generate all combinations
 
 
 # Early Stopping Callback (w. best validation metrics tracker)

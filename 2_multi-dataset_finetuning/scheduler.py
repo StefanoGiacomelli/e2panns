@@ -1,4 +1,5 @@
-# Cyclic Cosine Learning Rate Scheduler: taken from https://github.com/abhuse/cyclic-cosine-decay
+# Cyclic Cosine Learning Rate Scheduler: from https://github.com/abhuse/cyclic-cosine-decay
+
 from collections.abc import Iterable
 from math import log, cos, pi, floor
 from torch.optim.lr_scheduler import _LRScheduler
@@ -17,7 +18,7 @@ class CyclicCosineDecayLR(_LRScheduler):
                  last_epoch=-1,
                  verbose=False):
         """
-        Initialize new CyclicCosineDecayLR object.
+        Initialize a Cyclic Cosine Decay LR scheduler object.
 
         :param optimizer: (Optimizer) - Wrapped optimizer.
         :param init_decay_epochs: (int) - Number of initial decay epochs.

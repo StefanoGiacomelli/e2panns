@@ -652,19 +652,6 @@ class UrbanSound8K_DataModule(pl.LightningDataModule):
 
 
 # FreeSound-50K Dataset -----------------------------------------------------------------------------------------------
-def fsd50k_collate_fn(batch):
-    batch = [item for item in batch if item is not None]
-    if not batch:
-        raise ValueError("All samples in the batch are invalid.")
-    
-    waveforms, labels = zip(*batch)
-    max_length = max(waveform.size(1) for waveform in waveforms)
-    padded_waveforms = torch.stack([F.pad(waveform, (0, max_length - waveform.size(1)), "constant", 0) for waveform in waveforms])
-    labels = torch.tensor(labels, dtype=torch.long)
-    
-    return padded_waveforms, labels
-
-
 class FSD50K_TestDataset(Dataset):
     def __init__(self, csv_file, folder_path, target_sr=16000, label=1):
         self.folder_path = os.path.abspath(folder_path)
@@ -692,6 +679,19 @@ class FSD50K_TestDataset(Dataset):
             return None
         
         return waveform, self.label
+
+
+def fsd50k_collate_fn(batch):
+    batch = [item for item in batch if item is not None]
+    if not batch:
+        raise ValueError("All samples in the batch are invalid.")
+    
+    waveforms, labels = zip(*batch)
+    max_length = max(waveform.size(1) for waveform in waveforms)
+    padded_waveforms = torch.stack([F.pad(waveform, (0, max_length - waveform.size(1)), "constant", 0) for waveform in waveforms])
+    labels = torch.tensor(labels, dtype=torch.long)
+    
+    return padded_waveforms, labels
 
 
 class FSD50K_DataModule(pl.LightningDataModule):

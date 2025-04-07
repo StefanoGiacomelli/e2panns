@@ -27,9 +27,9 @@ SMALL_THRESHOLD = 0.01
 LARGE_THRESHOLD = 0.1
                             
 # TRAINING CONSTANTS
-EPOCHS = 100                                     # For Sequential Dataset-Aware Training
-PATIENCE = 30                                    # For Sequential Dataset-Aware Training                       
-ROUNDS = 5                                       # For Sequential Dataset-Aware Training
+EPOCHS = 100                                    # For Sequential Dataset-Aware Training
+PATIENCE = 30                                   # For Sequential Dataset-Aware Training                       
+ROUNDS = 5                                      # For Sequential Dataset-Aware Training
 #EPOCHS = 1000                                   # For Unified Training
 #PATIENCE = 50                                   # For Unified Training                                
 CHECKPOINT_PATH = "0_finetuning_results/2025-01-20_20-36_lr_fix_aug/checkpoints/epoch=64_epoch_val_accuracy=0.8480.ckpt"                       

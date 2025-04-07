@@ -56,7 +56,7 @@ class EPANNs_Binarized_Model(pl.LightningModule):
         
         self.beta = f_beta
         
-        # Learning Rate Scheduler parameters
+        # Learning Rate scheduler parameters
         self.decay_epochs = decay_epochs
         self.eta_min = eta_min
         self.eta_max = eta_max
@@ -78,8 +78,8 @@ class EPANNs_Binarized_Model(pl.LightningModule):
 
         # Initialize metrics
         self.init_metrics()
-        self.train_step_outputs = []    # For collecting outputs from training step (Lightning=2.0+ consistency)
-        self.val_step_outputs = []      # For collecting validation outputs (Lightning=2.0+ consistency)
+        self.train_step_outputs = []        # For collecting outputs from training step (Lightning=2.0+ consistency)
+        self.val_step_outputs = []          # For collecting validation outputs (Lightning=2.0+ consistency)
 
         # Placeholders for predictions and ground truths (for test phase)
         self.preds = []
@@ -275,6 +275,7 @@ class EPANNs_Binarized_Model(pl.LightningModule):
                                betas=self.betas, 
                                eps=self.eps,
                                amsgrad=True)
+        
         #scheduler = CosineAnnealingLR(optimizer, T_max=self.decay_epochs, eta_min=self.eta_min)
         scheduler = CyclicCosineDecayLR(optimizer, 
                                         init_decay_epochs=self.decay_epochs, 
@@ -468,7 +469,7 @@ class EPANNs_Binarized_Model(pl.LightningModule):
         # Apply black and white style
         fig.patch.set_facecolor('white')
 
-        # ---- Plot ROC Curve ----
+        # Plot ROC Curve
         ax1.plot(fpr, tpr, color="black", lw=1.5, label=f"ROC-AuC = {roc_auc:.3f}")
         ax1.fill_between(fpr, tpr, alpha=0.3, color="grey")
         ax1.plot([0, 1], [0, 1], color="grey", linestyle="--", linewidth=1, label="Random classifier")
@@ -481,7 +482,7 @@ class EPANNs_Binarized_Model(pl.LightningModule):
         ax1.tick_params(axis='both', which='both', direction='in')
         ax1.grid(True, linestyle='--', color='grey', alpha=0.6)
 
-        # ---- Plot Precision-Recall Curve ----
+        # Plot Precision-Recall Curve
         ax2.plot(recall, precision, color="black", lw=1.5, label=f"PR-AuC = {pr_auc:.3f}")
         ax2.fill_between(recall, precision, alpha=0.3, color="grey")
 
@@ -493,7 +494,7 @@ class EPANNs_Binarized_Model(pl.LightningModule):
         ax2.tick_params(axis='both', which='both', direction='in')
         ax2.grid(True, linestyle='--', color='grey', alpha=0.6)
 
-        # ---- Plot DET Curve ----
+        # Plot DET Curve
         ax3.plot(fpr, fnr, color="black", lw=1.5)
         ax3.set_xscale("log")
         ax3.set_yscale("log")
