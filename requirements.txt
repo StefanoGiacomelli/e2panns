@@ -3,9 +3,6 @@ tqdm
 ipython
 ipykernel
 
-# Profiling
-psutil
-
 # Computing
 numpy
 torch
@@ -21,9 +18,3 @@ matplotlib-inline
 seaborn
 pandas
 tensorboard
-
-# Energy - CO2
-codecarbon==2.4.2
-dash
-dash-bootstrap-components==0.13.1
-fire
