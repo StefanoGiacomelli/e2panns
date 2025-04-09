@@ -1,0 +1,104 @@
+{
+    "cpu": {
+        "model_name": "Intel(R) Xeon(R) CPU @ 2.30GHz",
+        "physical_cores": 8,
+        "frequencies_mhz": {
+            "cpu0": 0.0,
+            "cpu1": 0.0,
+            "cpu2": 0.0,
+            "cpu3": 0.0,
+            "cpu4": 0.0,
+            "cpu5": 0.0,
+            "cpu6": 0.0,
+            "cpu7": 0.0
+        }
+    },
+    "ram": {
+        "total_memory_gb": 54.75,
+        "available_memory_gb": 51.95,
+        "used_memory_gb": 2.15,
+        "percent_used": 5.1
+    },
+    "disks": [
+        {
+            "Filesystem": "overlay",
+            "Size": "236G",
+            "Used": "41G",
+            "Avail": "195G",
+            "Use%": "18%",
+            "Mounted": "/"
+        },
+        {
+            "Filesystem": "tmpfs",
+            "Size": "64M",
+            "Used": "0",
+            "Avail": "64M",
+            "Use%": "0%",
+            "Mounted": "/dev"
+        },
+        {
+            "Filesystem": "shm",
+            "Size": "25G",
+            "Used": "0",
+            "Avail": "25G",
+            "Use%": "0%",
+            "Mounted": "/dev/shm"
+        },
+        {
+            "Filesystem": "/dev/root",
+            "Size": "2.0G",
+            "Used": "1.2G",
+            "Avail": "820M",
+            "Use%": "59%",
+            "Mounted": "/usr/sbin/docker-init"
+        },
+        {
+            "Filesystem": "/dev/sda1",
+            "Size": "242G",
+            "Used": "70G",
+            "Avail": "173G",
+            "Use%": "29%",
+            "Mounted": "/opt/bin/.nvidia"
+        },
+        {
+            "Filesystem": "tmpfs",
+            "Size": "26G",
+            "Used": "2.1M",
+            "Avail": "26G",
+            "Use%": "1%",
+            "Mounted": "/var/colab"
+        },
+        {
+            "Filesystem": "tmpfs",
+            "Size": "26G",
+            "Used": "0",
+            "Avail": "26G",
+            "Use%": "0%",
+            "Mounted": "/proc/acpi"
+        },
+        {
+            "Filesystem": "tmpfs",
+            "Size": "26G",
+            "Used": "0",
+            "Avail": "26G",
+            "Use%": "0%",
+            "Mounted": "/proc/scsi"
+        },
+        {
+            "Filesystem": "tmpfs",
+            "Size": "26G",
+            "Used": "0",
+            "Avail": "26G",
+            "Use%": "0%",
+            "Mounted": "/sys/firmware"
+        },
+        {
+            "Filesystem": "drive",
+            "Size": "15G",
+            "Used": "4.8G",
+            "Avail": "11G",
+            "Use%": "32%",
+            "Mounted": "/content/drive"
+        }
+    ]
+}

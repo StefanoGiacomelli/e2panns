@@ -174,3 +174,5 @@ cython_debug/
 # PyTorch (Lightning) large files
 *.ckpt
 *.pt
+
+.DS_store

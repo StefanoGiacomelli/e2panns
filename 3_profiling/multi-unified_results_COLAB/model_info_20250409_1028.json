@@ -1,0 +1,113 @@
+{
+    "min_input_size": {
+        "samples": 9919,
+        "seconds": 0.30996875,
+        "sample_rate": 32000,
+        "binary_search_iterations": 19
+    },
+    "cpu_overall_time": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "max_sec": 0.31162175100007516,
+        "min_sec": 0.18841470300003493,
+        "mean_sec": 0.21822004696998876,
+        "std_dev_sec": 0.036087429297872085,
+        "median_sec": 0.20275976699991816,
+        "percentiles": {
+            "25th_perc": 0.19719780199997672,
+            "33th_perc": 0.19843507044994113,
+            "66th_perc": 0.20985839805997786,
+            "75th_perc": 0.21594237100001124
+        },
+        "iqr_sec": 0.018744569000034517,
+        "skewness": 1.6676633104478196,
+        "kurtosis": 1.2622859354801985
+    },
+    "cpu_process_time": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "max_sec": 1.2924306919999964,
+        "min_sec": 0.7234315620000018,
+        "mean_sec": 0.8216555288399979,
+        "std_dev_sec": 0.13417356655347595,
+        "median_sec": 0.7606123329999974,
+        "percentiles": {
+            "25th_perc": 0.7417675297500068,
+            "33th_perc": 0.7449946447599959,
+            "66th_perc": 0.7910177704200043,
+            "75th_perc": 0.8145932839999972
+        },
+        "iqr_sec": 0.07282575424999038,
+        "skewness": 1.8209846660259033,
+        "kurtosis": 2.2026931938970673
+    },
+    "memory_usage": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "current_bytes": 44194,
+        "peak_bytes": 102487,
+        "current_megabytes": 0.0421,
+        "peak_megabytes": 0.0977
+    },
+    "cpu_usage": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "avg_cpu_usage_percent": 50.63,
+        "peak_cpu_usage_percent": 69.6
+    },
+    "cuda_time": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "max_sec": 0.49310906982421876,
+        "min_sec": 0.009578495979309083,
+        "mean_sec": 0.015809169750213622,
+        "std_dev_sec": 0.04829954901922595,
+        "median_sec": 0.009829264163970947,
+        "percentiles": {
+            "25th_perc": 0.009715607643127441,
+            "33th_perc": 0.009742387619018555,
+            "66th_perc": 0.009916383953094483,
+            "75th_perc": 0.009949087858200072
+        },
+        "iqr_sec": 0.00023348021507263103,
+        "skewness": 9.795335394297489,
+        "kurtosis": 94.3024127075387
+    },
+    "e2e_inference_time": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "max_sec": 0.010833442000148352,
+        "min_sec": 0.009124144999987038,
+        "mean_sec": 0.009944103550010368,
+        "std_dev_sec": 0.0002961851210873841,
+        "median_sec": 0.009914098500075852,
+        "percentiles": {
+            "25th_perc": 0.0097725325001079,
+            "33th_perc": 0.009835762840061761,
+            "66th_perc": 0.009992997080130408,
+            "75th_perc": 0.010020846999964306
+        },
+        "iqr_sec": 0.00024831449985640575,
+        "skewness": 0.4154733523589719,
+        "kurtosis": 1.9081065156204513
+    },
+    "gpu_memory_usage": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "peak_memory_bytes": 212500480,
+        "peak_memory_megabytes": 202.6562
+    },
+    "gpu_utilization": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "avg_utilization_percent": 0.0,
+        "peak_utilization_percent": 0.0
+    },
+    "energy_consumption": {
+        "iterations": 100,
+        "input_duration_sec": 10.0,
+        "avg_emission_rate_gCO2eq_per_sec": 0.0007429383310169242,
+        "avg_cpu_energy_kWh": 0.00026368899262613725,
+        "avg_ram_energy_kWh": 0.00011633221994473461
+    }
+}
