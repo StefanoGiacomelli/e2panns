@@ -1,0 +1,2 @@
+source_dataset,target_dataset,epochs,patience,used_validation,timestamp,metric_test_loss_epoch,metric_Test_Accuracy,metric_Test_Precision,metric_Test_Recall,metric_Test_F1_score,metric_Test_F-beta_score,metric_Test_Sensitivity (TP-Accuracy),metric_Test_Specificity (TN-Accuracy),metric_Test_AuROC,metric_Test_AuPRC,metric_Test_MCC
+ESC-50,AudioSet-EV,1000,100,True,2025-09-15 10:31:09,11.963573455810547,0.48860397934913635,0.0,0.0,0.0,0.0,0.0,1.0,0.5,0.5113959908485413,-0.001216864213347435

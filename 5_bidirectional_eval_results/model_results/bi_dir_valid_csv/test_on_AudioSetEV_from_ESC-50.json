@@ -1,0 +1,34 @@
+{
+  "run": {
+    "source_dataset": "ESC-50",
+    "target_dataset": "AudioSet-EV",
+    "epochs": 1000,
+    "patience": 100,
+    "used_validation": true,
+    "timestamp": "2025-09-15 10:31:09",
+    "metric_test_loss_epoch": 11.963573455810547,
+    "metric_Test_Accuracy": 0.48860397934913635,
+    "metric_Test_Precision": 0.0,
+    "metric_Test_Recall": 0.0,
+    "metric_Test_F1_score": 0.0,
+    "metric_Test_F-beta_score": 0.0,
+    "metric_Test_Sensitivity (TP-Accuracy)": 0.0,
+    "metric_Test_Specificity (TN-Accuracy)": 1.0,
+    "metric_Test_AuROC": 0.5,
+    "metric_Test_AuPRC": 0.5113959908485413,
+    "metric_Test_MCC": -0.001216864213347435
+  },
+  "raw_metrics": {
+    "test_loss_epoch": 11.963573455810547,
+    "Test_Accuracy": 0.48860397934913635,
+    "Test_Precision": 0.0,
+    "Test_Recall": 0.0,
+    "Test_F1_score": 0.0,
+    "Test_F-beta_score": 0.0,
+    "Test_Sensitivity (TP-Accuracy)": 0.0,
+    "Test_Specificity (TN-Accuracy)": 1.0,
+    "Test_AuROC": 0.5,
+    "Test_AuPRC": 0.5113959908485413,
+    "Test_MCC": -0.001216864213347435
+  }
+}

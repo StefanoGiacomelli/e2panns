@@ -1,0 +1,12 @@
+decay_epochs: 1
+eta_max: 0.0001
+eta_min: 0.0001
+f_beta: 0.8
+output_mode: bin_raw
+overall_training: true
+restart_eta: 0.0001
+restart_interval: 1
+threshold: 0.5
+warmup_epochs: 1
+warmup_eta: 0.0001
+weight_decay: 1.0e-06
