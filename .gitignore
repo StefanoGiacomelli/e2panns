@@ -220,3 +220,5 @@ datasets/UrbanSound8K/audio/
 datasets/UrbanSound8K/metadata/
 datasets/UrbanSound8K/FREESOUNDCREDITS.txt
 datasets/UrbanSound8K/UrbanSound8K_README.txt
+# Salt submodule - work in progress (not tracked)
+salt/
