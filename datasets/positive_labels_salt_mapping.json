@@ -1,0 +1,42 @@
+{
+  "emergency_vehicle": {
+    "AudioSet": [
+      "Emergency vehicle",
+      "Ambulance (siren)",
+      "Police car (siren)",
+      "Fire engine, fire truck (siren)"
+    ],
+    "FSD50K": null,
+    "US8K": null,
+    "ESC50": null
+  },
+  "vehicle_siren_ringing": {
+    "AudioSet": [
+      "Ambulance (siren)",
+      "Police car (siren)",
+      "Fire engine, fire truck (siren)"
+    ],
+    "FSD50K": null,
+    "US8K": null,
+    "ESC50": null
+  },
+  "siren_ringing": {
+    "AudioSet": [
+      "Siren",
+      "Civil defense siren",
+      "Police car (siren)",
+      "Ambulance (siren)",
+      "Fire engine, fire truck (siren)",
+      "Reversing beeps"
+    ],
+    "FSD50K": [
+      "Siren"
+    ],
+    "US8K": [
+      "siren"
+    ],
+    "ESC50": [
+      "siren"
+    ]
+  }
+}

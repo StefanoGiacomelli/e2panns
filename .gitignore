@@ -12,7 +12,6 @@ build/
 develop-eggs/
 dist/
 downloads/
-datasets/
 eggs/
 .eggs/
 lib/
@@ -118,7 +117,7 @@ ipython_config.py
 .pdm-python
 .pdm-build/
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+# PEP 582;
 __pypackages__/
 
 # Celery stuff
@@ -131,6 +130,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.DS_Store
 env/
 venv/
 ENV/
@@ -176,3 +176,47 @@ cython_debug/
 *.pt
 
 .DS_store
+
+# =============================================================================
+# DATASETS - Exclude heavy/original files, keep custom Python/CSV/metadata
+# =============================================================================
+
+# AudioSet_EV_v1_2025 - Exclude audio files, zip archives, and ALL CSV files
+datasets/AudioSet_EV_v1_2025/*.zip
+datasets/AudioSet_EV_v1_2025/Positive_files/
+datasets/AudioSet_EV_v1_2025/Negative_files/
+datasets/AudioSet_EV_v1_2025/*.csv
+
+# AudioSet_EV_v2PANNs_2020 - Exclude audio files and ALL CSV files (root and audioset_metadata)
+datasets/AudioSet_EV_v2PANNs_2020/Positive_files/
+datasets/AudioSet_EV_v2PANNs_2020/Negative_files/
+datasets/AudioSet_EV_v2PANNs_2020/*.csv
+datasets/AudioSet_EV_v2PANNs_2020/audioset_metadata/*.csv
+
+# ESC-50 - Exclude original contents
+datasets/ESC-50/cross_val_folds/
+datasets/ESC-50/original_audio/
+datasets/ESC-50/esc50.csv
+datasets/ESC-50/LICENSE
+datasets/ESC-50/README.md
+
+# FSD50K - Exclude original archives and audio folders
+datasets/FSD50K/original_archive/
+datasets/FSD50K/FSD50K.*/
+
+# LSSiren - Exclude original contents
+datasets/LSSiren/Ambulance_data/
+datasets/LSSiren/Road_Noises/
+datasets/LSSiren/*.csv
+
+# sireNNet - Exclude category audio folders
+datasets/sireNNet/ambulance/
+datasets/sireNNet/firetruck/
+datasets/sireNNet/police/
+datasets/sireNNet/traffic/
+
+# UrbanSound8K - Exclude all except Python files
+datasets/UrbanSound8K/audio/
+datasets/UrbanSound8K/metadata/
+datasets/UrbanSound8K/FREESOUNDCREDITS.txt
+datasets/UrbanSound8K/UrbanSound8K_README.txt

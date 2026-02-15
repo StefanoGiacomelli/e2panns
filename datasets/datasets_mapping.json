@@ -1,0 +1,104 @@
+{
+    "ESC50": {
+        "siren": 1,
+        "helicopter": 0,
+        "chainsaw": 0, 
+        "car_horn": 0, 
+        "engine": 0, 
+        "train": 0, 
+        "church_bells": 0, 
+        "airplane": 0, 
+        "clock_alarm": 0
+    },
+
+    "SIRENNET": {
+        "ambulance": 1,
+        "firetruck": 1,
+        "police": 1,
+        "traffic": 0
+    },
+
+    "US8K":{
+        "siren": 1
+    },
+
+    "FSD50K": {
+        "Siren": 1,
+        "Car": 0,
+        "Car_passing_by": 0,
+        "Race_car_and_auto_racing": 0, 
+        "Vehicle_horn_and_car_horn_and_honking": 0,
+        "Accelerating_and_revving_and_vroom": 0, 
+        "Bus": 0, 
+        "Motor_vehicle_(road)": 0, 
+        "Motorcycle": 0, 
+        "Truck": 0,
+        "Bicycle": 0,
+        "Rail_transport": 0, 
+        "Train": 0, 
+        "Subway_and_metro_and_underground": 0, 
+        "Skateboard": 0, 
+        "Traffic_noise_and_roadway_noise": 0,
+        "Bicycle_bell": 0, 
+        "Alarm": 0, 
+        "Telephone": 0, 
+        "Doorbell": 0, 
+        "Ringtone": 0, 
+        "Speech": 0, 
+        "Music": 0, 
+        "Engine": 0, 
+        "Engine_starting": 0, 
+        "Idling": 0
+    },
+
+    "AUDIOSET": {
+        "Emergency vehicle": 1,
+        "Police car (siren)": 1,
+        "Ambulance (siren)": 1,
+        "Fire engine, fire truck (siren)": 1,
+        "Car": 0,
+        "Car passing by": 0,
+        "Power windows, electric windows": 0,
+        "Tire squeal": 0,
+        "Motor vehicle (road)": 0,
+        "Truck": 0,
+        "Air brake": 0,
+        "Ice cream truck, ice cream van": 0,
+        "Bus": 0, 
+        "Motorcycle": 0,
+        "Skidding": 0,
+        "Race car, auto racing": 0,
+        "Bicycle": 0,
+        "Train": 0,
+        "Rail transport": 0,
+        "Train wheels squealing": 0,
+        "Railroad car, train wagon": 0,
+        "Skateboard": 0,
+        "Traffic noise, roadway noise": 0,
+        "Outside, rural or natural": 0, 
+        "Outside, urban or manmade": 0,
+        "Car alarm": 0,      
+        "Vehicle horn, car horn, honking": 0,
+        "Bicycle bell": 0,
+        "Train horn": 0,
+        "Train whistle": 0,
+        "Foghorn": 0,
+        "Toot": 0,
+        "Reversing beeps": 0,
+        "Beep, bleep": 0,
+        "Civil defense siren": 0,
+        "Alarm": 0,
+        "Smoke detector, smoke alarm": 0,
+        "Fire alarm": 0,
+        "Buzzer": 0,
+        "Speech": 0,
+        "Music": 0,
+        "Singing": 0,
+        "Engine": 0
+    },
+
+    "LSSIREN": {
+        "Ambulance_data": 1,
+        "Road_Noises": 0
+    }
+}
