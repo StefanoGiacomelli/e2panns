@@ -13,6 +13,11 @@ from collections import Counter
 import json
 import ast
 import os
+import sys
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+from datasets.multi_class_utils import parse_audioset_multi_labels, FourWayBalancer
 
 # Configuration
 V1_POS_CSV = "./datasets/AudioSet_EV_v1_2025/EV_Positives.csv"
@@ -512,6 +517,181 @@ def plot_segment_comparison(v1_pos, v1_neg, v2_pos, v2_neg):
     plt.close()
 
 
+def plot_multiclass_splits_comparison():
+    """
+    Generate side-by-side comparison of train/val/test splits for multi-class mode.
+    Shows v1 vs v2 with 4 classes (0=negative, 1=police, 2=ambulance, 3=fire).
+    """
+    print("\n  Analyzing multi-class splits for v1 and v2...")
+    
+    # Load multi-class mapping
+    with open(MAPPING_JSON, 'r') as f:
+        mid_mapping = json.load(f)['AUDIOSET_MULTICLASS']
+    
+    # =========================================================================
+    # AudioSet v1 Multi-Class Analysis
+    # =========================================================================
+    print("    → Processing AudioSet v1...")
+    
+    # Load v1 data
+    v1_pos_df = pd.read_csv(V1_POS_CSV)
+    v1_pos_df = v1_pos_df[v1_pos_df['downloaded'] == True].reset_index(drop=True)
+    v1_neg_df = pd.read_csv(V1_NEG_CSV)
+    v1_neg_df = v1_neg_df[v1_neg_df['downloaded'] == True].reset_index(drop=True)
+    
+    # Parse positives
+    v1_pos_info = parse_audioset_multi_labels(v1_pos_df, mid_mapping)
+    v1_neg_indices = list(range(len(v1_neg_df)))
+    
+    # Balance 4-way
+    v1_balancer = FourWayBalancer(target_mode='auto', min_samples_per_class=50)
+    v1_result = v1_balancer.balance(
+        pure_samples={
+            0: v1_neg_indices,
+            1: v1_pos_info['pure'][1],
+            2: v1_pos_info['pure'][2],
+            3: v1_pos_info['pure'][3]
+        },
+        multi_samples=v1_pos_info['multi'],
+        seed=42
+    )
+    
+    # Count balanced samples
+    v1_total = sum(len(v1_result['balanced_indices'][c]) for c in [0, 1, 2, 3])
+    v1_train_size = int(0.8 * v1_total)
+    v1_val_size = int(0.1 * v1_total)
+    v1_test_size = v1_total - v1_train_size - v1_val_size
+    
+    # Simulate splits (proportional distribution)
+    v1_train_counts = {c: int(len(v1_result['balanced_indices'][c]) * 0.8) for c in [0, 1, 2, 3]}
+    v1_val_counts = {c: int(len(v1_result['balanced_indices'][c]) * 0.1) for c in [0, 1, 2, 3]}
+    v1_test_counts = {c: len(v1_result['balanced_indices'][c]) - v1_train_counts[c] - v1_val_counts[c] for c in [0, 1, 2, 3]}
+    
+    # =========================================================================
+    # AudioSet v2 Multi-Class Analysis
+    # =========================================================================
+    print("    → Processing AudioSet v2...")
+    
+    # Load v2 data
+    v2_pos_df = pd.read_csv(V2_POS_CSV)
+    v2_pos_df = v2_pos_df[v2_pos_df['downloaded'] == True].reset_index(drop=True)
+    v2_neg_df = pd.read_csv(V2_NEG_CSV)
+    v2_neg_df = v2_neg_df[v2_neg_df['downloaded'] == True].reset_index(drop=True)
+    
+    # Parse positives
+    v2_pos_info = parse_audioset_multi_labels(v2_pos_df, mid_mapping)
+    
+    # For v2, we'd use stratified negatives (simplified here: use first 1020)
+    v2_neg_indices = list(range(min(1020, len(v2_neg_df))))
+    
+    # Balance 4-way
+    v2_balancer = FourWayBalancer(target_mode='auto', min_samples_per_class=50)
+    v2_result = v2_balancer.balance(
+        pure_samples={
+            0: v2_neg_indices,
+            1: v2_pos_info['pure'][1],
+            2: v2_pos_info['pure'][2],
+            3: v2_pos_info['pure'][3]
+        },
+        multi_samples=v2_pos_info['multi'],
+        seed=42
+    )
+    
+    # Count balanced samples
+    v2_total = sum(len(v2_result['balanced_indices'][c]) for c in [0, 1, 2, 3])
+    v2_train_size = int(0.8 * v2_total)
+    v2_val_size = int(0.1 * v2_total)
+    v2_test_size = v2_total - v2_train_size - v2_val_size
+    
+    # Simulate splits (proportional distribution)
+    v2_train_counts = {c: int(len(v2_result['balanced_indices'][c]) * 0.8) for c in [0, 1, 2, 3]}
+    v2_val_counts = {c: int(len(v2_result['balanced_indices'][c]) * 0.1) for c in [0, 1, 2, 3]}
+    v2_test_counts = {c: len(v2_result['balanced_indices'][c]) - v2_train_counts[c] - v2_val_counts[c] for c in [0, 1, 2, 3]}
+    
+    # =========================================================================
+    # Generate Comparison Plot
+    # =========================================================================
+    print("    → Generating comparison plot...")
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    class_names = ['Class 0\n(Negative)', 'Class 1\n(Police)', 'Class 2\n(Ambulance)', 'Class 3\n(Fire)']
+    class_colors = ['#7f8c8d', '#3498db', '#e74c3c', '#e67e22']  # Gray, Blue, Red, Orange
+    
+    x = np.arange(len(class_names))
+    width = 0.25
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Subplot 1: AudioSet v1
+    # ─────────────────────────────────────────────────────────────────────────
+    v1_train_vals = [v1_train_counts[c] for c in [0, 1, 2, 3]]
+    v1_val_vals = [v1_val_counts[c] for c in [0, 1, 2, 3]]
+    v1_test_vals = [v1_test_counts[c] for c in [0, 1, 2, 3]]
+    
+    bars1_1 = ax1.bar(x - width, v1_train_vals, width, label='Train', color=class_colors, alpha=0.9, edgecolor='black', linewidth=1.2)
+    bars1_2 = ax1.bar(x, v1_val_vals, width, label='Val', color=class_colors, alpha=0.6, edgecolor='black', linewidth=1.2)
+    bars1_3 = ax1.bar(x + width, v1_test_vals, width, label='Test', color=class_colors, alpha=0.3, edgecolor='black', linewidth=1.2)
+    
+    ax1.set_xlabel('Class', fontsize=13, fontweight='bold')
+    ax1.set_ylabel('Sample Count', fontsize=13, fontweight='bold')
+    ax1.set_title(f'AudioSet EV v1 (2025)\nMulti-Class Splits\nTotal: {v1_total} samples', 
+                  fontsize=14, fontweight='bold', pad=15)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(class_names, fontsize=11)
+    ax1.legend(fontsize=11, loc='upper right')
+    ax1.grid(axis='y', alpha=0.3, linestyle='--')
+    ax1.set_axisbelow(True)
+    
+    # Add value labels
+    for bars in [bars1_1, bars1_2, bars1_3]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax1.text(bar.get_x() + bar.get_width()/2., height,
+                        f'{int(height)}',
+                        ha='center', va='bottom', fontsize=9, fontweight='bold')
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Subplot 2: AudioSet v2
+    # ─────────────────────────────────────────────────────────────────────────
+    v2_train_vals = [v2_train_counts[c] for c in [0, 1, 2, 3]]
+    v2_val_vals = [v2_val_counts[c] for c in [0, 1, 2, 3]]
+    v2_test_vals = [v2_test_counts[c] for c in [0, 1, 2, 3]]
+    
+    bars2_1 = ax2.bar(x - width, v2_train_vals, width, label='Train', color=class_colors, alpha=0.9, edgecolor='black', linewidth=1.2)
+    bars2_2 = ax2.bar(x, v2_val_vals, width, label='Val', color=class_colors, alpha=0.6, edgecolor='black', linewidth=1.2)
+    bars2_3 = ax2.bar(x + width, v2_test_vals, width, label='Test', color=class_colors, alpha=0.3, edgecolor='black', linewidth=1.2)
+    
+    ax2.set_xlabel('Class', fontsize=13, fontweight='bold')
+    ax2.set_ylabel('Sample Count', fontsize=13, fontweight='bold')
+    ax2.set_title(f'AudioSet EV v2 (2020 PANNs)\nMulti-Class Splits\nTotal: {v2_total} samples', 
+                  fontsize=14, fontweight='bold', pad=15)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(class_names, fontsize=11)
+    ax2.legend(fontsize=11, loc='upper right')
+    ax2.grid(axis='y', alpha=0.3, linestyle='--')
+    ax2.set_axisbelow(True)
+    
+    # Add value labels
+    for bars in [bars2_1, bars2_2, bars2_3]:
+        for bar in bars:
+            height = bar.get_height()
+            if height > 0:
+                ax2.text(bar.get_x() + bar.get_width()/2., height,
+                        f'{int(height)}',
+                        ha='center', va='bottom', fontsize=9, fontweight='bold')
+    
+    # Overall title
+    fig.suptitle('Multi-Class Dataset Splits Comparison (Train/Val/Test)', 
+                 fontsize=16, fontweight='bold', y=0.98)
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.savefig(os.path.join(OUTPUT_DIR, 'multiclass_splits_comparison_v1_vs_v2.svg'), 
+                format='svg', dpi=300, bbox_inches='tight')
+    print("✓ Saved: multiclass_splits_comparison_v1_vs_v2.svg")
+    plt.close()
+
+
 def main():
     """Main execution function."""
     
@@ -561,6 +741,9 @@ def main():
                                       'negatives', 'AudioSet EV v1')
     plot_label_distribution_by_segment(v2_neg[v2_neg['segment_type'] != 'unbalanced_train'], 
                                       'negatives', 'AudioSet EV v2')
+    
+    # Plot 6: Multi-class splits comparison (NEW)
+    plot_multiclass_splits_comparison()
     
     print("\n[6/6] Analysis complete!")
     print("\n" + "=" * 80)
