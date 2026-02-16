@@ -18,6 +18,13 @@
         "traffic": 0
     },
 
+    "SIRENNET_MULTICLASS": {
+        "police": 1,
+        "ambulance": 2,
+        "firetruck": 3,
+        "traffic": 0
+    },
+
     "US8K":{
         "siren": 1
     },
@@ -95,6 +102,12 @@
         "Music": 0,
         "Singing": 0,
         "Engine": 0
+    },
+
+    "AUDIOSET_MULTICLASS": {
+        "/m/04qvtq": [1, "Police car (siren)"],
+        "/m/012n7d": [2, "Ambulance (siren)"],
+        "/m/012ndj": [3, "Fire engine, fire truck (siren)"]
     },
 
     "LSSIREN": {

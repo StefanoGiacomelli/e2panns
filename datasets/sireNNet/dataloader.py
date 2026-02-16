@@ -284,11 +284,16 @@ class sireNNetDataModule(pl.LightningDataModule):
     Supports two modes:
     - 'train': Randomly splits data into train/dev/test
     - 'benchmark': Uses all data as test set
+    
+    Supports two label modes:
+    - 'binary': Binary classification (0=negative, 1=positive)
+    - 'multi_class': 4-class classification (0=traffic, 1=police, 2=ambulance, 3=fire)
     """
     
     def __init__(self,
                  folder_path: str,
                  mode: str = 'train',
+                 label_mode: str = 'binary',
                  seed: int = 42,
                  batch_size: int = 32,
                  split_ratios: Tuple[float, float, float] = (0.8, 0.1, 0.1),
@@ -305,6 +310,7 @@ class sireNNetDataModule(pl.LightningDataModule):
         Args:
             folder_path: Path to root folder with category subfolders
             mode: 'train' or 'benchmark'
+            label_mode: 'binary' (0/1) or 'multi_class' (0/1/2/3)
             seed: Random seed for reproducibility
             batch_size: Batch size for dataloaders
             split_ratios: (train, dev, test) ratios for train mode
@@ -323,16 +329,25 @@ class sireNNetDataModule(pl.LightningDataModule):
         
         self.folder_path = folder_path
         self.mode = mode
+        self.label_mode = label_mode
         self.seed = seed
         self.batch_size = batch_size
         self.split_ratios = split_ratios
         self.train_shuffle = shuffle
         self.augmentation = augmentation
         self.aug_prob = aug_prob
-        self.label_map = label_map
         self.target_size = target_size
         self.target_sr = target_sr
         self.num_workers = num_workers
+        
+        # Set label_map based on label_mode (if not provided)
+        if label_map is None:
+            if label_mode == 'multi_class':
+                self.label_map = load_label_mapping("SIRENNET_MULTICLASS")
+            else:
+                self.label_map = load_label_mapping("SIRENNET")
+        else:
+            self.label_map = label_map
         
         # Datasets (will be initialized in setup())
         self.train_dataset = None
@@ -359,6 +374,16 @@ class sireNNetDataModule(pl.LightningDataModule):
     
     def _setup_train_mode(self):
         """Setup for training mode: load all data and split randomly."""
+        
+        if self.label_mode == 'multi_class':
+            # Multi-class mode: balance 4 classes first, then split
+            self._setup_train_mode_multiclass()
+        else:
+            # Binary mode: original behavior
+            self._setup_train_mode_binary()
+    
+    def _setup_train_mode_binary(self):
+        """Setup for binary training mode (original behavior)."""
         # Create full dataset
         full_dataset = sireNNetDataset(folder_path=self.folder_path,
                                        label_map=self.label_map,
@@ -379,8 +404,79 @@ class sireNNetDataModule(pl.LightningDataModule):
                                                                                [train_len, dev_len, test_len],
                                                                                generator=self.generator)
     
+    def _setup_train_mode_multiclass(self):
+        """Setup for multi-class training mode with 4-way balancing."""
+        # Add parent directory to path for imports
+        import sys
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from multi_class_utils import FourWayBalancer, print_balance_summary
+        
+        # Collect all files by class
+        class_files = {0: [], 1: [], 2: [], 3: []}  # traffic, police, ambulance, fire
+        
+        for folder, label in self.label_map.items():
+            folder_path = os.path.join(self.folder_path, folder)
+            if not os.path.exists(folder_path):
+                continue
+            
+            files = [os.path.join(folder_path, f) 
+                    for f in os.listdir(folder_path) if f.endswith('.wav')]
+            class_files[label] = files
+        
+        # Balance 4 classes
+        balancer = FourWayBalancer(target_mode='auto', min_samples_per_class=10)
+        
+        # Convert file lists to indices for balancer
+        pure_samples = {cls: list(range(len(files))) for cls, files in class_files.items()}
+        
+        result = balancer.balance(pure_samples=pure_samples, seed=self.seed)
+        print_balance_summary(result, title="sireNNet 4-Way Balance (Train Mode)")
+        
+        # Create balanced dataset
+        balanced_file_paths = []
+        balanced_labels = []
+        
+        for cls in [0, 1, 2, 3]:
+            for idx in result['balanced_indices'][cls]:
+                balanced_file_paths.append(class_files[cls][idx])
+                balanced_labels.append(cls)
+        
+        # Create dataset with balanced files
+        full_dataset = sireNNetDataset(folder_path=self.folder_path,
+                                       label_map=self.label_map,
+                                       seed=self.seed,
+                                       augmentation=self.augmentation,
+                                       aug_prob=self.aug_prob,
+                                       target_size=self.target_size,
+                                       target_sr=self.target_sr)
+        
+        # Override file_paths and labels with balanced ones
+        full_dataset.file_paths = balanced_file_paths
+        full_dataset.labels = balanced_labels
+        
+        # Compute split sizes
+        total_len = len(full_dataset)
+        train_len = int(self.split_ratios[0] * total_len)
+        dev_len = int(self.split_ratios[1] * total_len)
+        test_len = total_len - train_len - dev_len
+        
+        # Random split with reproducible generator
+        self.train_dataset, self.dev_dataset, self.test_dataset = random_split(full_dataset,
+                                                                               [train_len, dev_len, test_len],
+                                                                               generator=self.generator)
+    
     def _setup_benchmark_mode(self):
-        """Setup for benchmark mode: progressive partitions CV with balanced pos/neg."""
+        """Setup for benchmark mode: progressive partitions CV with balanced classes."""
+        
+        if self.label_mode == 'multi_class':
+            # Multi-class mode: balance 4 classes in each partition
+            self._setup_benchmark_mode_multiclass()
+        else:
+            # Binary mode: original behavior (2-way balance)
+            self._setup_benchmark_mode_binary()
+    
+    def _setup_benchmark_mode_binary(self):
+        """Setup benchmark mode for binary classification (original behavior)."""
         # Create full dataset
         full_dataset = sireNNetDataset(folder_path=self.folder_path,
                                       label_map=self.label_map,
@@ -426,6 +522,75 @@ class sireNNetDataModule(pl.LightningDataModule):
             # Create subset
             subset = Subset(full_dataset, selected_indices)
             self.test_datasets[partition] = subset
+    
+    def _setup_benchmark_mode_multiclass(self):
+        """Setup benchmark mode for multi-class with 4-way balance (best effort)."""
+        # Collect all files by class
+        class_files = {0: [], 1: [], 2: [], 3: []}  # traffic, police, ambulance, fire
+        
+        for folder, label in self.label_map.items():
+            folder_path = os.path.join(self.folder_path, folder)
+            if not os.path.exists(folder_path):
+                continue
+            
+            files = [os.path.join(folder_path, f) 
+                    for f in os.listdir(folder_path) if f.endswith('.wav')]
+            
+            # Shuffle files for randomness within class (seed-controlled)
+            random.seed(self.seed)
+            random.shuffle(files)
+            
+            class_files[label] = files
+        
+        # Get counts per class
+        class_counts = {cls: len(files) for cls, files in class_files.items()}
+        total_min = min(class_counts.values())
+        
+        print(f"\nBenchmark Multi-Class Setup:")
+        print(f"  Class counts: {class_counts}")
+        print(f"  Min class: {total_min} samples")
+        
+        # Progressive partitions
+        partitions = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.0]
+        
+        for partition in partitions:
+            # Target per class in this partition
+            target_per_class = int(total_min * partition)
+            
+            if target_per_class < 1:
+                print(f"⚠️  Partition {partition}: too small for 4-way balance (< 1 per class), using 1")
+                target_per_class = 1
+            
+            # Sample equally from each class
+            partition_file_paths = []
+            partition_labels = []
+            
+            for cls in [0, 1, 2, 3]:
+                n_available = len(class_files[cls])
+                n_select = min(target_per_class, n_available)
+                selected_files = class_files[cls][:n_select]
+                
+                partition_file_paths.extend(selected_files)
+                partition_labels.extend([cls] * n_select)
+            
+            # Create dataset for this partition
+            partition_dataset = sireNNetDataset(folder_path=self.folder_path,
+                                                label_map=self.label_map,
+                                                seed=self.seed,
+                                                augmentation=False,
+                                                target_size=self.target_size,
+                                                target_sr=self.target_sr)
+            
+            # Override with partition files
+            partition_dataset.file_paths = partition_file_paths
+            partition_dataset.labels = partition_labels
+            
+            self.test_datasets[partition] = partition_dataset
+            
+            # Count per class for verification
+            class_dist = Counter(partition_labels)
+            print(f"  Partition {partition:5.4f}: {len(partition_labels):4d} samples " +
+                  f"(0:{class_dist[0]}, 1:{class_dist[1]}, 2:{class_dist[2]}, 3:{class_dist[3]})")
     
     def _seed_worker(self, worker_id):
         """Seed worker for reproducible DataLoader."""
@@ -678,6 +843,129 @@ if __name__ == "__main__":
             duration = waveforms.shape[2] / 32000
             print(f"    - Samples: {waveforms.shape[0]}")
             print(f"    - Positives: {pos_b}, Negatives: {neg_b}")
+            print(f"    - Duration: {duration:.2f}s, SR: 32000Hz")
+            break
+    
+    # =========================================================================
+    # TEST 3: MULTI-CLASS MODE (4-WAY CLASSIFICATION)
+    # =========================================================================
+    print("\n\n" + "=" * 80)
+    print("TEST 3: MULTI-CLASS MODE (4-WAY CLASSIFICATION)")
+    print("=" * 80)
+    
+    # Helper function to count multi-class labels
+    def count_multiclass_labels(dataset):
+        """Count samples per class (0, 1, 2, 3)."""
+        counts = {0: 0, 1: 0, 2: 0, 3: 0}
+        for idx in range(len(dataset)):
+            try:
+                _, label = dataset[idx]
+                if label in counts:
+                    counts[label] += 1
+            except:
+                pass
+        return counts
+    
+    # Initialize DataModule in multi-class train mode
+    dm_mc_train = sireNNetDataModule(folder_path=current_dir,
+                                     mode='train',
+                                     label_mode='multi_class',
+                                     seed=42,
+                                     batch_size=32,
+                                     split_ratios=(0.8, 0.1, 0.1),
+                                     shuffle=True,
+                                     augmentation=False,
+                                     target_size=96000,
+                                     target_sr=32000,
+                                     num_workers=0)
+    
+    # Setup
+    dm_mc_train.setup()
+    
+    # Get dataloaders
+    train_loader_mc = dm_mc_train.train_dataloader()
+    val_loader_mc = dm_mc_train.val_dataloader()
+    test_loader_mc = dm_mc_train.test_dataloader()
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Multi-Class Train Loader
+    # ─────────────────────────────────────────────────────────────────────────
+    print("\n" + "─" * 80)
+    print("MULTI-CLASS TRAIN LOADER STATISTICS")
+    print("─" * 80)
+    
+    train_samples_mc = len(train_loader_mc.dataset)
+    train_batches_mc = len(train_loader_mc)
+    
+    print("Counting labels per class...")
+    train_counts = count_multiclass_labels(train_loader_mc.dataset)
+    
+    print(f"Total samples: {train_samples_mc} ({train_batches_mc} batches)")
+    print(f"  - Class 0 (Traffic): {train_counts[0]}")
+    print(f"  - Class 1 (Police): {train_counts[1]}")
+    print(f"  - Class 2 (Ambulance): {train_counts[2]}")
+    print(f"  - Class 3 (Fire): {train_counts[3]}")
+    
+    # First batch analysis
+    print("\nFirst batch analysis:")
+    for waveforms, labels in train_loader_mc:
+        class_dist = Counter(labels.tolist())
+        duration = waveforms.shape[2] / 32000
+        print(f"  - Samples: {waveforms.shape[0]}")
+        print(f"  - Class distribution: 0:{class_dist.get(0,0)}, 1:{class_dist.get(1,0)}, "
+              f"2:{class_dist.get(2,0)}, 3:{class_dist.get(3,0)}")
+        print(f"  - Duration: {duration:.2f}s, Sample rate: 32000Hz")
+        break
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Multi-Class Benchmark Mode
+    # ─────────────────────────────────────────────────────────────────────────
+    print("\n" + "─" * 80)
+    print("MULTI-CLASS BENCHMARK MODE")
+    print("─" * 80)
+    
+    # Initialize in benchmark multi-class mode
+    dm_mc_bench = sireNNetDataModule(folder_path=current_dir,
+                                     mode='benchmark',
+                                     label_mode='multi_class',
+                                     seed=42,
+                                     batch_size=32,
+                                     target_size=96000,
+                                     target_sr=32000,
+                                     num_workers=0)
+    
+    # Setup
+    dm_mc_bench.setup()
+    
+    # Get test loaders
+    test_loaders_mc = dm_mc_bench.test_dataloaders()
+    partitions_mc = sorted(dm_mc_bench.test_datasets.keys())
+    
+    print(f"\nNumber of partitions: {len(test_loaders_mc)}")
+    print(f"Partitions: {partitions_mc}")
+    
+    # Statistics for each partition (showing ALL partitions)
+    for idx, (loader, partition) in enumerate(zip(test_loaders_mc, partitions_mc), 1):
+        loader_samples = len(loader.dataset)
+        loader_batches = len(loader)
+        
+        print(f"\n--- Partition {partition} ({loader_samples} samples, {loader_batches} batches) ---")
+        
+        # Count per class
+        counts = count_multiclass_labels(loader.dataset)
+        print(f"  - Class 0 (Traffic): {counts[0]}")
+        print(f"  - Class 1 (Police): {counts[1]}")
+        print(f"  - Class 2 (Ambulance): {counts[2]}")
+        print(f"  - Class 3 (Fire): {counts[3]}")
+        
+        # First batch analysis
+        print(f"  First batch:")
+        for waveforms, labels in loader:
+            class_dist = Counter(labels.tolist())
+            duration = waveforms.shape[2] / 32000
+            print(f"    - Samples: {waveforms.shape[0]}")
+            print(f"    - Class 0: {class_dist.get(0,0)}, Class 1: {class_dist.get(1,0)}, "
+                  f"Class 2: {class_dist.get(2,0)}, Class 3: {class_dist.get(3,0)}")
             print(f"    - Duration: {duration:.2f}s, SR: 32000Hz")
             break
     
