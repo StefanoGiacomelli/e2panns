@@ -29,7 +29,7 @@ import sys
 import json
 import ast
 import random
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import List, Optional
 
 import numpy as np
@@ -266,6 +266,10 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
     - Balances negative samples using stratified sampling
     - Seed-controlled for reproducibility
     - Standard train/val/test split
+    
+    Supports two label modes:
+    - 'binary': Binary classification (0=negative, 1=positive)
+    - 'multi_class': 4-class classification (0=negative, 1=police, 2=ambulance, 3=fire)
     """
     
     def __init__(self,
@@ -286,6 +290,7 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
                  TN_subfolders: List[str] = None,
                  
                  # Training params
+                 label_mode: str = 'binary',
                  batch_size: int = 32,
                  split_ratios: tuple = (0.8, 0.1, 0.1),
                  balance_negatives: bool = True,
@@ -300,6 +305,7 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
             TN_subfolders: List of negative subfolders to use
             label_mapping_csv: Path to class_labels_indices.csv
             negative_focus_labels: List of negative label names for stratification
+            label_mode: 'binary' (0/1) or 'multi_class' (0/1/2/3)
             batch_size: Batch size for dataloaders
             split_ratios: Train/val/test split ratios
             balance_negatives: Whether to balance negative samples
@@ -314,6 +320,7 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
         self.TN_subfolders = TN_subfolders if TN_subfolders is not None else ["balanced_train", "eval"]
         self.label_mapping_csv = label_mapping_csv
         self.negative_focus_labels = negative_focus_labels
+        self.label_mode = label_mode
         self.batch_size = batch_size
         self.split_ratios = split_ratios
         self.balance_negatives = balance_negatives
@@ -325,6 +332,15 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         """Setup datasets with integrated balancing"""
         
+        if self.label_mode == 'multi_class':
+            # Multi-class mode: 4-way balancing
+            self._setup_multiclass()
+        else:
+            # Binary mode: original behavior
+            self._setup_binary()
+    
+    def _setup_binary(self):
+        """Setup for binary classification (original behavior)."""
         # 1. Load Positives (use all files, no additional balancing)
         pos_df = pd.read_csv(self.TP_csv)
         pos_df = pos_df[pos_df['downloaded'] == True].reset_index(drop=True)
@@ -398,6 +414,152 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
         print(f"Validation set: {len(self.val_ds)} samples (Pos: {val_pos}, Neg: {val_neg})")
         print(f"Test set: {len(self.test_ds)} samples (Pos: {test_pos}, Neg: {test_neg})")
         print('─'*80)
+    
+    def _setup_multiclass(self):
+        """Setup for multi-class classification with 4-way balancing."""
+        import sys
+        import ast
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from multi_class_utils import FourWayBalancer, print_balance_summary, parse_audioset_multi_labels
+        
+        # Load AudioSet multi-class mapping
+        mid_mapping_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "datasets_mapping.json")
+        with open(mid_mapping_path, 'r') as f:
+            all_mappings = json.load(f)
+        mid_mapping = all_mappings["AUDIOSET_MULTICLASS"]
+        
+        # Load positives
+        pos_df = pd.read_csv(self.TP_csv)
+        pos_df = pos_df[pos_df['downloaded'] == True].reset_index(drop=True)
+        
+        # Parse positive labels into classes
+        pos_info = parse_audioset_multi_labels(pos_df, mid_mapping)
+        
+        # Load negatives
+        neg_df = pd.read_csv(self.TN_csv)
+        neg_df = neg_df[neg_df['downloaded'] == True].reset_index(drop=True)
+        
+        # Balance negatives using stratified balancer (same logic as binary)
+        if self.balance_negatives:
+            # Use stratified balancer to get balanced negatives
+            balancer = StratifiedNegativeBalancer(
+                csv_path=self.TN_csv,
+                label_mapping_csv=self.label_mapping_csv,
+                negative_focus_labels=self.negative_focus_labels,
+                seed=self.seed
+            )
+            # Calculate target: min of positive classes
+            min_pos_count = min(len(pos_info['pure'][1]), len(pos_info['pure'][2]), len(pos_info['pure'][3]))
+            neg_df_balanced = balancer.balance(target_count=min_pos_count)
+            neg_indices = list(range(len(neg_df_balanced)))
+        else:
+            neg_indices = list(range(len(neg_df)))
+            neg_df_balanced = neg_df
+        
+        # Balance 4 classes
+        four_way_balancer = FourWayBalancer(target_mode='auto', min_samples_per_class=50)
+        
+        result = four_way_balancer.balance(
+            pure_samples={
+                0: neg_indices,
+                1: pos_info['pure'][1],
+                2: pos_info['pure'][2],
+                3: pos_info['pure'][3]
+            },
+            multi_samples=pos_info['multi'],
+            seed=self.seed
+        )
+        
+        print_balance_summary(result, title="AudioSet EV v2 - 4-Way Balance")
+        
+        # Build file paths
+        file_label_pairs = []
+        
+        # Negatives (class 0)
+        for idx in result['balanced_indices'][0]:
+            file_info = neg_df_balanced.iloc[idx]
+            yt_id = file_info['yt_id']
+            segment_type = file_info['segment_type']
+            
+            # Map segment_type to folder
+            segment_mapping = {
+                'unbalanced_train': 'unbalanced',
+                'balanced_train': 'balanced_train',
+                'eval': 'eval'
+            }
+            mapped_segment = segment_mapping.get(segment_type, segment_type)
+            
+            if mapped_segment in self.TN_subfolders:
+                file_path = os.path.join(self.TN_folder, mapped_segment, f"{yt_id}.wav")
+                if os.path.exists(file_path):
+                    file_label_pairs.append((file_path, 0))
+        
+        # Positives (classes 1, 2, 3)
+        for cls in [1, 2, 3]:
+            for idx in result['balanced_indices'][cls]:
+                file_info = pos_df.iloc[idx]
+                yt_id = file_info['yt_id']
+                segment_type = file_info['segment_type']
+                
+                # Map segment_type to folder
+                segment_mapping = {
+                    'unbalanced_train': 'unbalanced',
+                    'balanced_train': 'balanced_train',
+                    'eval': 'eval'
+                }
+                mapped_segment = segment_mapping.get(segment_type, segment_type)
+                
+                if mapped_segment in self.TP_subfolders:
+                    file_path = os.path.join(self.TP_folder, mapped_segment, f"{yt_id}.wav")
+                    if os.path.exists(file_path):
+                        file_label_pairs.append((file_path, cls))
+        
+        print(f"\n  Total files found: {len(file_label_pairs)} / {sum(len(result['balanced_indices'][c]) for c in [0,1,2,3])}")
+        
+        # Create custom dataset
+        from torch.utils.data import Dataset as TorchDataset
+        
+        class IndexedAudioSetDataset(TorchDataset):
+            def __init__(self, file_label_pairs, target_size=320000, target_sr=32000):
+                self.file_label_pairs = file_label_pairs
+                self.target_size = target_size
+                self.target_sr = target_sr
+            
+            def __len__(self):
+                return len(self.file_label_pairs)
+            
+            def __getitem__(self, idx):
+                file_path, label = self.file_label_pairs[idx]
+                try:
+                    waveform, sr = torchaudio.load(file_path)
+                    if waveform.shape[0] > 1:
+                        waveform = torch.mean(waveform, dim=0, keepdim=True)
+                    if sr != self.target_sr:
+                        resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.target_sr)
+                        waveform = resampler(waveform)
+                    if waveform.shape[1] < self.target_size:
+                        waveform = torch.nn.functional.pad(waveform, (0, self.target_size - waveform.shape[1]))
+                    elif waveform.shape[1] > self.target_size:
+                        waveform = waveform[:, :self.target_size]
+                    return waveform.squeeze(0), label
+                except:
+                    return torch.zeros(self.target_size), label
+        
+        full_dataset = IndexedAudioSetDataset(file_label_pairs)
+        
+        # Split dataset
+        train_size = int(self.split_ratios[0] * len(full_dataset))
+        val_size = int(self.split_ratios[1] * len(full_dataset))
+        test_size = len(full_dataset) - train_size - val_size
+        
+        generator = torch.Generator().manual_seed(self.seed)
+        self.train_ds, self.val_ds, self.test_ds = random_split(
+            full_dataset,
+            [train_size, val_size, test_size],
+            generator=generator
+        )
+        
+        print(f"\nDataset splits: Train={len(self.train_ds)}, Val={len(self.val_ds)}, Test={len(self.test_ds)}")
     
     def train_dataloader(self):
         return DataLoader(
@@ -766,6 +928,208 @@ if __name__ == "__main__":
         duration = waveforms.shape[2] / 32000
         print(f"  - Samples: {waveforms.shape[0]}")
         print(f"  - Positives: {pos}, Negatives: {neg}")
+        print(f"  - Duration: {duration:.2f}s, Sample rate: 32000Hz")
+        break
+    
+    # =========================================================================
+    # TEST 3: MULTI-CLASS MODE (4-WAY CLASSIFICATION)
+    # =========================================================================
+    print("\n\n" + "="*80)
+    print("TEST 3: MULTI-CLASS MODE (4-WAY CLASSIFICATION)")
+    print("="*80)
+    
+    # Helper function to count multi-class labels
+    def count_multiclass_labels(dataset):
+        """Count samples per class (0, 1, 2, 3)."""
+        counts = {0: 0, 1: 0, 2: 0, 3: 0}
+        for idx in range(len(dataset)):
+            try:
+                _, label = dataset[idx]
+                if label in counts:
+                    counts[label] += 1
+            except:
+                pass
+        return counts
+    
+    # Initialize DataModule in multi-class mode
+    dm_mc = AudioSetEV_v2_DataModule(
+        TP_csv=os.path.join(current_dir, "EV_Positives.csv"),
+        TP_folder=os.path.join(current_dir, "Positive_files"),
+        TN_csv=os.path.join(current_dir, "EV_Negatives.csv"),
+        TN_folder=os.path.join(current_dir, "Negative_files"),
+        label_mapping_csv=os.path.join(current_dir, "audioset_metadata/class_labels_indices.csv"),
+        negative_focus_labels=negative_labels,
+        TP_subfolders=["balanced_train", "eval", "unbalanced"],
+        TN_subfolders=["balanced_train", "eval"],
+        label_mode='multi_class',
+        batch_size=32,
+        split_ratios=(0.8, 0.1, 0.1),
+        balance_negatives=True,
+        seed=42
+    )
+    
+    dm_mc.setup()
+    
+    # Get dataloaders
+    train_loader_mc = dm_mc.train_dataloader()
+    val_loader_mc = dm_mc.val_dataloader()
+    test_loader_mc = dm_mc.test_dataloader()
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Multi-Class Train Loader
+    # ─────────────────────────────────────────────────────────────────────────
+    print("\n" + "─"*80)
+    print("MULTI-CLASS TRAIN LOADER STATISTICS")
+    print("─"*80)
+    
+    train_samples_mc = len(train_loader_mc.dataset)
+    train_batches_mc = len(train_loader_mc)
+    
+    print("Counting labels per class...")
+    train_counts = count_multiclass_labels(train_loader_mc.dataset)
+    
+    print(f"Total samples: {train_samples_mc} ({train_batches_mc} batches)")
+    print(f"  - Class 0 (Negative): {train_counts[0]}")
+    print(f"  - Class 1 (Police): {train_counts[1]}")
+    print(f"  - Class 2 (Ambulance): {train_counts[2]}")
+    print(f"  - Class 3 (Fire): {train_counts[3]}")
+    
+    # First batch analysis
+    print("\nFirst batch analysis:")
+    for waveforms, labels in train_loader_mc:
+        class_dist = Counter(labels.tolist())
+        if len(waveforms.shape) == 2:
+            duration = waveforms.shape[1] / 32000
+        else:
+            duration = waveforms.shape[2] / 32000
+        print(f"  - Samples: {waveforms.shape[0]}")
+        print(f"  - Class distribution: 0:{class_dist.get(0,0)}, 1:{class_dist.get(1,0)}, "
+              f"2:{class_dist.get(2,0)}, 3:{class_dist.get(3,0)}")
+        print(f"  - Duration: {duration:.2f}s, Sample rate: 32000Hz")
+        break
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Multi-Class Validation Loader
+    # ─────────────────────────────────────────────────────────────────────────
+    print("\n" + "─"*80)
+    print("MULTI-CLASS VALIDATION LOADER STATISTICS")
+    print("─"*80)
+    
+    val_samples_mc = len(val_loader_mc.dataset)
+    val_batches_mc = len(val_loader_mc)
+    
+    print("Counting labels per class...")
+    val_counts = count_multiclass_labels(val_loader_mc.dataset)
+    
+    print(f"Total samples: {val_samples_mc} ({val_batches_mc} batches)")
+    print(f"  - Class 0 (Negative): {val_counts[0]}")
+    print(f"  - Class 1 (Police): {val_counts[1]}")
+    print(f"  - Class 2 (Ambulance): {val_counts[2]}")
+    print(f"  - Class 3 (Fire): {val_counts[3]}")
+    
+    # First batch analysis
+    print("\nFirst batch analysis:")
+    for waveforms, labels in val_loader_mc:
+        class_dist = Counter(labels.tolist())
+        if len(waveforms.shape) == 2:
+            duration = waveforms.shape[1] / 32000
+        else:
+            duration = waveforms.shape[2] / 32000
+        print(f"  - Samples: {waveforms.shape[0]}")
+        print(f"  - Class distribution: 0:{class_dist.get(0,0)}, 1:{class_dist.get(1,0)}, "
+              f"2:{class_dist.get(2,0)}, 3:{class_dist.get(3,0)}")
+        print(f"  - Duration: {duration:.2f}s, Sample rate: 32000Hz")
+        break
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Multi-Class Test Loader
+    # ─────────────────────────────────────────────────────────────────────────
+    print("\n" + "─"*80)
+    print("MULTI-CLASS TEST LOADER STATISTICS")
+    print("─"*80)
+    
+    test_samples_mc = len(test_loader_mc.dataset)
+    test_batches_mc = len(test_loader_mc)
+    
+    print("Counting labels per class...")
+    test_counts = count_multiclass_labels(test_loader_mc.dataset)
+    
+    print(f"Total samples: {test_samples_mc} ({test_batches_mc} batches)")
+    print(f"  - Class 0 (Negative): {test_counts[0]}")
+    print(f"  - Class 1 (Police): {test_counts[1]}")
+    print(f"  - Class 2 (Ambulance): {test_counts[2]}")
+    print(f"  - Class 3 (Fire): {test_counts[3]}")
+    
+    # First batch analysis
+    print("\nFirst batch analysis:")
+    for waveforms, labels in test_loader_mc:
+        class_dist = Counter(labels.tolist())
+        if len(waveforms.shape) == 2:
+            duration = waveforms.shape[1] / 32000
+        else:
+            duration = waveforms.shape[2] / 32000
+        print(f"  - Samples: {waveforms.shape[0]}")
+        print(f"  - Class distribution: 0:{class_dist.get(0,0)}, 1:{class_dist.get(1,0)}, "
+              f"2:{class_dist.get(2,0)}, 3:{class_dist.get(3,0)}")
+        print(f"  - Duration: {duration:.2f}s, Sample rate: 32000Hz")
+        break
+    
+    # ─────────────────────────────────────────────────────────────────────────
+    # Multi-Class Benchmark Mode
+    # ─────────────────────────────────────────────────────────────────────────
+    print("\n" + "─"*80)
+    print("MULTI-CLASS BENCHMARK MODE")
+    print("─"*80)
+    
+    # Initialize in benchmark multi-class mode (all data as test set)
+    dm_mc_bench = AudioSetEV_v2_DataModule(
+        TP_csv=os.path.join(current_dir, "EV_Positives.csv"),
+        TP_folder=os.path.join(current_dir, "Positive_files"),
+        
+        TN_csv=os.path.join(current_dir, "EV_Negatives.csv"),
+        TN_folder=os.path.join(current_dir, "Negative_files"),
+        
+        label_mapping_csv=os.path.join(current_dir, "audioset_metadata/class_labels_indices.csv"),
+        negative_focus_labels=negative_labels,
+        
+        TP_subfolders=["balanced_train", "eval", "unbalanced"],
+        TN_subfolders=["balanced_train", "eval"],
+        
+        label_mode='multi_class',
+        batch_size=32,
+        split_ratios=(0.0, 0.0, 1.0),  # All data as test
+        balance_negatives=True,
+        seed=42
+    )
+    
+    dm_mc_bench.setup()
+    
+    # Get test loader
+    test_loader_mc_bench = dm_mc_bench.test_dataloader()
+    
+    bench_samples_mc = len(test_loader_mc_bench.dataset)
+    bench_batches_mc = len(test_loader_mc_bench)
+    
+    print("Counting labels per class...")
+    bench_counts = count_multiclass_labels(test_loader_mc_bench.dataset)
+    
+    print(f"\nTotal samples: {bench_samples_mc} ({bench_batches_mc} batches)")
+    print(f"  - Class 0 (Negative): {bench_counts[0]}")
+    print(f"  - Class 1 (Police): {bench_counts[1]}")
+    print(f"  - Class 2 (Ambulance): {bench_counts[2]}")
+    print(f"  - Class 3 (Fire): {bench_counts[3]}")
+    
+    # First batch analysis
+    print("\nFirst batch analysis:")
+    for waveforms, labels in test_loader_mc_bench:
+        class_dist = Counter(labels.tolist())
+        if len(waveforms.shape) == 2:
+            duration = waveforms.shape[1] / 32000
+        else:
+            duration = waveforms.shape[2] / 32000
+        print(f"  - Samples: {waveforms.shape[0]}")
+        print(f"  - Class distribution: 0:{class_dist.get(0,0)}, 1:{class_dist.get(1,0)}, "
+              f"2:{class_dist.get(2,0)}, 3:{class_dist.get(3,0)}")
         print(f"  - Duration: {duration:.2f}s, Sample rate: 32000Hz")
         break
     
