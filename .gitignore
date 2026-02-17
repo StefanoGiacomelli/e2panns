@@ -188,6 +188,7 @@ datasets/AudioSet_EV_v1_2025/Negative_files/
 datasets/AudioSet_EV_v1_2025/*.csv
 
 # AudioSet_EV_v2PANNs_2020 - Exclude audio files and ALL CSV files (root and audioset_metadata)
+datasets/AudioSet_EV_v2PANNs_2020/*.zip
 datasets/AudioSet_EV_v2PANNs_2020/Positive_files/
 datasets/AudioSet_EV_v2PANNs_2020/Negative_files/
 datasets/AudioSet_EV_v2PANNs_2020/*.csv
