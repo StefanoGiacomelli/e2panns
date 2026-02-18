@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/audioclip/AudioCLIP-Full-Training.pt",
+  "sample_rate": 44100,
+  "parameters": {
+    "total": 32.64,
+    "total_mb": 124.53,
+    "trainable": 32.64,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 44100,
+    "channels": 1,
+    "min_length_samples": 883,
+    "min_length_seconds": 0.02
+  },
+  "flops": 28804258112,
+  "macs": 14402129056,
+  "gflops": 28.804,
+  "gmacs": 14.402,
+  "cpu": {
+    "fwd_times": [
+      0.322039,
+      0.313663,
+      0.316922,
+      0.321347,
+      0.314866,
+      0.314764,
+      0.321599,
+      0.326999,
+      0.325457,
+      0.326511
+    ],
+    "fwd_times_stats": {
+      "mean": 0.320417,
+      "max": 0.326999,
+      "min": 0.313663,
+      "std": 0.00507,
+      "stderr": 0.001603,
+      "median": 0.321473,
+      "iqr": 0.009223,
+      "p75": 0.324602,
+      "skewness": -0.050316,
+      "kurtosis": -1.484529
+    },
+    "throughput_samples_per_sec": 1376333.17
+  },
+  "mps": {
+    "fwd_times": [
+      0.037776,
+      0.037093,
+      0.037515,
+      0.036519,
+      0.037656,
+      0.0366,
+      0.037665,
+      0.036571,
+      0.037637,
+      0.036569
+    ],
+    "fwd_times_stats": {
+      "mean": 0.03716,
+      "max": 0.037776,
+      "min": 0.036519,
+      "std": 0.000543,
+      "stderr": 0.000172,
+      "median": 0.037304,
+      "iqr": 0.001073,
+      "p75": 0.037651,
+      "skewness": -0.155544,
+      "kurtosis": -1.802445
+    },
+    "throughput_samples_per_sec": 11867576.96,
+    "peak_memory_mb": 159.04
+  },
+  "profiling_date": "2026-02-17T22:28:21.845413",
+  "model_name": "audioclip"
+}

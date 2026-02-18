@@ -6,6 +6,7 @@ ipykernel
 # Computing
 numpy
 torch
+fvcore
 torchaudio
 pytorch-lightning
 torchmetrics

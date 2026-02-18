@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/efficientat/mn40_as_ext_mAP_487.pt",
+  "sample_rate": 32000,
+  "parameters": {
+    "total": 68.43,
+    "total_mb": 261.03,
+    "trainable": 68.43,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 32000,
+    "channels": 1,
+    "min_length_samples": 641,
+    "min_length_seconds": 0.02
+  },
+  "flops": 8184498942,
+  "macs": 4092249471,
+  "gflops": 8.184,
+  "gmacs": 4.092,
+  "cpu": {
+    "fwd_times": [
+      0.516855,
+      0.511219,
+      0.514726,
+      0.506763,
+      0.534166,
+      0.518706,
+      0.511738,
+      0.524558,
+      0.512891,
+      0.513213
+    ],
+    "fwd_times_stats": {
+      "mean": 0.516484,
+      "max": 0.534166,
+      "min": 0.506763,
+      "std": 0.007848,
+      "stderr": 0.002482,
+      "median": 0.513969,
+      "iqr": 0.006217,
+      "p75": 0.518243,
+      "skewness": 1.164917,
+      "kurtosis": 0.661823
+    },
+    "throughput_samples_per_sec": 619574.41
+  },
+  "mps": {
+    "fwd_times": [
+      0.028527,
+      0.028562,
+      0.027897,
+      0.02965,
+      0.028216,
+      0.027657,
+      0.027506,
+      0.028406,
+      0.02773,
+      0.029145
+    ],
+    "fwd_times_stats": {
+      "mean": 0.02833,
+      "max": 0.02965,
+      "min": 0.027506,
+      "std": 0.000683,
+      "stderr": 0.000216,
+      "median": 0.028311,
+      "iqr": 0.000781,
+      "p75": 0.028553,
+      "skewness": 0.626741,
+      "kurtosis": -0.549847
+    },
+    "throughput_samples_per_sec": 11295591.02,
+    "peak_memory_mb": 305.66
+  },
+  "profiling_date": "2026-02-17T22:28:00.721294",
+  "model_name": "efficientat_mn"
+}

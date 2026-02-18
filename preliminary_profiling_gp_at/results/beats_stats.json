@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/beats/BEATs_iter3_plus_AS2M_finetuned_on_AS2M_cpt2.pt",
+  "sample_rate": 16000,
+  "parameters": {
+    "total": 90.72,
+    "total_mb": 346.06,
+    "trainable": 90.72,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "min_length_samples": 2801,
+    "min_length_seconds": 0.175
+  },
+  "flops": 49586377472,
+  "macs": 24793188736,
+  "gflops": 49.586,
+  "gmacs": 24.793,
+  "cpu": {
+    "fwd_times": [
+      0.157914,
+      0.155575,
+      0.157979,
+      0.155024,
+      0.154275,
+      0.150874,
+      0.171693,
+      0.154646,
+      0.153504,
+      0.153097
+    ],
+    "fwd_times_stats": {
+      "mean": 0.156458,
+      "max": 0.171693,
+      "min": 0.150874,
+      "std": 0.00576,
+      "stderr": 0.001822,
+      "median": 0.154835,
+      "iqr": 0.003633,
+      "p75": 0.15733,
+      "skewness": 2.012821,
+      "kurtosis": 3.178054
+    },
+    "throughput_samples_per_sec": 1022637.55
+  },
+  "mps": {
+    "fwd_times": [
+      0.041596,
+      0.041561,
+      0.040618,
+      0.041507,
+      0.042324,
+      0.041061,
+      0.041246,
+      0.043089,
+      0.041569,
+      0.04134
+    ],
+    "fwd_times_stats": {
+      "mean": 0.041591,
+      "max": 0.043089,
+      "min": 0.040618,
+      "std": 0.000683,
+      "stderr": 0.000216,
+      "median": 0.041534,
+      "iqr": 0.00032,
+      "p75": 0.04159,
+      "skewness": 0.965067,
+      "kurtosis": 0.581882
+    },
+    "throughput_samples_per_sec": 3846974.96,
+    "peak_memory_mb": 481.17
+  },
+  "profiling_date": "2026-02-17T22:27:18.536439",
+  "model_name": "beats"
+}

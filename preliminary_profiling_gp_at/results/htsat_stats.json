@@ -1,0 +1,78 @@
+{
+  "checkpoint": "models/htsat/HTSAT_AudioSet_Saved_3.ckpt",
+  "sample_rate": 32000,
+  "parameters": {
+    "total": 31.33,
+    "total_mb": 119.5,
+    "trainable": 30.24,
+    "trainable_percent": 96.54
+  },
+  "input": {
+    "sample_rate": 32000,
+    "channels": 1,
+    "min_length_samples": null,
+    "min_length_seconds": null,
+    "error": "Model doesn't work even with 15.0s input"
+  },
+  "flops": 7094384320,
+  "macs": 3547192160,
+  "gflops": 7.094,
+  "gmacs": 3.547,
+  "cpu": {
+    "fwd_times": [
+      0.08095,
+      0.078623,
+      0.070524,
+      0.080264,
+      0.077483,
+      0.085384,
+      0.07807,
+      0.077196,
+      0.082418,
+      0.077129
+    ],
+    "fwd_times_stats": {
+      "mean": 0.078804,
+      "max": 0.085384,
+      "min": 0.070524,
+      "std": 0.003935,
+      "stderr": 0.001244,
+      "median": 0.078347,
+      "iqr": 0.003511,
+      "p75": 0.080779,
+      "skewness": -0.450286,
+      "kurtosis": 0.495863
+    },
+    "throughput_samples_per_sec": 4060704.14
+  },
+  "mps": {
+    "fwd_times": [
+      0.004542,
+      0.004683,
+      0.00555,
+      0.005134,
+      0.005017,
+      0.004917,
+      0.004783,
+      0.004712,
+      0.004488,
+      0.004555
+    ],
+    "fwd_times_stats": {
+      "mean": 0.004838,
+      "max": 0.00555,
+      "min": 0.004488,
+      "std": 0.000328,
+      "stderr": 0.000104,
+      "median": 0.004747,
+      "iqr": 0.000405,
+      "p75": 0.004992,
+      "skewness": 0.983613,
+      "kurtosis": 0.165252
+    },
+    "throughput_samples_per_sec": 66140643.18,
+    "peak_memory_mb": 144.58
+  },
+  "profiling_date": "2026-02-17T22:28:23.457263",
+  "model_name": "htsat"
+}

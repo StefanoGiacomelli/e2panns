@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/yamnet/yamnet.pth",
+  "sample_rate": 16000,
+  "parameters": {
+    "total": 3.75,
+    "total_mb": 14.29,
+    "trainable": 3.75,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "min_length_samples": 321,
+    "min_length_seconds": 0.02
+  },
+  "flops": 720587328,
+  "macs": 360293664,
+  "gflops": 0.721,
+  "gmacs": 0.36,
+  "cpu": {
+    "fwd_times": [
+      0.088577,
+      0.085198,
+      0.087703,
+      0.093023,
+      0.088495,
+      0.090827,
+      0.092579,
+      0.09015,
+      0.092486,
+      0.086402
+    ],
+    "fwd_times_stats": {
+      "mean": 0.089544,
+      "max": 0.093023,
+      "min": 0.085198,
+      "std": 0.002711,
+      "stderr": 0.000857,
+      "median": 0.089364,
+      "iqr": 0.00417,
+      "p75": 0.092071,
+      "skewness": -0.138219,
+      "kurtosis": -1.225621
+    },
+    "throughput_samples_per_sec": 1786831.72
+  },
+  "mps": {
+    "fwd_times": [
+      0.004241,
+      0.004112,
+      0.005063,
+      0.004756,
+      0.004589,
+      0.004051,
+      0.004095,
+      0.004013,
+      0.003873,
+      0.00388
+    ],
+    "fwd_times_stats": {
+      "mean": 0.004267,
+      "max": 0.005063,
+      "min": 0.003873,
+      "std": 0.000401,
+      "stderr": 0.000127,
+      "median": 0.004104,
+      "iqr": 0.00048,
+      "p75": 0.004502,
+      "skewness": 0.906081,
+      "kurtosis": -0.502285
+    },
+    "throughput_samples_per_sec": 37493115.65,
+    "peak_memory_mb": 42.47
+  },
+  "profiling_date": "2026-02-17T22:27:21.269257",
+  "model_name": "yamnet"
+}

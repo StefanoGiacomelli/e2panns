@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/passt/passt-s-kd-ap.486.pt",
+  "sample_rate": 32000,
+  "parameters": {
+    "total": 86.15,
+    "total_mb": 328.65,
+    "trainable": 86.15,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 32000,
+    "channels": 1,
+    "min_length_samples": 4802,
+    "min_length_seconds": 0.15
+  },
+  "flops": 127588318718,
+  "macs": 63794159359,
+  "gflops": 127.588,
+  "gmacs": 63.794,
+  "cpu": {
+    "fwd_times": [
+      0.296421,
+      0.291543,
+      0.288762,
+      0.289578,
+      0.296655,
+      0.287048,
+      0.288113,
+      0.273871,
+      0.283586,
+      0.27961
+    ],
+    "fwd_times_stats": {
+      "mean": 0.287519,
+      "max": 0.296655,
+      "min": 0.273871,
+      "std": 0.007067,
+      "stderr": 0.002235,
+      "median": 0.288438,
+      "iqr": 0.006601,
+      "p75": 0.291052,
+      "skewness": -0.515407,
+      "kurtosis": -0.408507
+    },
+    "throughput_samples_per_sec": 1112971.05
+  },
+  "mps": {
+    "fwd_times": [
+      0.063547,
+      0.063308,
+      0.062783,
+      0.06316,
+      0.063489,
+      0.062906,
+      0.063211,
+      0.062988,
+      0.063222,
+      0.062959
+    ],
+    "fwd_times_stats": {
+      "mean": 0.063157,
+      "max": 0.063547,
+      "min": 0.062783,
+      "std": 0.00025,
+      "stderr": 7.9e-05,
+      "median": 0.063185,
+      "iqr": 0.000321,
+      "p75": 0.063287,
+      "skewness": 0.138763,
+      "kurtosis": -1.053221
+    },
+    "throughput_samples_per_sec": 5066715.71,
+    "peak_memory_mb": 346.97
+  },
+  "profiling_date": "2026-02-17T22:28:57.761776",
+  "model_name": "passt"
+}

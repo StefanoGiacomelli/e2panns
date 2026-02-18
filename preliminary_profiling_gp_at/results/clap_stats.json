@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/clap/630k-audioset-fusion-best.pt",
+  "sample_rate": 48000,
+  "parameters": {
+    "total": 158.35,
+    "total_mb": 604.05,
+    "trainable": 157.27,
+    "trainable_percent": 99.32
+  },
+  "input": {
+    "sample_rate": 48000,
+    "channels": 1,
+    "min_length_samples": 961,
+    "min_length_seconds": 0.02
+  },
+  "flops": 7094768704,
+  "macs": 3547384352,
+  "gflops": 7.095,
+  "gmacs": 3.547,
+  "cpu": {
+    "fwd_times": [
+      0.070641,
+      0.066751,
+      0.06299,
+      0.069182,
+      0.069811,
+      0.068485,
+      0.066538,
+      0.063866,
+      0.064073,
+      0.06537
+    ],
+    "fwd_times_stats": {
+      "mean": 0.066771,
+      "max": 0.070641,
+      "min": 0.06299,
+      "std": 0.002687,
+      "stderr": 0.00085,
+      "median": 0.066645,
+      "iqr": 0.004611,
+      "p75": 0.069008,
+      "skewness": 0.025258,
+      "kurtosis": -1.379831
+    },
+    "throughput_samples_per_sec": 7188780.12
+  },
+  "mps": {
+    "fwd_times": [
+      0.012744,
+      0.007807,
+      0.009199,
+      0.009438,
+      0.009109,
+      0.009047,
+      0.009121,
+      0.009525,
+      0.008964,
+      0.009114
+    ],
+    "fwd_times_stats": {
+      "mean": 0.009407,
+      "max": 0.012744,
+      "min": 0.007807,
+      "std": 0.001262,
+      "stderr": 0.000399,
+      "median": 0.009117,
+      "iqr": 0.000315,
+      "p75": 0.009378,
+      "skewness": 1.914026,
+      "kurtosis": 3.357191
+    },
+    "throughput_samples_per_sec": 51027256.27,
+    "peak_memory_mb": 830.14
+  },
+  "profiling_date": "2026-02-17T22:27:27.792320",
+  "model_name": "clap"
+}

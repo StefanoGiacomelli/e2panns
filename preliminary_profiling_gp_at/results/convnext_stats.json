@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/convnext/convnext_tiny_471mAP.pth",
+  "sample_rate": 32000,
+  "parameters": {
+    "total": 29.39,
+    "total_mb": 112.11,
+    "trainable": 28.22,
+    "trainable_percent": 96.03
+  },
+  "input": {
+    "sample_rate": 32000,
+    "channels": 1,
+    "min_length_samples": 7360,
+    "min_length_seconds": 0.23
+  },
+  "flops": 21164794784,
+  "macs": 10582397392,
+  "gflops": 21.165,
+  "gmacs": 10.582,
+  "cpu": {
+    "fwd_times": [
+      0.413367,
+      0.408956,
+      0.411495,
+      0.412626,
+      0.413078,
+      0.415566,
+      0.415831,
+      0.414979,
+      0.413986,
+      0.422246
+    ],
+    "fwd_times_stats": {
+      "mean": 0.414213,
+      "max": 0.422246,
+      "min": 0.408956,
+      "std": 0.003483,
+      "stderr": 0.001101,
+      "median": 0.413676,
+      "iqr": 0.00268,
+      "p75": 0.415419,
+      "skewness": 0.981816,
+      "kurtosis": 1.197405
+    },
+    "throughput_samples_per_sec": 772549.58
+  },
+  "mps": {
+    "fwd_times": [
+      0.003454,
+      0.003456,
+      0.003966,
+      0.004043,
+      0.003572,
+      0.014513,
+      0.017355,
+      0.017273,
+      0.017576,
+      0.017755
+    ],
+    "fwd_times_stats": {
+      "mean": 0.010296,
+      "max": 0.017755,
+      "min": 0.003454,
+      "std": 0.007015,
+      "stderr": 0.002218,
+      "median": 0.009278,
+      "iqr": 0.013664,
+      "p75": 0.017334,
+      "skewness": 0.042188,
+      "kurtosis": -1.948241
+    },
+    "throughput_samples_per_sec": 31079389.92,
+    "peak_memory_mb": 132.68
+  },
+  "profiling_date": "2026-02-17T22:28:51.119785",
+  "model_name": "convnext"
+}

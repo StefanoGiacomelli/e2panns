@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/vggish/vggish_with_classifier.pth",
+  "sample_rate": 16000,
+  "parameters": {
+    "total": 72.21,
+    "total_mb": 275.45,
+    "trainable": 72.21,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "min_length_samples": 321,
+    "min_length_seconds": 0.02
+  },
+  "flops": 8656074968,
+  "macs": 4328037484,
+  "gflops": 8.656,
+  "gmacs": 4.328,
+  "cpu": {
+    "fwd_times": [
+      0.026145,
+      0.023658,
+      0.02445,
+      0.021586,
+      0.023123,
+      0.023102,
+      0.022758,
+      0.023265,
+      0.021351,
+      0.02285
+    ],
+    "fwd_times_stats": {
+      "mean": 0.023229,
+      "max": 0.026145,
+      "min": 0.021351,
+      "std": 0.001366,
+      "stderr": 0.000432,
+      "median": 0.023113,
+      "iqr": 0.000778,
+      "p75": 0.02356,
+      "skewness": 0.7112,
+      "kurtosis": 0.344528
+    },
+    "throughput_samples_per_sec": 6888008.54
+  },
+  "mps": {
+    "fwd_times": [
+      0.000925,
+      0.000927,
+      0.00088,
+      0.00095,
+      0.000925,
+      0.000883,
+      0.000867,
+      0.000828,
+      0.000834,
+      0.000825
+    ],
+    "fwd_times_stats": {
+      "mean": 0.000884,
+      "max": 0.00095,
+      "min": 0.000825,
+      "std": 4.6e-05,
+      "stderr": 1.4e-05,
+      "median": 0.000882,
+      "iqr": 8.3e-05,
+      "p75": 0.000925,
+      "skewness": -0.031097,
+      "kurtosis": -1.442532
+    },
+    "throughput_samples_per_sec": 180914472.92,
+    "peak_memory_mb": 296.84
+  },
+  "profiling_date": "2026-02-17T22:28:24.208973",
+  "model_name": "vggish"
+}

@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/psla/as_mdl_0_wa.pth",
+  "sample_rate": 16000,
+  "parameters": {
+    "total": 13.64,
+    "total_mb": 52.04,
+    "trainable": 13.64,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "min_length_samples": 401,
+    "min_length_seconds": 0.025
+  },
+  "flops": 1980337856,
+  "macs": 990168928,
+  "gflops": 1.98,
+  "gmacs": 0.99,
+  "cpu": {
+    "fwd_times": [
+      0.405296,
+      0.418832,
+      0.402759,
+      0.411954,
+      0.431838,
+      0.413913,
+      0.400926,
+      0.40722,
+      0.40739,
+      0.406764
+    ],
+    "fwd_times_stats": {
+      "mean": 0.410689,
+      "max": 0.431838,
+      "min": 0.400926,
+      "std": 0.009136,
+      "stderr": 0.002889,
+      "median": 0.407305,
+      "iqr": 0.00776,
+      "p75": 0.413423,
+      "skewness": 1.276408,
+      "kurtosis": 0.879974
+    },
+    "throughput_samples_per_sec": 389589.08
+  },
+  "mps": {
+    "fwd_times": [
+      0.013593,
+      0.013575,
+      0.013286,
+      0.012901,
+      0.013312,
+      0.01223,
+      0.012588,
+      0.012322,
+      0.012279,
+      0.011797
+    ],
+    "fwd_times_stats": {
+      "mean": 0.012788,
+      "max": 0.013593,
+      "min": 0.011797,
+      "std": 0.000634,
+      "stderr": 0.0002,
+      "median": 0.012745,
+      "iqr": 0.001016,
+      "p75": 0.013305,
+      "skewness": -0.052424,
+      "kurtosis": -1.376115
+    },
+    "throughput_samples_per_sec": 12511439.95,
+    "peak_memory_mb": 94.03
+  },
+  "profiling_date": "2026-02-17T22:27:42.860467",
+  "model_name": "psla"
+}

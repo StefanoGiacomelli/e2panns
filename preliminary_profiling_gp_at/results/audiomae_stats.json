@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/audiomae/finetuned.pth",
+  "sample_rate": 16000,
+  "parameters": {
+    "total": 86.05,
+    "total_mb": 328.27,
+    "trainable": 85.66,
+    "trainable_percent": 99.54
+  },
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "min_length_samples": 401,
+    "min_length_seconds": 0.025
+  },
+  "flops": 48603389696,
+  "macs": 24301694848,
+  "gflops": 48.603,
+  "gmacs": 24.302,
+  "cpu": {
+    "fwd_times": [
+      0.135636,
+      0.127051,
+      0.131214,
+      0.128514,
+      0.134162,
+      0.125154,
+      0.132792,
+      0.134475,
+      0.138196,
+      0.130992
+    ],
+    "fwd_times_stats": {
+      "mean": 0.131819,
+      "max": 0.138196,
+      "min": 0.125154,
+      "std": 0.004053,
+      "stderr": 0.001282,
+      "median": 0.132003,
+      "iqr": 0.005263,
+      "p75": 0.134397,
+      "skewness": -0.164922,
+      "kurtosis": -0.915615
+    },
+    "throughput_samples_per_sec": 1213789.21
+  },
+  "mps": {
+    "fwd_times": [
+      0.02446,
+      0.02431,
+      0.025433,
+      0.024341,
+      0.024161,
+      0.024914,
+      0.024191,
+      0.024209,
+      0.024285,
+      0.024788
+    ],
+    "fwd_times_stats": {
+      "mean": 0.024509,
+      "max": 0.025433,
+      "min": 0.024161,
+      "std": 0.000412,
+      "stderr": 0.00013,
+      "median": 0.024325,
+      "iqr": 0.000478,
+      "p75": 0.024706,
+      "skewness": 1.25623,
+      "kurtosis": 0.419393
+    },
+    "throughput_samples_per_sec": 6528197.48,
+    "peak_memory_mb": 345.44
+  },
+  "profiling_date": "2026-02-17T22:28:38.234248",
+  "model_name": "audiomae"
+}

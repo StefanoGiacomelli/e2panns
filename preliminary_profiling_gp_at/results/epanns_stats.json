@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/epanns/checkpoint_closeto_.44.pt",
+  "sample_rate": 32000,
+  "parameters": {
+    "total": 24.29,
+    "total_mb": 92.66,
+    "trainable": 23.21,
+    "trainable_percent": 95.54
+  },
+  "input": {
+    "sample_rate": 32000,
+    "channels": 1,
+    "min_length_samples": 9920,
+    "min_length_seconds": 0.31
+  },
+  "flops": 13529726656,
+  "macs": 6764863328,
+  "gflops": 13.53,
+  "gmacs": 6.765,
+  "cpu": {
+    "fwd_times": [
+      0.052507,
+      0.055007,
+      0.057175,
+      0.052423,
+      0.056389,
+      0.055158,
+      0.053411,
+      0.055062,
+      0.05819,
+      0.056635
+    ],
+    "fwd_times_stats": {
+      "mean": 0.055196,
+      "max": 0.05819,
+      "min": 0.052423,
+      "std": 0.001959,
+      "stderr": 0.000619,
+      "median": 0.05511,
+      "iqr": 0.002764,
+      "p75": 0.056574,
+      "skewness": -0.111935,
+      "kurtosis": -1.12572
+    },
+    "throughput_samples_per_sec": 5797549.15
+  },
+  "mps": {
+    "fwd_times": [
+      0.001903,
+      0.001824,
+      0.001738,
+      0.002008,
+      0.005151,
+      0.009325,
+      0.006266,
+      0.006425,
+      0.006273,
+      0.006267
+    ],
+    "fwd_times_stats": {
+      "mean": 0.004718,
+      "max": 0.009325,
+      "min": 0.001738,
+      "std": 0.002668,
+      "stderr": 0.000844,
+      "median": 0.005709,
+      "iqr": 0.004342,
+      "p75": 0.006271,
+      "skewness": 0.130128,
+      "kurtosis": -1.192025
+    },
+    "throughput_samples_per_sec": 67824809.17,
+    "peak_memory_mb": 145.07
+  },
+  "profiling_date": "2026-02-17T22:28:39.623173",
+  "model_name": "epanns"
+}

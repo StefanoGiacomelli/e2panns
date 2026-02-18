@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/m2d/weights_ep69it3124-0.47998.pth",
+  "sample_rate": 32000,
+  "parameters": {
+    "total": 85.9,
+    "total_mb": 327.68,
+    "trainable": 85.9,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 32000,
+    "channels": 1,
+    "min_length_samples": 641,
+    "min_length_seconds": 0.02
+  },
+  "flops": 28963003152,
+  "macs": 14481501576,
+  "gflops": 28.963,
+  "gmacs": 14.482,
+  "cpu": {
+    "fwd_times": [
+      0.093653,
+      0.086028,
+      0.088038,
+      0.086265,
+      0.09916,
+      0.098025,
+      0.100546,
+      0.10163,
+      0.099461,
+      0.100312
+    ],
+    "fwd_times_stats": {
+      "mean": 0.095312,
+      "max": 0.10163,
+      "min": 0.086028,
+      "std": 0.006284,
+      "stderr": 0.001987,
+      "median": 0.098593,
+      "iqr": 0.010657,
+      "p75": 0.100099,
+      "skewness": -0.595156,
+      "kurtosis": -1.379149
+    },
+    "throughput_samples_per_sec": 3357400.25
+  },
+  "mps": {
+    "fwd_times": [
+      0.004,
+      0.004418,
+      0.004547,
+      0.003984,
+      0.003792,
+      0.003757,
+      0.007268,
+      0.013812,
+      0.013812,
+      0.013833
+    ],
+    "fwd_times_stats": {
+      "mean": 0.007322,
+      "max": 0.013833,
+      "min": 0.003757,
+      "std": 0.004596,
+      "stderr": 0.001453,
+      "median": 0.004483,
+      "iqr": 0.008188,
+      "p75": 0.012176,
+      "skewness": 0.740137,
+      "kurtosis": -1.329571
+    },
+    "throughput_samples_per_sec": 43701667.87,
+    "peak_memory_mb": 348.87
+  },
+  "profiling_date": "2026-02-17T22:28:27.282263",
+  "model_name": "m2d"
+}

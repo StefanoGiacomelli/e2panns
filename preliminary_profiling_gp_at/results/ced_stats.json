@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/ced/audiotransformer_base_mAP_4999.pt",
+  "sample_rate": 16000,
+  "parameters": {
+    "total": 85.71,
+    "total_mb": 326.96,
+    "trainable": 85.71,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "min_length_samples": 2400,
+    "min_length_seconds": 0.15
+  },
+  "flops": 22287004352,
+  "macs": 11143502176,
+  "gflops": 22.287,
+  "gmacs": 11.144,
+  "cpu": {
+    "fwd_times": [
+      0.074278,
+      0.072309,
+      0.071135,
+      0.069151,
+      0.069362,
+      0.074434,
+      0.070886,
+      0.07135,
+      0.074073,
+      0.072005
+    ],
+    "fwd_times_stats": {
+      "mean": 0.071898,
+      "max": 0.074434,
+      "min": 0.069151,
+      "std": 0.001912,
+      "stderr": 0.000605,
+      "median": 0.071678,
+      "iqr": 0.002684,
+      "p75": 0.073632,
+      "skewness": 0.024139,
+      "kurtosis": -1.191615
+    },
+    "throughput_samples_per_sec": 2225367.49
+  },
+  "mps": {
+    "fwd_times": [
+      0.00428,
+      0.004572,
+      0.00448,
+      0.004069,
+      0.003918,
+      0.008464,
+      0.011608,
+      0.0103,
+      0.010418,
+      0.011306
+    ],
+    "fwd_times_stats": {
+      "mean": 0.007341,
+      "max": 0.011608,
+      "min": 0.003918,
+      "std": 0.003351,
+      "stderr": 0.00106,
+      "median": 0.006518,
+      "iqr": 0.006058,
+      "p75": 0.010389,
+      "skewness": 0.148963,
+      "kurtosis": -1.813341
+    },
+    "throughput_samples_per_sec": 21794195.72,
+    "peak_memory_mb": 327.76
+  },
+  "profiling_date": "2026-02-17T22:27:30.262686",
+  "model_name": "ced"
+}

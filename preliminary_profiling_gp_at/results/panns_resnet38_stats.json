@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/panns/ResNet38_mAP=0.434.pth",
+  "sample_rate": 32000,
+  "parameters": {
+    "total": 74.87,
+    "total_mb": 285.59,
+    "trainable": 73.78,
+    "trainable_percent": 98.55
+  },
+  "input": {
+    "sample_rate": 32000,
+    "channels": 1,
+    "min_length_samples": 9920,
+    "min_length_seconds": 0.31
+  },
+  "flops": 24522591936,
+  "macs": 12261295968,
+  "gflops": 24.523,
+  "gmacs": 12.261,
+  "cpu": {
+    "fwd_times": [
+      0.096907,
+      0.095107,
+      0.09686,
+      0.092627,
+      0.091571,
+      0.092038,
+      0.094621,
+      0.093328,
+      0.095081,
+      0.09549
+    ],
+    "fwd_times_stats": {
+      "mean": 0.094363,
+      "max": 0.096907,
+      "min": 0.091571,
+      "std": 0.001897,
+      "stderr": 0.0006,
+      "median": 0.094851,
+      "iqr": 0.002592,
+      "p75": 0.095394,
+      "skewness": -0.11015,
+      "kurtosis": -1.254961
+    },
+    "throughput_samples_per_sec": 3391163.86
+  },
+  "mps": {
+    "fwd_times": [
+      0.004724,
+      0.012269,
+      0.010919,
+      0.010964,
+      0.010913,
+      0.010931,
+      0.010916,
+      0.01091,
+      0.01097,
+      0.010908
+    ],
+    "fwd_times_stats": {
+      "mean": 0.010442,
+      "max": 0.012269,
+      "min": 0.004724,
+      "std": 0.002053,
+      "stderr": 0.000649,
+      "median": 0.010917,
+      "iqr": 4.5e-05,
+      "p75": 0.010956,
+      "skewness": -2.435743,
+      "kurtosis": 4.511041
+    },
+    "throughput_samples_per_sec": 30644529.04,
+    "peak_memory_mb": 342.23
+  },
+  "profiling_date": "2026-02-17T22:28:33.496689",
+  "model_name": "panns_resnet38"
+}

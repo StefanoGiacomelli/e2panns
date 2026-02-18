@@ -1,0 +1,77 @@
+{
+  "checkpoint": "models/ast/audioset_10_10_0.4593.pth",
+  "sample_rate": 16000,
+  "parameters": {
+    "total": 88.13,
+    "total_mb": 336.2,
+    "trainable": 88.13,
+    "trainable_percent": 100.0
+  },
+  "input": {
+    "sample_rate": 16000,
+    "channels": 1,
+    "min_length_samples": 401,
+    "min_length_seconds": 0.025
+  },
+  "flops": 130663751936,
+  "macs": 65331875968,
+  "gflops": 130.664,
+  "gmacs": 65.332,
+  "cpu": {
+    "fwd_times": [
+      0.270131,
+      0.267473,
+      0.270055,
+      0.272559,
+      0.273399,
+      0.272389,
+      0.268669,
+      0.267723,
+      0.27053,
+      0.271557
+    ],
+    "fwd_times_stats": {
+      "mean": 0.270449,
+      "max": 0.273399,
+      "min": 0.267473,
+      "std": 0.002051,
+      "stderr": 0.000649,
+      "median": 0.270331,
+      "iqr": 0.003165,
+      "p75": 0.272181,
+      "skewness": -0.116502,
+      "kurtosis": -1.221555
+    },
+    "throughput_samples_per_sec": 591609.8
+  },
+  "mps": {
+    "fwd_times": [
+      0.067435,
+      0.066589,
+      0.06631,
+      0.066382,
+      0.066584,
+      0.066558,
+      0.066392,
+      0.066224,
+      0.066614,
+      0.066456
+    ],
+    "fwd_times_stats": {
+      "mean": 0.066554,
+      "max": 0.067435,
+      "min": 0.066224,
+      "std": 0.000336,
+      "stderr": 0.000106,
+      "median": 0.066507,
+      "iqr": 0.000203,
+      "p75": 0.066587,
+      "skewness": 1.922832,
+      "kurtosis": 2.997819
+    },
+    "throughput_samples_per_sec": 2404050.07,
+    "peak_memory_mb": 336.81
+  },
+  "profiling_date": "2026-02-17T22:27:13.450849",
+  "model_name": "ast"
+}
