@@ -195,12 +195,12 @@ datasets/AudioSet_EV_v2PANNs_2020/Negative_files/
 datasets/AudioSet_EV_v2PANNs_2020/*.csv
 datasets/AudioSet_EV_v2PANNs_2020/audioset_metadata/*.csv
 
-# ESC-50 - Exclude original contents
-datasets/ESC-50/cross_val_folds/
-datasets/ESC-50/original_audio/
-datasets/ESC-50/esc50.csv
-datasets/ESC-50/LICENSE
-datasets/ESC-50/README.md
+# ESC50 - Exclude original contents
+datasets/ESC50/cross_val_folds/
+datasets/ESC50/original_audio/
+datasets/ESC50/esc50.csv
+datasets/ESC50/LICENSE
+datasets/ESC50/README.md
 
 # FSD50K - Exclude original archives and audio folders
 datasets/FSD50K/original_archive/

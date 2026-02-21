@@ -3,6 +3,7 @@
 This directory contains a comprehensive **technical profiling analysis** of 18 state-of-the-art **General-Purpose Audio Tagging (GP-AT)** models. All models are pre-trained on AudioSet (o related distributions) and support audio tagging across 527 classes. This preliminary analysis was conducted to identify the most suitable architectures for our Emergency Vehicle (EV) siren detection and classification experiments.
 
 ![Python 3.11](https://img.shields.io/badge/python-3.11.2-blue.svg) ![PyTorch](https://img.shields.io/badge/-PyTorch-333?style=flat&logo=pytorch) ![License](https://img.shields.io/badge/License-MIT-green)
+
 ---
 
 ## Table of Contents

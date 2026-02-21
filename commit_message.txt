@@ -1,0 +1,166 @@
+Major refactoring: EV Recognition framework with multi-model GP-AT support
+
+This commit represents a complete restructuring of the E2PANNs codebase to create
+a modular, scalable framework for Emergency Vehicle recognition using pre-trained 
+General-Purpose Audio Tagging (GP-AT) models.
+
+## 🏗️ Architecture Refactoring
+
+### Old Code Migration
+- Moved all previous experimental code to OLD/ directory
+- Includes: initial fine-tuning experiments, preliminary benchmarks, and legacy test scripts
+- Old code will be removed after final validation of new implementation
+
+### New Modular Structure
+- **main.py**: Unified training/testing pipeline with YAML configuration support
+- **main_benchmark.py**: Automated benchmark evaluation across all datasets
+- **models/**: Modular Lightning-based model implementations
+- **datasets/**: Standardized DataModules for all 7 EV datasets
+- **configs/**: YAML-based configuration system
+
+## 🎯 Multi-Model GP-AT Support
+
+Extended framework to support 3 state-of-the-art GP-AT architectures:
+
+1. **E-PANNs** (PANNs-based, 32kHz)
+   - Pre-trained on AudioSet
+   - Optimized for emergency vehicle detection
+   
+2. **CED** (Transformer-based, 16kHz)
+   - Distilled ViT-based architecture
+   - Efficient inference
+   
+3. **CLAP** (HTSAT-based, 48kHz)
+   - Audio-language model
+   - Zero-shot capabilities
+
+### Technical Profiling
+
+- Performance metrics, computational requirements, and architecture comparisons
+- Comprehensive profiling and statistics available in `preliminary_profiling_gp_at/` and `figures/`
+
+## 🔧 Core Features
+
+### Training & Testing Pipeline (main.py)
+- **Modes**: fit, test, fit+test, benchmark
+- **Configuration**: YAML-based with validation
+- **Logging**: TensorBoard integration
+- **Checkpointing**: Automatic best model saving
+- **Mixed Datasets**: Support for train/dev from one dataset, test from another
+
+### Automated Benchmarking (main_benchmark.py)
+- **Multi-dataset**: Automatic testing on all 7 datasets
+- **Multi-task**: Binary + multiclass evaluation
+- **Output**: CSV reports with comprehensive metrics
+- **Clean Results**: No intermediate files, only final CSVs
+
+### Lightning Models (models/lightning_models.py)
+- **BinaryEVClassifier**: Emergency vehicle detection (binary)
+- **MultiClassSirenClassifier**: Siren type classification (4-way)
+- **Metrics**: Accuracy, Precision, Recall, F1, AUROC, Specificity, F-beta
+- **Custom Callbacks**: Advanced checkpointing with monitoring
+
+## 📊 Dataset Support
+
+Unified DataModule implementation for 7 datasets:
+
+1. **AudioSet_EV_v1_2025**: Latest AudioSet-derived EV dataset
+2. **AudioSet_EV_v2PANNs_2020**: PANNs-compatible version
+3. **sireNNet**: Multi-class siren dataset (binary + 4-way)
+4. **LSSiren**: Large-scale siren/road noise dataset
+5. **ESC50**: Environmental sound classification (10-fold CV)
+6. **FSD50K**: Freesound dataset subset
+7. **UrbanSound8K**: Urban audio dataset (10-fold CV)
+
+### Key Features
+- **Dual Mode**: 'train' (random splits) and 'benchmark' (pre-defined CV folds)
+- **Proper CV**: Fixed fold separation bug - now tests each fold independently
+- **Audio Processing**: Configurable sample rates, duration normalization
+- **Data Augmentation**: Optional augmentation pipeline
+- **Label Mapping**: Automatic handling of multi-label scenarios
+
+## 🐛 Critical Bugfixes
+
+### Cross-Validation Metrics Fix
+**Problem**: PyTorch Lightning with multiple test dataloaders aggregated all fold data,
+resulting in identical replicated metrics across all folds instead of per-fold metrics.
+
+**Solution**: 
+- Implemented `test_with_cv_support()` function that tests each fold separately
+- Applied to both main.py and main_benchmark.py
+- Now properly computes independent metrics for each CV fold
+- Enables accurate cross-validation performance assessment
+
+### Temporary Files Cleanup
+- Benchmarking now uses temporary directory for Lightning outputs
+- Automatic cleanup after completion
+- Clean results directory with only CSV reports
+
+### YAML Configuration
+- Fixed handling of None/null values in YAML configs
+- Proper type checking for optional parameters
+
+## 📁 Project Structure
+
+```
+E2PANNs/
+├── main.py                      # Main training/testing script
+├── main_benchmark.py            # Automated benchmarking
+├── configs/                     # YAML configurations
+│   └── example.yaml
+├── models/                      # Model implementations
+│   ├── lightning_models.py      # Lightning modules
+│   ├── callbacks.py             # Custom callbacks
+│   ├── epanns/                  # E-PANNs architecture
+│   ├── ced/                     # CED architecture
+│   └── clap/                    # CLAP architecture
+├── datasets/                    # DataModule implementations
+│   ├── AudioSet_EV_v1_2025/
+│   ├── AudioSet_EV_v2PANNs_2020/
+│   ├── sireNNet/
+│   ├── LSSiren/
+│   ├── ESC50/
+│   ├── FSD50K/
+│   ├── UrbanSound8K/
+│   └── datasets_mapping.json   # Label mappings
+├── preliminary_profiling_gp_at/ # Architecture analysis
+└── OLD/                         # Legacy code (to be removed)
+```
+
+## 🚀 Usage
+
+### Training
+```bash
+python main.py --config configs/example.yaml --mode fit+test
+```
+
+### Benchmarking
+```bash
+python main_benchmark.py
+```
+
+### Configuration
+Edit `configs/example.yaml` to customize:
+- Model selection (epanns/ced/clap)
+- Dataset selection and mode
+- Training hyperparameters
+- Paths and logging
+
+## 📝 Notes
+
+- All old experimental code preserved in OLD/ directory
+- OLD/ will be removed after final validation
+- Technical profiling completed for all 3 GP-AT models
+- Framework ready for paper experiments and benchmarking
+
+## ✅ Testing Status
+
+- ✅ main.py tested with example.yaml (fit+test mode)
+- ✅ main_benchmark.py tested with all datasets
+- ✅ CV fold separation verified and working correctly
+- ✅ Temporary file cleanup confirmed
+- ✅ Multi-model support validated
+
+---
+
+Author: Stefano Giacomelli - Ph.D. candidate in ICT (DISIM dpt. - University of L'Aquila)

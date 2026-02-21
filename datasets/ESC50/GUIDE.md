@@ -9,7 +9,7 @@ Commands pipeline is tested on Unix-based systems.
 Move inside the appropriate folder and download the dataset (from GitHub), using the following commands:
 
 ```bash
-cd ./datasets/ESC-50/
+cd ./datasets/ESC50/
 wget https://github.com/karoldvl/ESC-50/archive/master.zip
 ```
 

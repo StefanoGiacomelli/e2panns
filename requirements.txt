@@ -6,11 +6,12 @@ ipykernel
 # Computing
 numpy
 torch
+einops
+transformers
 fvcore
 torchaudio
 pytorch-lightning
 torchmetrics
-epanns-inference
 scikit-learn
 
 # Visualization & Stats

@@ -160,10 +160,12 @@ class ESC50Dataset(Dataset):
             
             # Build file path based on mode
             if self.mode == 'benchmark' and self.fold is not None:
-                # Benchmark mode with specific fold
+                # Benchmark mode with specific fold - use cross_val_folds structure
                 if row["fold"] != self.fold:
                     continue
-                audio_path = os.path.join(self.audio_folder, f"fold_{self.fold}", row["filename"])
+                # Get base directory (remove 'original_audio' from path)
+                base_dir = self.audio_folder.replace('original_audio', '').rstrip('/')
+                audio_path = os.path.join(base_dir, 'cross_val_folds', f"fold_{self.fold}", row["filename"])
             else:
                 # Training mode: load from original_audio or all fold folders
                 if "original_audio" in self.audio_folder or "audio" in self.audio_folder:
@@ -460,35 +462,28 @@ class ESC50DataModule(pl.LightningDataModule):
                           collate_fn=esc50_collate_fn,
                           persistent_workers=True if self.num_workers > 0 else False)
     
-    def test_dataloader(self) -> DataLoader:
-        """Return test dataloader (train mode only)."""
-        if self.mode != 'train':
-            raise ValueError("test_dataloader() only available in 'train' mode. Use test_dataloaders() for benchmark.")
-        
-        return DataLoader(self.test_dataset,
-                          batch_size=self.batch_size,
-                          shuffle=False,
-                          num_workers=self.num_workers,
-                          collate_fn=esc50_collate_fn,
-                          persistent_workers=True if self.num_workers > 0 else False)
-    
-    def test_dataloaders(self) -> List[DataLoader]:
-        """Return list of test dataloaders (benchmark mode only)."""
-        if self.mode != 'benchmark':
-            raise ValueError("test_dataloaders() only available in 'benchmark' mode")
-        
-        loaders = []
-        for fold_name in sorted(self.test_datasets.keys()):
-            loader = DataLoader(self.test_datasets[fold_name],
-                                batch_size=self.batch_size,
-                                shuffle=False,
-                                num_workers=self.num_workers,
-                                collate_fn=esc50_collate_fn,
-                                persistent_workers=True if self.num_workers > 0 else False)
-            
-            loaders.append(loader)
-        
-        return loaders
+    def test_dataloader(self):
+        """Return test dataloader(s) - single for train mode, list for benchmark CV."""
+        if self.mode == 'train':
+            # Single test loader for train mode
+            return DataLoader(self.test_dataset,
+                            batch_size=self.batch_size,
+                            shuffle=False,
+                            num_workers=self.num_workers,
+                            collate_fn=esc50_collate_fn,
+                            persistent_workers=True if self.num_workers > 0 else False)
+        else:  # benchmark mode
+            # Multiple loaders for cross-validation (one per fold)
+            loaders = []
+            for fold_name in sorted(self.test_datasets.keys()):
+                loader = DataLoader(self.test_datasets[fold_name],
+                                    batch_size=self.batch_size,
+                                    shuffle=False,
+                                    num_workers=self.num_workers,
+                                    collate_fn=esc50_collate_fn,
+                                    persistent_workers=True if self.num_workers > 0 else False)
+                loaders.append(loader)
+            return loaders
 
 
 # =============================================================================

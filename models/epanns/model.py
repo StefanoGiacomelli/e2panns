@@ -442,7 +442,8 @@ if __name__ == "__main__":
     
     # 2. Load AudioSet labels
     print("\n2. Loading AudioSet labels...")
-    labels_path = "/Users/stefano/Documents/PhD_main_project/datasets_gui_data/youtube/audioset/class_labels_indices.csv"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    labels_path = os.path.join(script_dir, "..", "..", "datasets", "AudioSet_EV_v2PANNs_2020", "audioset_metadata", "class_labels_indices.csv")
     with open(labels_path, 'r') as f:
         reader = csv.reader(f)
         next(reader)  # skip header
@@ -451,7 +452,7 @@ if __name__ == "__main__":
     
     # 3. Load audio
     print("\n3. Loading audio...")
-    audio_path = "/Users/stefano/Documents/PhD_main_project/utils/R9_ZSCveAHg_7s.wav"
+    audio_path = os.path.join(script_dir, "..", "..", "datasets", "AudioSet_EV_v2PANNs_2020", "Positive_files", "unbalanced", "_1f3piTQtmo.wav")
     waveform, sr = sf.read(audio_path)
     waveform = torch.from_numpy(waveform).float()
     if waveform.dim() == 2:
@@ -467,8 +468,6 @@ if __name__ == "__main__":
     
     # 4. Create model and load checkpoint
     print("\n4. Creating model...")
-    # Load checkpoint
-    script_dir = os.path.dirname(os.path.abspath(__file__))
     checkpoint_path = os.path.join(script_dir, "checkpoint_closeto_.44.pt")
     model = EPANNs(sample_rate=SAMPLE_RATE)
     model.load_pretrained(checkpoint_path)

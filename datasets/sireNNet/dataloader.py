@@ -624,34 +624,28 @@ class sireNNetDataModule(pl.LightningDataModule):
                           collate_fn=sirennet_collate_fn,
                           persistent_workers=True if self.num_workers > 0 else False)
     
-    def test_dataloader(self) -> DataLoader:
-        """Return test dataloader (train mode only)."""
-        if self.mode != 'train':
-            raise ValueError("test_dataloader() only available in 'train' mode. Use test_dataloaders() for benchmark.")
-        
-        return DataLoader(self.test_dataset,
-                          batch_size=self.batch_size,
-                          shuffle=False,
-                          num_workers=self.num_workers,
-                          collate_fn=sirennet_collate_fn,
-                          persistent_workers=True if self.num_workers > 0 else False)
-    
-    def test_dataloaders(self):
-        """Return list of test dataloaders (benchmark mode: one per partition)."""
-        if self.mode != 'benchmark':
-            raise ValueError("test_dataloaders() only available in 'benchmark' mode")
-        
-        loaders = []
-        for partition in sorted(self.test_datasets.keys()):
-            loader = DataLoader(self.test_datasets[partition],
-                               batch_size=self.batch_size,
-                               shuffle=False,
-                               num_workers=self.num_workers,
-                               collate_fn=sirennet_collate_fn,
-                               persistent_workers=True if self.num_workers > 0 else False)
-            loaders.append(loader)
-        
-        return loaders
+    def test_dataloader(self):
+        """Return test dataloader(s) - single for train mode, list for benchmark CV."""
+        if self.mode == 'train':
+            # Single test loader for train mode
+            return DataLoader(self.test_dataset,
+                            batch_size=self.batch_size,
+                            shuffle=False,
+                            num_workers=self.num_workers,
+                            collate_fn=sirennet_collate_fn,
+                            persistent_workers=True if self.num_workers > 0 else False)
+        else:  # benchmark mode
+            # Multiple loaders for cross-validation (one per partition)
+            loaders = []
+            for partition in sorted(self.test_datasets.keys()):
+                loader = DataLoader(self.test_datasets[partition],
+                                    batch_size=self.batch_size,
+                                    shuffle=False,
+                                    num_workers=self.num_workers,
+                                    collate_fn=sirennet_collate_fn,
+                                    persistent_workers=True if self.num_workers > 0 else False)
+                loaders.append(loader)
+            return loaders
 
 
 # =============================================================================

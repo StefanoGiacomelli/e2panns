@@ -164,4 +164,4 @@ The current release includes:
 
 ## 📄 License
 
-Each dataset is governed by its respective license. Please refer to individual README files for specific license information and attribution requirements.
+Each dataset is ruled by its respective license. Please refer to individual README files for specific license information and attribution requirements.
