@@ -343,7 +343,7 @@ If you use this collection in your research, please cite the respective papers f
 Department of Engineering, Information Science & Mathematics (DISIM dpt.)
 University of L'Aquila, Italy
 
-![DISIM_logo](https://phdict.disim.univaq.it/wp-content/uploads/2024/06/logo-univaq-disim-2-2-768x283.png){width="400" height="150"}
+![DISIM_logo](https://phdict.disim.univaq.it/wp-content/uploads/2024/06/logo-univaq-disim-2-2-768x283.png)
 
 📧 Email: stefano.giacomelli@graduate.univaq.it  
 🔗 GitHub: https://github.com/StefanoGiacomelli 

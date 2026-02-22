@@ -86,3 +86,29 @@ class ModelCheckpoint(_ModelCheckpoint):
         # Optional: print confirmation
         if trainer.is_global_zero:
             print(f"Saved checkpoint pair: {os.path.basename(filepath)} + {os.path.basename(pt_filepath)}")
+    
+    def _remove_checkpoint(self, trainer, filepath: str):
+        """
+        Override to remove both .ckpt and .pt files when purging old checkpoints.
+        
+        This ensures that when Lightning removes an old .ckpt (due to save_top_k),
+        the corresponding .pt file is also removed, maintaining consistency.
+        
+        Args:
+            trainer: PyTorch Lightning Trainer
+            filepath: Path to checkpoint being removed (.ckpt)
+        """
+        # 1. Remove .ckpt using Lightning's logic
+        super()._remove_checkpoint(trainer, filepath)
+        
+        # 2. Remove corresponding .pt file
+        pt_filepath = filepath.replace('.ckpt', '.pt')
+        
+        if os.path.exists(pt_filepath):
+            try:
+                os.remove(pt_filepath)
+                if trainer.is_global_zero:
+                    print(f"Removed old checkpoint pair: {os.path.basename(filepath)} + {os.path.basename(pt_filepath)}")
+            except Exception as e:
+                if trainer.is_global_zero:
+                    print(f"Warning: Failed to remove {pt_filepath}: {e}")

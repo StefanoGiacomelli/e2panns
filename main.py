@@ -473,8 +473,7 @@ def get_callbacks(config: Dict[str, Any]):
                                      save_top_k=ckpt_config['save_top_k'],
                                      mode=ckpt_config['mode'],
                                      save_last=ckpt_config.get('save_last', True),
-                                     filename=ckpt_config.get('filename', 'epoch_{epoch:03d}'),
-                                     auto_insert_metric_name=ckpt_config.get('auto_insert_metric_name', False))
+                                     filename=ckpt_config.get('filename', 'epoch={epoch:03d}'))
         callbacks.append(checkpoint)
         print(f"✓ Added ModelCheckpoint (monitor={ckpt_config['monitor']}, save_top_k={ckpt_config['save_top_k']})")
     

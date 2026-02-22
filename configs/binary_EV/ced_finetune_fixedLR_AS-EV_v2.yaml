@@ -1,0 +1,154 @@
+# =============================================================================
+# CED ViT finetuned w. fixed learning rate on AudioSet EV v2 (AudioSet 2020 PANNs pre-training release)
+# =============================================================================
+# This configuration is designed for controlling the training pipeline.
+#
+# Usage:
+#   python main.py --config configs/example.yaml --mode fit+test
+#
+# To exploit benchmark mode (using pre-defined splits):
+#   python main.py --config configs/example.yaml --mode benchmark
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# EXPERIMENT
+# -----------------------------------------------------------------------------
+experiment:
+  name: "ced_finetune_fixedLR_AS-EV_v2"           # Experiment name (used for folders)
+  task: "binary"                                  # binary | multiclass
+  model_name: "ced"                               # epanns | ced | clap
+  pretrained: true                                # Load pretrained AudioSet weights
+  lightning_ckpt_path: None                       # No Lightning checkpoint, use pretrained .pt (if specified, overrides pretrained)
+  seed: 42                                        # Random seed for reproducibility
+
+# -----------------------------------------------------------------------------
+# PATHS
+# -----------------------------------------------------------------------------
+paths:
+  data_root: "./datasets"                                     # Root folder for datasets
+  checkpoints: "./checkpoints/ced_finetune_fixedLR_AS-EV_v2"  # Model checkpoints
+  logs: "./logs/ced_finetune_fixedLR_AS-EV_v2"                # TensorBoard logs
+  results: "./results/ced_finetune_fixedLR_AS-EV_v2"          # Metrics and predictions
+
+# -----------------------------------------------------------------------------
+# DATA
+# -----------------------------------------------------------------------------
+data:
+  # Single dataset mode (same for train/dev/test)
+  dataset: "AudioSet_EV_v2PANNs_2020"             # Dataset name (folder name in data_root)
+  mode: "train"                                   # train | benchmark
+  
+  # Mixed datasets mode
+  # train_dev_dataset: "AudioSet_EV_v2PANNs_2020"
+  # train_dev_mode: "train"
+  # test_dataset: "sireNNet"
+  # test_mode: "benchmark"
+  
+  # DataLoader parameters
+  batch_size: 32                                  # Batch size
+  num_workers: 0                                  # 0 to avoid multiprocessing issues on some systems
+  
+  # Audio preprocessing
+  target_sr: 16000                                # Must match model: 32k=epanns, 16k=ced, 48k=clap
+  target_duration: 10.0                           # Target audio duration in seconds
+
+# -----------------------------------------------------------------------------
+# TRAINING
+# -----------------------------------------------------------------------------
+training:
+  max_epochs: 100                                 # Maximum training epochs
+  val_check_interval: 1.0                         # Validate every N epochs (1.0 = every epoch)
+  gradient_clip_val: 1.0                          # Gradient clipping value
+  precision: 32                                   # 32 for full precision, 16 for mixed precision
+  # limit_train_batches: 1                          # Only 1 batch (debugging purposes)
+  # limit_val_batches: 1                            # Only 1 batch (debugging purposes)
+  # limit_test_batches: 1                           # Only 1 batch (debugging purposes)
+
+  # Optimizer (Adam)
+  optimizer:
+    lr: 0.0003                                    # Learning rate (choose between: 0.0003 or 0.001)
+    weight_decay: 0.000001                        # L2 regularization
+    betas: [0.9, 0.999]                           # Adam beta parameters
+    eps: 0.00000001                               # Epsilon for numerical stability
+    amsgrad: true                                 # Use AMSGrad variant
+  
+  # Learning rate scheduler
+  scheduler:
+    type: "exponential"                           # exponential | cyclic_cosine
+    # ExponentialLR parameters
+    gamma: 1.00                                   # Decay factor
+    # CyclicCosineLR parameters
+    # init_decay_epochs: 10                        # Number of epochs for initial decay phase
+    # min_decay_lr: 0.0001                         # Minimum learning rate
+    # restart_interval: 10                         # Number of epochs between restarts (cycle length)
+    # restart_interval_multiplier: None            # Multiplier for restart intervals (geometric increase)
+    # restart_lr: 0.01                             # Learning rate at restarts (if None, uses initial lr)
+    # warmup_epochs: 5                             # Number of warmup epochs at the start of training
+    # warmup_start_lr: 0.001                       # Starting learning rate for warmup (must be set if warmup_epochs > 0)
+
+
+# -----------------------------------------------------------------------------
+# MODEL
+# -----------------------------------------------------------------------------
+model:
+  threshold: 0.5                                  # Classification threshold (binary only)
+  f_beta: 0.8                                     # For F-beta score (binary only, beta < 1 emphasizes precision, beta > 1 emphasizes recall)
+
+# -----------------------------------------------------------------------------
+# TENSORBOARD
+# -----------------------------------------------------------------------------
+tensorboard:
+  log_every_n_steps: 1                            # Log metrics every N training steps
+  log_lr: true                                    # Log learning rate
+  log_grad_norm: false                            # Log gradient norms (useful for debugging)
+
+# -----------------------------------------------------------------------------
+# CALLBACKS
+# -----------------------------------------------------------------------------
+callbacks:
+  # Early stopping (disabled for 1 epoch test)
+  early_stopping:
+    monitor: "val_f1"
+    patience: 15
+    mode: "max"
+    min_delta: 0.01
+  
+  # Model checkpoint
+  model_checkpoint:
+    monitor: "val_f1"                             # Metric to monitor
+    save_top_k: 1                                 # Save only best model
+    mode: "max"                                   # max for metrics to maximize
+    save_last: true                               # Save last checkpoint for test
+    filename: "{epoch:03d}_{val_f1:.4f}"          # Format: epoch=xxx-val_f1=y.yyyy
+
+# -----------------------------------------------------------------------------
+# HARDWARE
+# -----------------------------------------------------------------------------
+hardware:
+  accelerator: "auto"                             # auto | gpu | cpu | mps (Apple Silicon)
+  devices: 1                                      # Number of devices to use
+  strategy: null                                  # null for single device, ddp for distributed
+
+# =============================================================================
+# NOTES
+# =============================================================================
+# Available datasets (must exist in data_root):
+#   - AudioSet_EV_v1_2025      (binary, multiclass)
+#   - AudioSet_EV_v2PANNs_2020 (binary, multiclass)
+#   - sireNNet                 (binary, multiclass)
+#   - LSSiren                  (binary only)
+#   - ESC50                    (binary only)
+#   - FSD50K                   (binary only)
+#   - UrbanSound8K             (binary only)
+#
+# Available models:
+#   - epanns: 24M params, 32kHz, fast
+#   - ced:    86M params, 16kHz, medium
+#   - clap:  158M params, 48kHz, slow
+#
+# Execution modes:
+#   --mode fit         : Train + validate only
+#   --mode test        : Test only split (requires checkpoint)
+#   --mode fit+test    : Train, validate, then test
+#   --mode benchmark   : Test only with benchmark splits (pre-defined partitions)
+# =============================================================================

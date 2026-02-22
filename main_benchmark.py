@@ -1,6 +1,6 @@
 """
-Benchmark Evaluation Script for E2PANNs
-========================================
+Benchmark Evaluation Script for EV recognition framework
+========================================================
 Test pretrained or finetuned models on all available datasets.
 
 Usage:
@@ -48,9 +48,13 @@ from datasets.UrbanSound8K.dataloader import UrbanSound8KDataModule, urbansound8
 # ============================================================================
 
 # Model Configuration
-MODEL_NAME = 'epanns'                                           # 'epanns', 'ced', 'clap'
-CHECKPOINT_TYPE = 'pretrained'                                  # 'pretrained' (.pt) or 'finetuned' (.ckpt)
-CHECKPOINT_PATH = './models/epanns/checkpoint_closeto_.44.pt'   # Path to AudioSet checkpoint
+MODEL_NAME = 'epanns'                                               # 'epanns', 'ced', 'clap'
+# MODEL_NAME = 'ced'
+# MODEL_NAME = 'clap'
+CHECKPOINT_TYPE = 'pretrained'                                      # 'pretrained' (.pt) or 'finetuned' (.ckpt)
+CHECKPOINT_PATH = './models/epanns/checkpoint_closeto_.44.pt'       # Path to AudioSet checkpoint
+# CHECKPOINT_PATH = './models/ced/audiotransformer_base_mAP_4999.pt'
+# CHECKPOINT_PATH = './models/clap/630k-audioset-fusion-best.pt'
 
 # For finetuned (EV-framework) checkpoint example:
 # CHECKPOINT_TYPE = 'finetuned'
