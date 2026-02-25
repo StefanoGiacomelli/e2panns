@@ -177,8 +177,8 @@ cython_debug/
 *.ckpt
 *.pt
 
-# Checkpoints directory
-checkpoints/
+# Checkpoints subdirectories (but keep root files)
+checkpoints/*/
 
 .DS_store
 
