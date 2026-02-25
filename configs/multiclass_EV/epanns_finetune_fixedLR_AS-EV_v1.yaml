@@ -46,7 +46,6 @@ data:
   
   # DataLoader parameters
   batch_size: 32                                  # Batch size
-  num_workers: 0                                  # 0 to avoid multiprocessing issues on some systems
   
   # Audio preprocessing
   target_sr: 32000                                # Must match model: 32k=epanns, 16k=ced, 48k=clap
@@ -60,9 +59,9 @@ training:
   val_check_interval: 1.0                         # Validate every N epochs (1.0 = every epoch)
   gradient_clip_val: 1.0                          # Gradient clipping value
   precision: 32                                   # 32 for full precision, 16 for mixed precision
-  limit_train_batches: 1                          # Only 1 batch (debugging purposes)
-  limit_val_batches: 1                            # Only 1 batch (debugging purposes)
-  limit_test_batches: 1                           # Only 1 batch (debugging purposes)
+  # limit_train_batches: 1                          # Only 1 batch (debugging purposes)
+  # limit_val_batches: 1                            # Only 1 batch (debugging purposes)
+  # limit_test_batches: 1                           # Only 1 batch (debugging purposes)
 
   # Optimizer (Adam)
   optimizer:

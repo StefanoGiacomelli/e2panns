@@ -303,7 +303,7 @@ class sireNNetDataModule(pl.LightningDataModule):
                  label_map: Optional[dict] = None,
                  target_size: int = 96000,
                  target_sr: int = 32000,
-                 num_workers: int = 2):
+                 num_workers: Optional[int] = None):
         """
         Initialize sireNNet DataModule.
         
@@ -338,7 +338,11 @@ class sireNNetDataModule(pl.LightningDataModule):
         self.aug_prob = aug_prob
         self.target_size = target_size
         self.target_sr = target_sr
-        self.num_workers = num_workers
+        
+        # Auto-configure workers and memory settings
+        self.num_workers = num_workers if num_workers is not None else min(8, os.cpu_count() // 4)
+        self.pin_memory = torch.cuda.is_available()
+        self.persistent_workers = self.num_workers > 0
         
         # Set label_map based on label_mode (if not provided)
         if label_map is None:
@@ -607,10 +611,11 @@ class sireNNetDataModule(pl.LightningDataModule):
                           batch_size=self.batch_size,
                           shuffle=self.train_shuffle,
                           num_workers=self.num_workers,
+                          pin_memory=self.pin_memory,
+                          persistent_workers=self.persistent_workers,
                           collate_fn=sirennet_collate_fn,
                           worker_init_fn=self._seed_worker,
-                          generator=self.generator,
-                          persistent_workers=True if self.num_workers > 0 else False)
+                          generator=self.generator)
     
     def val_dataloader(self) -> DataLoader:
         """Return validation dataloader."""
@@ -621,8 +626,9 @@ class sireNNetDataModule(pl.LightningDataModule):
                           batch_size=self.batch_size,
                           shuffle=False,
                           num_workers=self.num_workers,
-                          collate_fn=sirennet_collate_fn,
-                          persistent_workers=True if self.num_workers > 0 else False)
+                          pin_memory=self.pin_memory,
+                          persistent_workers=self.persistent_workers,
+                          collate_fn=sirennet_collate_fn)
     
     def test_dataloader(self):
         """Return test dataloader(s) - single for train mode, list for benchmark CV."""
@@ -632,8 +638,9 @@ class sireNNetDataModule(pl.LightningDataModule):
                             batch_size=self.batch_size,
                             shuffle=False,
                             num_workers=self.num_workers,
-                            collate_fn=sirennet_collate_fn,
-                            persistent_workers=True if self.num_workers > 0 else False)
+                            pin_memory=self.pin_memory,
+                            persistent_workers=self.persistent_workers,
+                            collate_fn=sirennet_collate_fn)
         else:  # benchmark mode
             # Multiple loaders for cross-validation (one per partition)
             loaders = []

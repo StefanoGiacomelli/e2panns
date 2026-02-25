@@ -294,7 +294,8 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
                  batch_size: int = 32,
                  split_ratios: tuple = (0.8, 0.1, 0.1),
                  balance_negatives: bool = True,
-                 seed: int = 42):
+                 seed: int = 42,
+                 num_workers: Optional[int] = None):
         """
         Args:
             TP_csv: Path to positives CSV
@@ -325,6 +326,11 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
         self.split_ratios = split_ratios
         self.balance_negatives = balance_negatives
         self.seed = seed
+        
+        # Auto-configure workers and memory settings
+        self.num_workers = num_workers if num_workers is not None else min(8, os.cpu_count() // 4)
+        self.pin_memory = torch.cuda.is_available()
+        self.persistent_workers = self.num_workers > 0
         
         # Set global seed
         pl.seed_everything(seed)
@@ -566,9 +572,10 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
             self.train_ds,
             batch_size=self.batch_size,
             shuffle=True,
-            collate_fn=custom_collate_fn,
-            num_workers=0,
-            persistent_workers=False
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            persistent_workers=self.persistent_workers,
+            collate_fn=custom_collate_fn
         )
     
     def val_dataloader(self):
@@ -576,9 +583,10 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
             self.val_ds,
             batch_size=self.batch_size,
             shuffle=False,
-            collate_fn=custom_collate_fn,
-            num_workers=0,
-            persistent_workers=False
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            persistent_workers=self.persistent_workers,
+            collate_fn=custom_collate_fn
         )
     
     def test_dataloader(self):
@@ -586,9 +594,10 @@ class AudioSetEV_v2_DataModule(pl.LightningDataModule):
             self.test_ds,
             batch_size=self.batch_size,
             shuffle=False,
-            collate_fn=custom_collate_fn,
-            num_workers=0,
-            persistent_workers=False
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            persistent_workers=self.persistent_workers,
+            collate_fn=custom_collate_fn
         )
 
 

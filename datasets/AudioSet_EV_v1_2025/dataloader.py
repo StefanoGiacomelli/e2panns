@@ -325,7 +325,7 @@ class AudioSetEV_v1_DataModule(pl.LightningDataModule):
                  label_map: Optional[dict] = None,
                  target_size: int = 320000,
                  target_sr: int = 32000,
-                 num_workers: int = 2):
+                 num_workers: Optional[int] = None):
         """
         Initialize AudioSet EV v1 DataModule.
         
@@ -367,7 +367,11 @@ class AudioSetEV_v1_DataModule(pl.LightningDataModule):
         self.label_map = label_map
         self.target_size = target_size
         self.target_sr = target_sr
-        self.num_workers = num_workers
+        
+        # Auto-configure workers and memory settings
+        self.num_workers = num_workers if num_workers is not None else min(8, os.cpu_count() // 4)
+        self.pin_memory = torch.cuda.is_available()
+        self.persistent_workers = self.num_workers > 0
         
         # Datasets (will be initialized in setup())
         self.train_dataset = None
@@ -707,10 +711,11 @@ class AudioSetEV_v1_DataModule(pl.LightningDataModule):
                           batch_size=self.batch_size,
                           shuffle=self.train_shuffle,
                           num_workers=self.num_workers,
+                          pin_memory=self.pin_memory,
+                          persistent_workers=self.persistent_workers,
                           collate_fn=audioset_ev_v1_collate_fn,
                           worker_init_fn=self._seed_worker,
-                          generator=self.generator,
-                          persistent_workers=True if self.num_workers > 0 else False)
+                          generator=self.generator)
     
     def val_dataloader(self) -> DataLoader:
         """Return validation dataloader."""
@@ -721,8 +726,9 @@ class AudioSetEV_v1_DataModule(pl.LightningDataModule):
                           batch_size=self.batch_size,
                           shuffle=False,
                           num_workers=self.num_workers,
-                          collate_fn=audioset_ev_v1_collate_fn,
-                          persistent_workers=True if self.num_workers > 0 else False)
+                          pin_memory=self.pin_memory,
+                          persistent_workers=self.persistent_workers,
+                          collate_fn=audioset_ev_v1_collate_fn)
     
     def test_dataloader(self) -> DataLoader:
         """Return test dataloader."""
@@ -730,8 +736,9 @@ class AudioSetEV_v1_DataModule(pl.LightningDataModule):
                           batch_size=self.batch_size,
                           shuffle=False,
                           num_workers=self.num_workers,
-                          collate_fn=audioset_ev_v1_collate_fn,
-                          persistent_workers=True if self.num_workers > 0 else False)
+                          pin_memory=self.pin_memory,
+                          persistent_workers=self.persistent_workers,
+                          collate_fn=audioset_ev_v1_collate_fn)
 
 
 # =============================================================================

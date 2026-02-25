@@ -1,0 +1,21 @@
+# =============================================================================
+# E-PANNs AudioSet Pretrained Model - Benchmark Configuration
+# =============================================================================
+# Benchmark E-PANNs pretrained on AudioSet across all EV recognition datasets
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/epanns_audioset_pretrained.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "epanns"                                                    # Model architecture
+  checkpoint_type: "pretrained"                                     # 'pretrained' or 'finetuned'
+  checkpoint_path: "./models/epanns/checkpoint_closeto_.44.pt"      # Path to model checkpoint
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32                                                    # Batch size for testing (num_workers auto-configured)
+  limit_test_batches: null                                          # null = full dataset, 0.1 = 10% of dataset
+  datasets_to_test: []                                              # [] = all datasets, or specify: ['ESC50', 'AudioSet_EV_v1_2025', ...]
+  output_dir: "./benchmark_results"                                 # Output directory for results

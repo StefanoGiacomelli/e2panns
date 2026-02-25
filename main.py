@@ -19,8 +19,8 @@ from typing import Dict, Any
 import numpy as np
 import json
 import yaml
+import torch
 import pytorch_lightning as pl
-from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
@@ -290,9 +290,8 @@ def get_datamodule(config: Dict[str, Any], dataset_name: str = None, mode_overri
     
     print(f"✓ Initializing {dataset_name} DataModule (label_mode='{label_mode}', mode='{mode}')")
     
-    # Common parameters
+    # Common parameters (num_workers auto-configured in DataModule)
     common_params = {'batch_size': data_config['batch_size'],
-                     'num_workers': data_config['num_workers'],
                      'target_sr': data_config['target_sr'],
                      'seed': exp_config['seed'],
                      'mode': mode}
@@ -605,7 +604,7 @@ def main():
                          log_every_n_steps=tensorboard_config.get('log_every_n_steps', 50),
                          callbacks=callbacks,
                          logger=logger,
-                         deterministic=True)
+                         deterministic="warn")  # Allows non-deterministic ops (e.g., CLAP upsampling) with warnings
     
     print(f"✓ Trainer initialized with max_epochs={config['training']['max_epochs']}")
     

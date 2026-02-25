@@ -15,7 +15,7 @@
 # -----------------------------------------------------------------------------
 experiment:
   name: "ced_finetune_fixedLR_AS-EV_v1"           # Experiment name (used for folders)
-  task: "multiclass"                              # binary | multiclass
+  task: "binary"                                  # binary | multiclass
   model_name: "ced"                               # epanns | ced | clap
   pretrained: true                                # Load pretrained AudioSet weights
   lightning_ckpt_path: None                       # No Lightning checkpoint, use pretrained .pt (if specified, overrides pretrained)
@@ -45,8 +45,7 @@ data:
   # test_mode: "benchmark"
   
   # DataLoader parameters
-  batch_size: 32                                  # Batch size
-  num_workers: 0                                  # 0 to avoid multiprocessing issues on some systems
+  batch_size: 32                                  # Batch size (num_workers auto-configured)
   
   # Audio preprocessing
   target_sr: 16000                                # Must match model: 32k=epanns, 16k=ced, 48k=clap

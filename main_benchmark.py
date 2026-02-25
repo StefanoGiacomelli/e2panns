@@ -4,9 +4,13 @@ Benchmark Evaluation Script for EV recognition framework
 Test pretrained or finetuned models on all available datasets.
 
 Usage:
+    # Use default configuration (backward compatible)
     python main_benchmark.py
+    
+    # Use YAML configuration
+    python main_benchmark.py --config benchmark_configs/epanns_audioset_pretrained.yaml
 
-Configure parameters in the CONFIGURATION section below.
+Configure parameters in the CONFIGURATION section below or via YAML config.
 
 Author: Stefano Giacomelli - Ph.D. candidate in ICT (DISIM dpt. - University of L'Aquila)
 """
@@ -15,6 +19,8 @@ import os
 import sys
 import csv
 import json
+import yaml
+import argparse
 import shutil
 import tempfile
 from datetime import datetime
@@ -44,40 +50,71 @@ from datasets.UrbanSound8K.dataloader import UrbanSound8KDataModule, urbansound8
 
 
 # ============================================================================
+# CONFIGURATION LOADING
+# ============================================================================
+
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='EV Benchmark models on all datasets',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--config', type=str, default=None,
+                        help='Path to benchmark config YAML file (optional)')
+    return parser.parse_args()
+
+
+def load_config(config_path: str) -> dict:
+    """Load benchmark configuration from YAML file."""
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    print(f"✓ Loaded benchmark config from: {config_path}")
+    return config
+
+
+# ============================================================================
 # CONFIGURATION
 # ============================================================================
 
-# Model Configuration
-MODEL_NAME = 'epanns'                                               # 'epanns', 'ced', 'clap'
-# MODEL_NAME = 'ced'
-# MODEL_NAME = 'clap'
-CHECKPOINT_TYPE = 'pretrained'                                      # 'pretrained' (.pt) or 'finetuned' (.ckpt)
-CHECKPOINT_PATH = './models/epanns/checkpoint_closeto_.44.pt'       # Path to AudioSet checkpoint
-# CHECKPOINT_PATH = './models/ced/audiotransformer_base_mAP_4999.pt'
-# CHECKPOINT_PATH = './models/clap/630k-audioset-fusion-best.pt'
+# Parse command line arguments
+args = parse_args()
 
-# For finetuned (EV-framework) checkpoint example:
-# CHECKPOINT_TYPE = 'finetuned'
-# CHECKPOINT_PATH = './checkpoints/best_model.ckpt'
+# Load configuration from YAML if provided, otherwise use defaults
+if args.config:
+    config = load_config(args.config)
+    
+    # Model Configuration
+    MODEL_NAME = config['model']['name']
+    CHECKPOINT_TYPE = config['model']['checkpoint_type']
+    CHECKPOINT_PATH = config['model']['checkpoint_path']
+    
+    # Benchmark Configuration
+    BATCH_SIZE = config['benchmark']['batch_size']
+    LIMIT_TEST_BATCHES = config['benchmark']['limit_test_batches']
+    DATASETS_TO_TEST = config['benchmark']['datasets_to_test']
+    OUTPUT_DIR = config['benchmark']['output_dir']
+else:
+    # Default Configuration (backward compatibility)
+    # Model Configuration
+    MODEL_NAME = 'epanns'                                               # 'epanns', 'ced', 'clap'
+    CHECKPOINT_TYPE = 'pretrained'                                      # 'pretrained' (.pt) or 'finetuned' (.ckpt)
+    CHECKPOINT_PATH = './models/epanns/checkpoint_closeto_.44.pt'       # Path to AudioSet checkpoint
+    
+    # Datasets to test
+    DATASETS_TO_TEST = []                                               # Empty = all, or ['ESC50', 'AudioSet_EV_v1_2025', ...]
+    
+    # Test Configuration
+    BATCH_SIZE = 32
+    LIMIT_TEST_BATCHES = None                                           # Set to a float (e.g., 0.1) to limit to a fraction of the test set
+    
+    # Output Configuration
+    OUTPUT_DIR = './benchmark_results'
 
-# Datasets to test
-DATASETS_TO_TEST = []                                           # Empty = all, or ['ESC50', 'AudioSet_EV_v1_2025', ...]
-
-# Test Configuration
-BATCH_SIZE = 32
-NUM_WORKERS = 0
-LIMIT_TEST_BATCHES = None                                       # Set to a float (e.g., 0.1) to limit to a fraction of the test set
-
-# Hardware
+# Fixed Configuration (always the same)
 DEVICE = 'auto'
-
-# Reproducibility
 SEED = 42
-
-# Output Configuration
-OUTPUT_DIR = './benchmark_results'
-
-# Sample Rate per model (auto-determined)
 SAMPLE_RATES = {'epanns': 32000, 'ced': 16000, 'clap': 48000}
 
 # Dataset compatibility with tasks
@@ -114,6 +151,7 @@ def set_seed(seed: int):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     pl.seed_everything(seed, workers=True)
+
 
 
 def load_model(checkpoint_type: str, checkpoint_path: str, model_name: str, task: str, results_path: str):
@@ -192,8 +230,8 @@ def initialize_datamodule(dataset_name: str, task: str, model_name: str):
     mode = 'benchmark' if dataset_name in CV_DATASETS else 'train'
     label_mode = 'binary' if task == 'binary' else 'multi_class'
     
+    # Common parameters (num_workers auto-configured in DataModule)
     common_params = {'batch_size': BATCH_SIZE,
-                     'num_workers': NUM_WORKERS,
                      'seed': SEED,
                      'mode': mode,
                      'target_sr': target_sr}
@@ -310,7 +348,7 @@ def test_dataset(model, datamodule, dataset_name: str, task: str, output_dir: st
                               enable_checkpointing=False,
                               enable_progress_bar=True,
                               limit_test_batches=LIMIT_TEST_BATCHES,
-                              deterministic=True)
+                              deterministic="warn")  # Allows non-deterministic ops with warnings
             
             # Test this fold
             fold_results = trainer.test(model, dataloaders=fold_loader)
@@ -327,7 +365,7 @@ def test_dataset(model, datamodule, dataset_name: str, task: str, output_dir: st
                           enable_checkpointing=False,
                           enable_progress_bar=True,
                           limit_test_batches=LIMIT_TEST_BATCHES,
-                          deterministic=True)
+                          deterministic="warn")  # Allows non-deterministic ops with warnings
         
         results = trainer.test(model, datamodule=datamodule)
     

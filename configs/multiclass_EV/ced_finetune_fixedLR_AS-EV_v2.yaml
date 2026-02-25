@@ -46,7 +46,6 @@ data:
   
   # DataLoader parameters
   batch_size: 32                                  # Batch size
-  num_workers: 0                                  # 0 to avoid multiprocessing issues on some systems
   
   # Audio preprocessing
   target_sr: 16000                                # Must match model: 32k=epanns, 16k=ced, 48k=clap

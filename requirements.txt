@@ -2,14 +2,17 @@
 tqdm
 ipython
 ipykernel
+soundfile
 
 # Computing
-numpy
-torch
+# numpy
+# torch
 einops
 transformers
 fvcore
-torchaudio
+# torchaudio
+torchlibrosa
+# torchvision
 pytorch-lightning
 torchmetrics
 scikit-learn
