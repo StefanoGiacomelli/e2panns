@@ -1,0 +1,27 @@
+# =============================================================================
+# EPANNs Re-trained Binary - AudioSet-EV v2 - Benchmark Configuration
+# =============================================================================
+# Benchmark EPANNs re-trained from scratch (non-pretrained) on AudioSet-EV v2 (binary task)
+#
+# Training details:
+#   - Dataset: AudioSet_EV_v2PANNs_2020
+#   - Task: Binary Emergency Vehicle classification
+#   - Initialization: Random (Xavier Uniform, no pretrained weights)
+#   - Best epoch: 56 (F1=0.9571)
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/re-trained/epanns_retrained_binary_AS-EV_v2.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "epanns"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/re-training_EV/epanns_scratch_binary_AS-EV_v2/epoch=056_val_f1=0.9571.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32
+  limit_test_batches: null
+  datasets_to_test: []
+  output_dir: "./benchmark_results"

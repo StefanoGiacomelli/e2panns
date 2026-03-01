@@ -229,3 +229,7 @@ datasets/UrbanSound8K/UrbanSound8K_README.txt
 
 # Salt submodule (not tracked)
 salt/
+
+# Logs - Exclude all contents except README.md
+logs/*
+!logs/README.md

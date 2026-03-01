@@ -1,0 +1,27 @@
+# =============================================================================
+# CED Re-trained Binary - AudioSet-EV v1 - Benchmark Configuration
+# =============================================================================
+# Benchmark CED re-trained from scratch (non-pretrained) on AudioSet-EV v1 (binary task)
+#
+# Training details:
+#   - Dataset: AudioSet_EV_v1_2025
+#   - Task: Binary Emergency Vehicle classification
+#   - Initialization: Random (Truncated Normal, no pretrained weights)
+#   - Best epoch: 16 (F1=0.7812)
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/re-trained/ced_retrained_binary_AS-EV_v1.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "ced"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/re-training_EV/ced_scratch_binary_AS-EV_v1/epoch=016_val_f1=0.7812.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32
+  limit_test_batches: null
+  datasets_to_test: []
+  output_dir: "./benchmark_results"

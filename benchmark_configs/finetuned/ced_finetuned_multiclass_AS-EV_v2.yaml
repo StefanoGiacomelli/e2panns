@@ -1,0 +1,26 @@
+# =============================================================================
+# CED Finetuned Multiclass - AudioSet-EV v2 - Benchmark Configuration
+# =============================================================================
+# Benchmark CED finetuned on AudioSet-EV v2 (multiclass task) across all datasets
+#
+# Training details:
+#   - Dataset: AudioSet_EV_v2PANNs_2020
+#   - Task: 4-class Emergency Vehicle classification (Traffic/Police/Ambulance/Fire)
+#   - Best epoch: 16 (F1=0.7301)
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/ced_finetuned_multiclass_AS-EV_v2.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "ced"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/multiclass_EV/ced_finetune_fixedLR_AS-EV_v2/epoch=016_val_f1=0.7301.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32
+  limit_test_batches: null
+  datasets_to_test: []
+  output_dir: "./benchmark_results"

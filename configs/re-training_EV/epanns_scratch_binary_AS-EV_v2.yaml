@@ -1,0 +1,109 @@
+# =============================================================================
+# EPANNs training FROM SCRATCH (non-pretrained) on AudioSet EV v2
+# =============================================================================
+# Training EPANNs from random initialization without AudioSet pretrained weights.
+# Extended training: 500 epochs with patience=50 for early stopping.
+# Smaller batch size (16) for better generalization from scratch.
+#
+# Usage:
+#   python main.py --config configs/epanns_scratch_binary_AS-EV_v2.yaml --mode fit+test
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# EXPERIMENT
+# -----------------------------------------------------------------------------
+experiment:
+  name: "epanns_scratch_binary_AS-EV_v2"          # Experiment name (used for folders)
+  task: "binary"                                  # binary | multiclass
+  model_name: "epanns"                            # epanns | ced | clap
+  pretrained: false                               # NO pretrained weights - training from scratch!
+  lightning_ckpt_path: None                       # No Lightning checkpoint
+  seed: 42                                        # Random seed for reproducibility
+
+# -----------------------------------------------------------------------------
+# PATHS
+# -----------------------------------------------------------------------------
+paths:
+  data_root: "./datasets"                                           # Root folder for datasets
+  checkpoints: "./checkpoints/epanns_scratch_binary_AS-EV_v2"       # Model checkpoints
+  logs: "./logs/epanns_scratch_binary_AS-EV_v2"                     # TensorBoard logs
+  results: "./results/epanns_scratch_binary_AS-EV_v2"               # Metrics and predictions
+
+# -----------------------------------------------------------------------------
+# DATA
+# -----------------------------------------------------------------------------
+data:
+  # Single dataset mode (same for train/dev/test)
+  dataset: "AudioSet_EV_v2PANNs_2020"             # Dataset name (folder name in data_root)
+  mode: "train"                                   # train | benchmark
+  
+  # DataLoader parameters
+  batch_size: 16                                  # Smaller batch for from-scratch training
+  
+  # Audio preprocessing
+  target_sr: 32000                                # EPANNs requires 32kHz
+  target_duration: 10.0                           # Target audio duration in seconds
+
+# -----------------------------------------------------------------------------
+# TRAINING
+# -----------------------------------------------------------------------------
+training:
+  max_epochs: 500                                 # Extended training for from-scratch
+  val_check_interval: 1.0                         # Validate every N epochs (1.0 = every epoch)
+  gradient_clip_val: 1.0                          # Gradient clipping value
+  precision: 32                                   # 32 for full precision, 16 for mixed precision
+
+  # Optimizer (Adam)
+  optimizer:
+    lr: 0.001                                     # Learning rate
+    weight_decay: 0.000001                        # L2 regularization
+    betas: [0.9, 0.999]                           # Adam beta parameters
+    eps: 0.00000001                               # Epsilon for numerical stability
+    amsgrad: true                                 # Use AMSGrad variant
+  
+  # Learning rate scheduler
+  scheduler:
+    type: "exponential"                           # exponential | cyclic_cosine
+    gamma: 1.00                                   # Decay factor (1.00 = no decay)
+
+# -----------------------------------------------------------------------------
+# MODEL
+# -----------------------------------------------------------------------------
+model:
+  threshold: 0.5                                  # Classification threshold (binary only)
+  f_beta: 0.8                                     # For F-beta score
+
+# -----------------------------------------------------------------------------
+# TENSORBOARD
+# -----------------------------------------------------------------------------
+tensorboard:
+  log_every_n_steps: 1                            # Log metrics every N training steps
+  log_lr: true                                    # Log learning rate
+  log_grad_norm: false                            # Log gradient norms
+
+# -----------------------------------------------------------------------------
+# CALLBACKS
+# -----------------------------------------------------------------------------
+callbacks:
+  # Early stopping (extended patience for from-scratch training)
+  early_stopping:
+    monitor: "val_f1"
+    patience: 50                                  # Extended patience
+    mode: "max"
+    min_delta: 0.01
+  
+  # Model checkpoint
+  model_checkpoint:
+    monitor: "val_f1"                             # Metric to monitor
+    save_top_k: 1                                 # Save only best model
+    mode: "max"                                   # max for metrics to maximize
+    save_last: true                               # Save last checkpoint for test
+    filename: "{epoch:03d}_{val_f1:.4f}"          # Format: epoch=xxx-val_f1=y.yyyy
+
+# -----------------------------------------------------------------------------
+# HARDWARE
+# -----------------------------------------------------------------------------
+hardware:
+  accelerator: "auto"                             # auto | gpu | cpu | mps (Apple Silicon)
+  devices: 1                                      # Number of devices to use
+  strategy: null                                  # null for single device, ddp for distributed

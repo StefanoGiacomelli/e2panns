@@ -1,0 +1,27 @@
+# =============================================================================
+# EPANNs Re-trained Multiclass - AudioSet-EV v2 - Benchmark Configuration
+# =============================================================================
+# Benchmark EPANNs re-trained from scratch (non-pretrained) on AudioSet-EV v2 (multiclass task)
+#
+# Training details:
+#   - Dataset: AudioSet_EV_v2PANNs_2020
+#   - Task: 4-class Emergency Vehicle classification (Traffic/Police/Ambulance/Fire)
+#   - Initialization: Random (Xavier Uniform, no pretrained weights)
+#   - Best epoch: 1 (F1=0.1332)
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/re-trained/epanns_retrained_multiclass_AS-EV_v2.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "epanns"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/re-training_EV/epanns_scratch_multiclass_AS-EV_v2/epoch=001_val_f1=0.1332.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32
+  limit_test_batches: null
+  datasets_to_test: []
+  output_dir: "./benchmark_results"

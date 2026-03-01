@@ -1,0 +1,14 @@
+Dataset,Fold,Task,Accuracy,Precision,Recall,Specificity,F1,AUROC,FBeta
+AudioSet_EV_v1_2025,-,multiclass,0.4489,0.2278,0.4140,0.8098,0.2938,0.6920,0.2762
+AudioSet_EV_v2PANNs_2020,-,multiclass,0.4657,0.2958,0.4772,0.8255,0.3450,0.7418,0.3311
+sireNNet,fold_1,multiclass,0.5000,0.2500,0.5000,0.8333,0.3333,0.5833,0.3106
+sireNNet,fold_2,multiclass,0.5000,0.2667,0.5000,0.8333,0.3429,0.6667,0.3222
+sireNNet,fold_3,multiclass,0.5000,0.2909,0.5000,0.8333,0.3556,0.7083,0.3379
+sireNNet,fold_4,multiclass,0.5000,0.2667,0.5000,0.8333,0.3429,0.6875,0.3222
+sireNNet,fold_5,multiclass,0.4688,0.2500,0.4688,0.8229,0.3214,0.6973,0.3020
+sireNNet,fold_6,multiclass,0.4688,0.2570,0.4688,0.8229,0.3252,0.7085,0.3067
+sireNNet,fold_7,multiclass,0.4609,0.2598,0.4609,0.8203,0.3231,0.7028,0.3058
+sireNNet,fold_8,multiclass,0.4590,0.2640,0.4590,0.8197,0.3242,0.7099,0.3077
+sireNNet,fold_9,multiclass,0.4600,0.2692,0.4600,0.8200,0.3279,0.7153,0.3119
+sireNNet,fold_10,multiclass,0.4575,0.2644,0.4575,0.8192,0.3248,0.7141,0.3083
+sireNNet,CV_Aggregate,multiclass,0.4775 ± 0.0187,0.2639 ± 0.0111,0.4775 ± 0.0187,0.8258 ± 0.0062,0.3321 ± 0.0108,0.6894 ± 0.0380,0.3135 ± 0.0103

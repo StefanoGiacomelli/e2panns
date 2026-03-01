@@ -1,0 +1,26 @@
+# =============================================================================
+# CLAP Finetuned Multiclass - AudioSet-EV v2 - Benchmark Configuration
+# =============================================================================
+# Benchmark CLAP finetuned on AudioSet-EV v2 (multiclass task) across all datasets
+#
+# Training details:
+#   - Dataset: AudioSet_EV_v2PANNs_2020
+#   - Task: 4-class Emergency Vehicle classification (Traffic/Police/Ambulance/Fire)
+#   - Best epoch: 4 (F1=0.7331)
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/clap_finetuned_multiclass_AS-EV_v2.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "clap"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/multiclass_EV/clap_finetune_fixedLR_AS-EV_v2/epoch=004_val_f1=0.7331.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32
+  limit_test_batches: null
+  datasets_to_test: []
+  output_dir: "./benchmark_results"

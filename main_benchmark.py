@@ -85,6 +85,10 @@ args = parse_args()
 if args.config:
     config = load_config(args.config)
     
+    # Extract config name from file path (for output naming)
+    from pathlib import Path
+    CONFIG_NAME = Path(args.config).stem
+    
     # Model Configuration
     MODEL_NAME = config['model']['name']
     CHECKPOINT_TYPE = config['model']['checkpoint_type']
@@ -96,9 +100,11 @@ if args.config:
     DATASETS_TO_TEST = config['benchmark']['datasets_to_test']
     OUTPUT_DIR = config['benchmark']['output_dir']
 else:
-    # Default Configuration (backward compatibility)
     # Model Configuration
     MODEL_NAME = 'epanns'                                               # 'epanns', 'ced', 'clap'
+    
+    # Default Configuration (backward compatibility)
+    CONFIG_NAME = f"{MODEL_NAME}_default"                                              
     CHECKPOINT_TYPE = 'pretrained'                                      # 'pretrained' (.pt) or 'finetuned' (.ckpt)
     CHECKPOINT_PATH = './models/epanns/checkpoint_closeto_.44.pt'       # Path to AudioSet checkpoint
     
@@ -487,8 +493,8 @@ def main():
         print(f"# TASK: {task.upper()}")
         print(f"{'#'*80}")
         
-        # Generate output filename
-        csv_filename = f"{MODEL_NAME}_{task}_benchmark_{timestamp}.csv"
+        # Generate output filename (using config name for uniqueness)
+        csv_filename = f"{CONFIG_NAME}__{task}_results_{timestamp}.csv"
         csv_path = os.path.join(OUTPUT_DIR, csv_filename)
         print(f"\nOutput CSV: {csv_path}")
         
@@ -558,11 +564,12 @@ def main():
     print("\n" + "="*80)
     print("BENCHMARK COMPLETED")
     print("="*80)
+    print(f"Configuration: {CONFIG_NAME}")
     print(f"Model: {MODEL_NAME.upper()}")
     print(f"Tasks tested: binary + multiclass")
     print(f"\nResults saved to:")
-    print(f"  - {MODEL_NAME}_binary_benchmark_{timestamp}.csv")
-    print(f"  - {MODEL_NAME}_multiclass_benchmark_{timestamp}.csv")
+    print(f"  - {CONFIG_NAME}__binary_results_{timestamp}.csv")
+    print(f"  - {CONFIG_NAME}__multiclass_results_{timestamp}.csv")
     print("="*80 + "\n")
     
     # Clean up temporary directory
