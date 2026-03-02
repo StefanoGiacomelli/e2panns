@@ -158,11 +158,15 @@ class AudioSetEV_v2_Dataset(Dataset):
     
     Supports loading from multiple subfolders (e.g., balanced_train, eval, unbalanced).
     Each sample is processed to 10-second mono audio at 32kHz.
+    Supports optional data augmentation.
     """
     
     def __init__(self, csv_df: pd.DataFrame, audio_folder: str, 
                  subfolders: List[str], target_size: int = 320000,
-                 binary_label: int = 1):
+                 binary_label: int = 1,
+                 augmentation: bool = False,
+                 aug_prob: float = 0.7,
+                 seed: int = 42):
         """
         Args:
             csv_df: DataFrame with sample metadata
@@ -171,12 +175,26 @@ class AudioSetEV_v2_Dataset(Dataset):
                        (e.g., ["balanced_train", "eval", "unbalanced"])
             target_size: Target audio length in samples (default: 10s @ 32kHz)
             binary_label: Binary label (1 for positive, 0 for negative)
+            augmentation: Whether to apply data augmentation
+            aug_prob: Probability of applying each augmentation
+            seed: Random seed for reproducibility
         """
         self.df = csv_df
         self.audio_folder = audio_folder
         self.subfolders = subfolders
         self.target_size = target_size
         self.binary_label = binary_label
+        
+        # Set seeds for reproducibility
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        
+        # Augmentation settings
+        self.augmentation = augmentation
+        self.aug_prob = aug_prob
+        if self.augmentation:
+            self.augmentations = self._define_augmentations()
         
         # Build file list with full paths
         self.file_list = []
@@ -212,6 +230,51 @@ class AudioSetEV_v2_Dataset(Dataset):
         print(f"  → Found {len(self.file_list)} audio files")
         if self.skipped_files:
             print(f"  → Warning: {len(self.skipped_files)} files not found (skipped)")
+
+    def _define_augmentations(self) -> dict:
+        """Define augmentation functions."""
+        return {
+            "add_noise": self._add_random_noise,
+            "time_roll": self._time_roll,
+            "polarity_inversion": self._polarity_inversion,
+            "rand_amp_scaling": self._random_amplification,
+        }
+    
+    def _add_random_noise(self, waveform: torch.Tensor, scale: float = 0.1) -> torch.Tensor:
+        """Add random noise to waveform."""
+        noise_type = random.choice(["white", "gaussian"])
+        noise = torch.randn_like(waveform) if noise_type == "white" else torch.normal(0, 1, size=waveform.shape)
+        noisy = waveform + noise * scale
+        return noisy / torch.max(torch.abs(noisy))
+    
+    def _time_roll(self, waveform: torch.Tensor) -> torch.Tensor:
+        """Apply circular time shift."""
+        shift = random.randint(1, waveform.size(1))
+        return torch.roll(waveform, shifts=shift, dims=1)
+    
+    def _polarity_inversion(self, waveform: torch.Tensor) -> torch.Tensor:
+        """Invert waveform polarity."""
+        return waveform * -1
+    
+    def _random_amplification(self, waveform: torch.Tensor) -> torch.Tensor:
+        """Apply random amplitude scaling."""
+        if random.random() > 0.5:
+            scalar = random.uniform(0.1, 1.0)
+            return waveform * scalar
+        else:
+            vector = torch.rand(waveform.size(1))
+            return waveform * vector.unsqueeze(0)
+    
+    def _apply_augmentations(self, waveform: torch.Tensor) -> torch.Tensor:
+        """Apply random augmentations to waveform."""
+        augment_order = list(self.augmentations.keys())
+        random.shuffle(augment_order)
+        
+        for aug_name in augment_order:
+            if random.random() < self.aug_prob:
+                waveform = self.augmentations[aug_name](waveform)
+        
+        return waveform
     
     def __len__(self):
         return len(self.file_list)
@@ -241,6 +304,10 @@ class AudioSetEV_v2_Dataset(Dataset):
                 waveform = F.pad(waveform, (0, pad_size))
             else:
                 waveform = waveform[:, :self.target_size]
+            
+            # Apply augmentation if enabled
+            if self.augmentation:
+                waveform = self._apply_augmentations(waveform)
             
             return waveform, self.binary_label
             
