@@ -1,2 +1,0 @@
-source_dataset,target_dataset,epochs,patience,used_validation,timestamp,metric_test_loss_epoch,metric_Test_Accuracy,metric_Test_Precision,metric_Test_Recall,metric_Test_F1_score,metric_Test_F-beta_score,metric_Test_Sensitivity (TP-Accuracy),metric_Test_Specificity (TN-Accuracy),metric_Test_AuROC,metric_Test_AuPRC,metric_Test_MCC
-LSSiren,AudioSet-EV,1000,100,True,2025-09-15 10:27:24,48.86039733886719,0.5113959908485413,0.5113959908485413,1.0,0.6767200827598572,0.631879448890686,1.0,0.0,0.5,0.5113959908485413,0.001216864213347435

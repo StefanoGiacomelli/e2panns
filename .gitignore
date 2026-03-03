@@ -233,3 +233,4 @@ salt/
 # Logs - Exclude all contents except README.md
 logs/*
 !logs/README.md
+models/xAI/results/binary_EV/ced_layer_evolution_TP.svg

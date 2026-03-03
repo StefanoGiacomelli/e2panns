@@ -1,0 +1,109 @@
+# ==============================================================================
+# XAI Configuration for Binary Emergency Vehicle Detection
+# ==============================================================================
+
+# Target class (AudioSet index 322 = Emergency Vehicle)
+target_class: 322
+target_class_name: "Emergency Vehicle"
+
+# Models Configuration
+models:
+  epanns:
+    name: "E-PANNs"
+    checkpoint_pretrained: "models/epanns/checkpoint_closeto_.44.pt"
+    checkpoint_finetuned: "checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.pt"
+    sample_rate: 32000
+    min_length_seconds: 0.31
+    min_length_samples: 9920
+    layers:
+      - "model.logmel_extractor"
+      - "model.conv_block1"
+      - "model.conv_block2"
+      - "model.conv_block3"
+      - "model.conv_block4"
+      - "model.conv_block5"
+      - "model.conv_block6"
+    
+  ced:
+    name: "CED-Base"
+    checkpoint_pretrained: "models/ced/audiotransformer_base_mAP_4999.pt"
+    checkpoint_finetuned: "checkpoints/binary_EV/ced_finetune_fixedLR_AS-EV_v2/epoch=003_val_f1=0.9682.pt"
+    sample_rate: 16000
+    min_length_seconds: 0.15
+    min_length_samples: 2400
+    n_attention_layers: 12
+    layers:
+      - "front_end"
+      - "init_bn"
+      - "patch_embed"
+      - "blocks.0"
+      - "blocks.1"
+      - "blocks.2"
+      - "blocks.3"
+      - "blocks.4"
+      - "blocks.5"
+      - "blocks.6"
+      - "blocks.7"
+      - "blocks.8"
+      - "blocks.9"
+      - "blocks.10"
+      - "blocks.11"
+    
+  clap:
+    name: "CLAP"
+    checkpoint_pretrained: "models/clap/630k-audioset-fusion-best.pt"
+    checkpoint_finetuned: "checkpoints/binary_EV/clap_finetune_fixedLR_AS-EV_v2/epoch=009_val_f1=0.9611.pt"
+    sample_rate: 48000
+    min_length_seconds: 0.02
+    min_length_samples: 961
+    layers:
+      - "model.audio_branch.logmel_extractor"
+      - "model.audio_branch.bn0"
+      - "model.audio_branch.patch_embed"
+      - "model.audio_branch.layers.0"
+      - "model.audio_branch.layers.1"
+      - "model.audio_branch.layers.2"
+      - "model.audio_branch.layers.3"
+
+# Test Samples
+samples:
+  TP:
+    name: "TP_t2DrvtWfCqE"
+    path: "models/xAI/test_samps/TP_t2DrvtWfCqE.wav"
+    description: "True Positive - Emergency Vehicle Siren"
+  
+  TN:
+    name: "TN_jig6aMB2XyU"
+    path: "models/xAI/test_samps/TN_jig6aMB2XyU.wav"
+    description: "True Negative - Non-Emergency Sound"
+
+# Output Configuration
+output_dir: "models/xAI/results/binary_EV"
+figure_format: "svg"  
+dpi: 600
+
+# Temporal Dynamics Configuration
+temporal_dynamics:
+  # Sliding window parameters (in seconds)
+  # Window size will be model's minimum input length
+  # Hop size for overlap (fraction of window)
+  hop_fraction: 0.5  # 50% overlap
+  
+  # Confidence threshold for onset detection
+  onset_threshold: 0.5
+  
+  # Plot configuration
+  plot_confidence: true
+  plot_saliency_timeline: true
+  plot_critical_windows: true
+
+# Layer Evolution Configuration
+layer_evolution:
+  # Interpolate all layers to same time resolution for comparison
+  normalize_time: true
+  
+  # Colormap for heatmap
+  cmap: "viridis"
+  
+  # Show layer names on Y-axis
+  show_layer_names: true
