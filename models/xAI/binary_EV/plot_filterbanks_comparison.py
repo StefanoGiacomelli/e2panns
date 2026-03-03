@@ -5,7 +5,7 @@ Self-contained script that compares learned mel-filterbanks (from finetuned mode
 vs reference implementations (torchaudio/torchlibrosa).
 
 Generates: filterbanks_comparison.svg
-Layout: 4 rows × 3 columns
+Layout: 4 rows x 3 columns
 - Row 0: Mel filterbank frequency response (both learned and reference)
 - Row 1: Learned filterbank heatmap (from finetuned model)
 - Row 2: Reference filterbank heatmap (torchaudio/torchlibrosa)

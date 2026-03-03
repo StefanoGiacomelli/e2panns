@@ -23,3 +23,6 @@ matplotlib-inline
 seaborn
 pandas
 tensorboard
+
+# Profiling Raspberry-Pi
+# psutil
