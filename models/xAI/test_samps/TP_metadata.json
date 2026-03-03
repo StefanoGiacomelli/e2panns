@@ -1,0 +1,10 @@
+{
+  "filename": "t2DrvtWfCqE.wav",
+  "original_path": "datasets/AudioSet_EV_v2PANNs_2020/Positive_files/balanced_train/t2DrvtWfCqE.wav",
+  "label": 1,
+  "probabilities": {
+    "epanns": 0.9999996423721313,
+    "ced": 0.9999998807907104,
+    "clap": 0.9999998807907104
+  }
+}

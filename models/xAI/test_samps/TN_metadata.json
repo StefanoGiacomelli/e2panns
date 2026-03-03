@@ -1,0 +1,10 @@
+{
+  "filename": "jig6aMB2XyU.wav",
+  "original_path": "datasets/AudioSet_EV_v2PANNs_2020/Negative_files/balanced_train/jig6aMB2XyU.wav",
+  "label": 0,
+  "probabilities": {
+    "epanns": 0.0001263422309421003,
+    "ced": 3.239835848489747e-07,
+    "clap": 6.109941352860915e-08
+  }
+}

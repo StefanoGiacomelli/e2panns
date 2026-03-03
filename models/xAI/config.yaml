@@ -1,0 +1,150 @@
+# XAI Comparative Analysis Configuration
+# ========================================
+
+# Model checkpoints (finetuned on AS-EV_v2)
+models:
+  epanns:
+    name: "EPANNs"
+    checkpoint: "checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.ckpt"
+    sample_rate: 32000
+    architecture: "cnn"
+    
+  ced:
+    name: "CED-Base"
+    checkpoint: "checkpoints/binary_EV/ced_finetune_fixedLR_AS-EV_v2/epoch=003_val_f1=0.9682.ckpt"
+    sample_rate: 16000
+    architecture: "transformer"
+    
+  clap:
+    name: "CLAP"
+    checkpoint: "checkpoints/binary_EV/clap_finetune_fixedLR_AS-EV_v2/epoch=009_val_f1=0.9611.ckpt"
+    sample_rate: 48000
+    architecture: "swin_transformer"
+
+# Test samples
+samples:
+  # Automatically selected samples with model consensus
+  auto_selected:
+    - path: "models/xAI/test_samps/TP_t2DrvtWfCqE.wav"
+      label: 1
+      type: "TP"
+      description: "True Positive - all models ~100% confident"
+      
+    - path: "models/xAI/test_samps/TN_jig6aMB2XyU.wav"
+      label: 0
+      type: "TN"
+      description: "True Negative - all models ~0% confident"
+  
+  # Manual pool (for future use with labeled siren types)
+  manual_pool: []
+
+# XAI Methods to apply
+methods:
+  # Gradient-based methods
+  guided_backprop:
+    enabled: true
+    # Analyze multiple layers for each model
+    multi_layer_analysis: true
+    target_layers:
+      epanns: ["model.logmel_extractor", "model.conv_block1", "model.conv_block2", "model.conv_block3", "model.conv_block4", "model.conv_block5", "model.conv_block6"]
+      ced: ["front_end"]  # Only single layer for CED (transformers don't work well with gradient-based)
+      clap: ["model.audio_branch.logmel_extractor", "model.audio_branch.bn0", "model.audio_branch.layers.0", "model.audio_branch.layers.1", "model.audio_branch.layers.2", "model.audio_branch.layers.3"]
+  
+  # Activation-based methods
+  score_cam:
+    enabled: true
+    target_layers:
+      epanns: ["model.conv_block6"]
+      ced: ["blocks.11"]
+      clap: ["model.audio_branch.layers.2"]
+  
+  # Architecture-specific methods
+  attention_rollout:
+    enabled: true
+    models: ["ced"]
+    num_layers: 12  # CED has 12 transformer blocks
+  
+  attention_maps:
+    enabled: true
+    models: ["ced"]
+    save_all_layers: true
+  
+  patch_importance:
+    enabled: true
+    models: ["ced"]
+  
+  filterbank_analysis:
+    enabled: true
+    models: ["epanns", "ced", "clap"]
+    compare_to_standard: true
+  
+  tscam_visualization:
+    enabled: true
+    models: ["clap"]
+
+# Metrics Configuration
+metrics:
+  # Consistency metrics
+  sparsity:
+    enabled: true
+    method: "gini"  # Gini coefficient
+  
+  peak_to_mean:
+    enabled: true
+  
+  # Faithfulness metrics
+  deletion:
+    enabled: true
+    steps: 20
+    mask_value: 0.0
+  
+  average_drop:
+    enabled: true
+    top_k_percent: 0.1  # Remove top 10% salient regions
+  
+  # Cross-model comparison
+  cross_model_agreement:
+    enabled: true
+    correlation_method: "pearson"  # Options: pearson, spearman
+
+# Visualization Configuration
+visualization:
+  output_format: "svg"
+  dpi: 600
+  output_dir: "models/xAI/results"
+  
+  # Color schemes
+  colormap:
+    saliency: "gray_r"  # White (high) to Black (low) for saliency maps
+    spectrogram: "viridis"
+    difference: "RdBu_r"  # Red-Blue diverging
+  
+  # Plot types
+  plots:
+    spectrogram_overlay: true
+    side_by_side_comparison: true
+    time_series: true
+    difference_maps: true
+    filterbank_comparison: true
+    attention_maps: true
+    metrics_summary: true
+  
+  # Figure sizes (inches)
+  figsize:
+    single: [14, 5]
+    comparison: [20, 10]
+    grid: [18, 12]
+
+# Processing Configuration
+processing:
+  device: "cuda"  # Options: cuda, cpu
+  batch_size: 1
+  num_workers: 4
+  seed: 42
+
+# Output Configuration
+output:
+  save_intermediate: true  # Save individual method outputs
+  save_raw_data: true  # Save saliency maps as numpy arrays
+  generate_report: true  # Generate HTML summary report
+  verbose: true
