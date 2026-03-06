@@ -24,5 +24,7 @@ seaborn
 pandas
 tensorboard
 
-# Profiling Raspberry-Pi
-# psutil
+# SED Raspberry-Pi
+psutil
+setuptools==69.5.1  # Required by sed_eval for pkg_resources
+sed_eval

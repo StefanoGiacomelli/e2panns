@@ -25,7 +25,6 @@ Author: Stefano Giacomelli - Ph.D. candidate in ICT (DISIM dpt. - University of 
 """
 
 import os
-import sys
 import json
 import random
 import csv

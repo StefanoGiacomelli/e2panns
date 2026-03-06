@@ -18,6 +18,7 @@
    - [Automated Benchmarking](#62-automated-benchmarking-main_benchmarkpy)
    - [Batch Experiment Runner](#63-batch-experiment-runner-run_all_experimentspy)
    - [Batch Benchmark Runner](#64-batch-benchmark-runner-run_all_benchmarkspy)
+   - [Real-Time SED System](#65-real-time-sed-system)
 7. [Configuration](#configuration)
 8. [Models](#models)
 9. [Datasets](#datasets)
@@ -51,11 +52,12 @@ The framework leverages **General-Purpose Audio Transformers (GP-AT)** and adapt
 ✅ **Multi-Model Support**: 3 GP-AT architectures (E-PANNs, CED, CLAP) with different sample rates and characteristics  
 ✅ **Dual-Task Framework**: Binary (siren detection) + Multi-class (siren type classification)  
 ✅ **7 Dataset Benchmark**: AudioSet-EV (v1 & v2), sireNNet, LSSiren, ESC-50, FSD50K, UrbanSound8K  
+✅ **Real-Time SED System**: Frame-by-frame temporal localization with adaptive window sizing  
 ✅ **YAML Configuration**: Flexible experiment setup with validation and version control  
 ✅ **PyTorch Lightning**: Modern training pipeline with callbacks, logging, and distributed training support  
 ✅ **Automated Runners**: Batch execution for multiple experiments and benchmarks  
 ✅ **Cross-Validation**: Proper fold separation for CV datasets (ESC-50, UrbanSound8K, sireNNet)  
-✅ **Comprehensive Metrics**: Accuracy, Precision, Recall, F1, F-beta, AUROC, Specificity  
+✅ **Comprehensive Metrics**: Accuracy, Precision, Recall, F1, F-beta, AUROC, Specificity + SED metrics  
 ✅ **Dual Checkpoint Format**: Lightning `.ckpt` (full state) + PyTorch `.pt` (model only)  
 ✅ **TensorBoard Integration**: Real-time training monitoring with loss curves and metrics  
 ✅ **Technical Profiling**: Pre-selection analysis of 18 GP-AT models with performance metrics  
@@ -68,6 +70,8 @@ The framework leverages **General-Purpose Audio Transformers (GP-AT)** and adapt
 E2PANNs/
 ├── main.py                          # Main training/testing pipeline
 ├── main_benchmark.py                # Automated benchmark evaluation
+├── main_sed_file.py                 # Real-time SED single file processing
+├── main_sed_dataset.py              # Real-time SED dataset processing
 ├── run_all_experiments.py           # Batch experiment runner
 ├── run_all_benchmarks.py            # Batch benchmark runner
 │
@@ -78,9 +82,26 @@ E2PANNs/
 │   ├── ced/                         # CED (ConvNeXt-based, 16kHz)
 │   └── clap/                        # CLAP (HTSAT-based, 48kHz)
 │
+├── sed_system/                      # Real-time SED system
+│   ├── core/                        # Core inference components
+│   │   ├── audio_processor.py       # Audio loading and preprocessing
+│   │   ├── buffer.py                # Circular buffer for streaming
+│   │   ├── frame_provider.py        # Adaptive frame extraction
+│   │   ├── inference_engine.py      # Frame-by-frame inference
+│   │   └── model_loader.py          # Model loading utilities
+│   ├── monitoring/                  # Performance & metrics tracking
+│   │   ├── performance_monitor.py   # CPU/RAM monitoring
+│   │   ├── sed_metrics.py           # SED metrics (segment & event)
+│   │   └── metrics_logger.py        # Logging utilities
+│   ├── visualization/               # Result visualization
+│   │   └── plotter.py               # Mel-spectrogram + predictions
+│   ├── pipeline.py                  # Main SED pipeline
+│   └── README.md                    # SED system documentation
+│
 ├── datasets/                        # EV-Benchmark: 7 datasets w. PyTorch Datasets & Lightning DataModules
 │   ├── AudioSet_EV_v1_2025/         # Primary EV dataset (2025 release)
 │   ├── AudioSet_EV_v2PANNs_2020/    # Extended EV dataset (PANNs-aligned)
+│   ├── AudioSet_EV_Strong/          # AudioSet-EV with strong temporal labels (SED)
 │   ├── sireNNet/                    # Urban EV sirens (multi-class)
 │   ├── LSSiren/                     # Large-scale siren recordings
 │   ├── ESC50/                       # Environmental sounds (50 classes, 5-fold CV)
@@ -95,6 +116,10 @@ E2PANNs/
 │   └── multiclass_siren/            # Multi-class (siren types) task configurations
 │
 ├── benchmark_configs/               # Benchmark configuration files
+│   ├── pretrained/                  # Pretrained model benchmarks
+│   ├── finetuned/                   # Finetuned model benchmarks
+│   ├── re-trained/                  # Re-trained model benchmarks
+│   └── sed/                         # SED system configurations
 │
 ├── preliminary_profiling_gp_at/     # Technical profiling of 18 GP-AT models
 │   ├── results/                     # Profiling JSON files
@@ -104,9 +129,10 @@ E2PANNs/
 ├── checkpoints/                     # Model checkpoints (.ckpt + .pt)
 ├── logs/                            # TensorBoard logs
 ├── results/                         # Test metrics and predictions
-├── benchmark_results/               # Benchmark CSV reports
+├── benchmark_results_*/             # Benchmark CSV reports by task
 │
 ├── requirements.txt                 # Python dependencies
+├── requirements_cuda.txt            # CUDA-specific dependencies
 └── README.md
 ```
 
@@ -327,6 +353,151 @@ python run_all_benchmarks.py --config_dir benchmark_configs --continue_on_error
 
 ---
 
+### 6.5 Real-Time SED System
+
+The **SED (Sound Event Detection) System** enables real-time processing for emergency vehicle siren detection with frame-level temporal localization.
+
+#### Single File Processing (`main_sed_file.py`)
+
+Process a single audio file with visualization:
+
+``` bash
+python main_sed_file.py benchmark_configs/sed/epanns_finetunedBinaryEV_TPfile.yaml
+```
+
+**Features:**
+- Frame-by-frame inference with adaptive window sizing
+- Mel-spectrogram visualization with predictions overlay
+- Detected events with onset/offset timestamps
+- SED metrics (segment-based & event-based)
+- Performance monitoring (CPU, RAM, throughput)
+
+**Example config** ([`benchmark_configs/sed/epanns_finetunedBinaryEV_TPfile.yaml`](benchmark_configs/sed/)):
+
+```yaml
+audio_file: "models/xAI/test_samps/TP_t2DrvtWfCqE.wav"
+
+model:
+  name: "epanns"
+  checkpoint: "checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.pt"
+  device: "cpu"
+
+inference:
+  threshold: 0.5
+  chunk_duration: 0.310
+  adaptive_window:
+    enabled: true
+    frame_duration_max: 1.0
+    adapt_coeff: 0.4
+
+sed_metrics:
+  segment_time_resolution: 0.310
+  event_tolerance: 0.500
+
+visualization:
+  plot_predictions: true
+```
+
+**Output example:**
+
+```
+Detected Events (3 events):
+  1. [0.62s - 1.86s]  duration=1.24s  confidence=0.998
+  2. [2.48s - 2.79s]  duration=0.31s  confidence=0.974
+  3. [3.10s - 9.92s]  duration=6.82s  confidence=1.000
+
+Performance:
+  Throughput: 0.93x real-time
+  CPU: 35.9% (mean)
+  RAM: 789 MB (mean)
+```
+
+---
+
+#### Dataset Processing (`main_sed_dataset.py`)
+
+Process entire AudioSet_EV_Strong dataset (positives only):
+
+```bash
+python main_sed_dataset.py benchmark_configs/sed/epanns_finetunedBinaryEV_AS-EV_Strong_v2.yaml
+```
+
+**Features:**
+- Batch processing with progress bar (tqdm)
+- Aggregated SED metrics (mean ± std)
+- Per-sample detailed metrics (CSV + JSON)
+- Logs to file (clean console for progress bar)
+- NaN-robust aggregation (np.nanmean)
+
+**Example config** ([`benchmark_configs/sed/epanns_finetunedBinaryEV_AS-EV_Strong_v2.yaml`](benchmark_configs/sed/)):
+
+```yaml
+dataset:
+  name: "AudioSet_EV_v2"
+  max_samples: null  # null = all, or specify number
+
+model:
+  name: "epanns"
+  checkpoint: "checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.pt"
+  device: "cpu"
+
+output:
+  dir: "results/sed_AudioSet_EV_v2_epanns_finetuned"
+  save_per_sample: true
+
+logging:
+  level: "INFO"
+  log_file: "run.log"
+```
+
+**Output:**
+
+- `results/sed_AudioSet_EV_v2_epanns_finetuned/`
+  - `summary.json` - Aggregated metrics
+  - `results.csv` - Per-sample metrics (966 rows)
+  - `sample_metrics.json` - Detailed JSON
+  - `run.log` - Processing log
+
+**Example results (966 positive samples, EPANNs finetuned):**
+
+```
+SED Metrics (Segment-based):
+  Precision: 0.964 ± 0.125
+  Recall: 0.819 ± 0.202
+  F1: 0.868 ± 0.170
+
+SED Metrics (Event-based):
+  Precision: 0.490 ± 0.452
+  Recall: 0.574 ± 0.478
+  F1: 0.511 ± 0.448
+
+Performance:
+  Throughput: 0.93x ± 0.01x real-time
+  CPU: 35.2% ± 0.3%
+  RAM: 1609 MB ± 44 MB
+```
+
+---
+
+#### SED System Architecture
+
+For architectural details and API documentation, see [`sed_system/README.md`](sed_system/README.md).
+
+**Key components:**
+
+- **CircularBuffer**: Thread-safe audio streaming simulation
+- **InputFrameProvider**: Adaptive frame extraction (min → max duration)
+- **InferenceEngine**: Frame-by-frame model inference
+- **SED Metrics**: DCASE-compliant segment & event evaluation
+- **Performance Monitor**: Real-time CPU/RAM tracking
+- **Plotter**: Mel-spectrogram visualization with predictions
+
+**Adaptive Window Sizing:**
+
+When model confidence > threshold, frame duration expands from `chunk_duration` (310ms) to `frame_duration_max` (1000ms), reducing inference count by 30-40% on positive samples.
+
+---
+
 ## Models
 
 E2PANNs supports 3 state-of-the-art General-Purpose Audio Transformer (GP-AT) architectures:
@@ -472,47 +643,7 @@ CSV columns:
 
 ## Requirements
 
-### Core Dependencies
-
-```
-Python >= 3.11.2
-PyTorch >= 2.0.0
-pytorch-lightning >= 2.6.0
-torchmetrics >= 1.0.0
-torchaudio >= 2.0.0
-```
-
-### Audio Processing
-
-```
-librosa >= 0.10.0
-soundfile >= 0.12.0
-audiomentations >= 0.30.0
-```
-
-### Machine Learning
-
-```
-scikit-learn >= 1.3.0
-numpy >= 1.24.0
-pandas >= 2.0.0
-```
-
-### Visualization & Logging
-
-```
-tensorboard >= 2.13.0
-matplotlib >= 3.7.0
-seaborn >= 0.12.0
-```
-
-### Configuration
-
-```
-pyyaml >= 6.0
-```
-
-For the complete list, see [`requirements.txt`](requirements.txt).
+See [`requirements.txt`](requirements.txt).
 
 ---
 
@@ -524,7 +655,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## Citation
 
-If you use E2PANNs in your research, please cite:
+If you use this framework in your research, please cite:
 
 ```bibtex
 @article{giacomelli2026e2panns,

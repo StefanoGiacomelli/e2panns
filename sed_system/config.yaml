@@ -1,0 +1,61 @@
+# ============================================
+# SED System Configuration
+# ============================================
+
+# Real-time simulation parameters
+simulation:
+  buffer_duration: 20.0          # Circular buffer size (seconds)
+  chunk_duration: 0.310          # Write chunk size (seconds)
+  frame_duration_min: 0.310      # Minimum frame size (seconds)
+  frame_duration_max: 1.0        # Maximum frame size (seconds)
+  output_threshold: 0.5          # Probability threshold for binarization
+  adapt_width_coeff: 0.4         # Frame size increment coefficient (0=disabled, 1=full SR)
+
+# Model configurations
+models:
+  epanns:
+    sample_rate: 32000
+    class_index: 322             # Emergency vehicle in AudioSet (527-class)
+    pretrained: "models/epanns/checkpoint_closeto_.44.pt"
+  
+  ced:
+    sample_rate: 16000
+    class_index: 322
+    pretrained: "models/ced/audiotransformer_base_mAP_4999.pt"
+  
+  clap:
+    sample_rate: 48000
+    class_index: 322
+    pretrained: "models/clap/630k-audioset-fusion-best.pt"
+
+# Dataset configuration (for --dataset mode)
+dataset:
+  train_metadata: "datasets/AudioSet_EV_Strong/audioset_strong_metadata/audioset_train_strong.tsv"
+  eval_metadata: "datasets/AudioSet_EV_Strong/audioset_strong_metadata/audioset_eval_strong.tsv"
+  audio_folders:
+    - "datasets/AudioSet_EV_v1_2025/audio/"
+    - "datasets/AudioSet_EV_v2PANNs_2020/audio/"
+  window_size: 0.1               # Label track bin size (seconds)
+  ev_mids:                       # Emergency Vehicle MIDs
+    - "/m/012n7d"                # Police car (siren)
+    - "/m/0dgbq"                 # Fire engine
+    - "/m/03j1ly"                # Ambulance (siren)
+    - "/m/07qv_x_"               # Civil defense siren
+
+# SED Metrics (sed_eval)
+metrics:
+  segment_time_resolution: 0.310  # Segment-based frame resolution (seconds) - aligned with chunk_duration
+  event_tolerance: 0.500          # Event-based collar tolerance (seconds) - onset/offset matching
+  event_label: "Emergency vehicle"
+
+# Monitoring
+monitoring:
+  enable_performance: true       # Enable CPU/RAM monitoring
+  perf_interval: 0.1            # Performance sampling interval (seconds)
+  log_level: "INFO"             # DEBUG, INFO, WARNING, ERROR
+  save_metrics: true            # Save detailed CSV metrics
+  save_summary: true            # Save JSON summary
+
+# Output
+output:
+  base_dir: "sed_results"       # Output root directory

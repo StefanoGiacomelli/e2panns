@@ -1,0 +1,112 @@
+# ============================================================================
+# Dataset SED Processing Configuration
+# ============================================================================
+# This configuration file defines settings for processing the entire
+# AudioSet_EV_Strong dataset for Emergency Vehicle Sound Event Detection.
+#
+# Usage:
+#   python main_dataset.py configs/example_dataset.yaml
+#
+# ============================================================================
+
+# ============================================================================
+# DATASET CONFIGURATION
+# ============================================================================
+dataset:
+  # Dataset name (determines folder structure and metadata paths)
+  name: "AudioSet_EV_v2"  # Options: AudioSet_EV_v1, AudioSet_EV_v2
+  
+  # Processing mode
+  mode: "detection"  # Always 'detection' for inference
+  
+  # Maximum number of samples to process (null = all positive samples)
+  # Useful for testing: set to small number (e.g., 10) for quick validation
+  max_samples: null  # null = process all, or specify number (e.g., 10, 100)
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  name: "epanns"  # Options: epanns, ced, clap
+  checkpoint: "checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.pt"
+  device: "cpu"   # Options: cpu, cuda
+
+# ============================================================================
+# INFERENCE SETTINGS
+# ============================================================================
+inference:
+  # Detection threshold (0.0-1.0)
+  threshold: 0.5
+  
+  # Minimum chunk duration for inference (seconds)
+  # This should match the model's training window size
+  chunk_duration: 0.310
+  
+  # Circular buffer duration for audio processing (seconds)
+  buffer_duration: 20.0
+  
+  # Adaptive window width configuration
+  # When model confidence is high, the inference window can be expanded
+  # to reduce the number of inferences and improve throughput
+  adaptive_window:
+    enabled: true                   # Enable/disable adaptive window
+    frame_duration_max: 1.0         # Maximum window duration when confidence is high (seconds)
+    adapt_coeff: 0.4                # Adaptation coefficient (0.0-1.0)
+                                    # 0.0 = always use chunk_duration
+                                    # 1.0 = always use frame_duration_max when above threshold
+
+# ============================================================================
+# SED METRICS CONFIGURATION
+# ============================================================================
+# Ground truth is automatically loaded from dataset metadata
+sed_metrics:
+  # Segment-based metrics: time resolution for frame-by-frame evaluation (seconds)
+  # Should match chunk_duration for consistency with inference
+  segment_time_resolution: 0.310
+  
+  # Event-based metrics: tolerance for onset/offset matching (seconds)
+  # Events are considered matching if onset/offset are within this tolerance
+  event_tolerance: 0.500
+
+# ============================================================================
+# MULTIPROCESSING CONFIGURATION
+# ============================================================================
+multiprocessing:
+  # Enable multiprocessing for faster dataset processing
+  # NOTE: May not work on all platforms (edge devices, some cloud environments)
+  enabled: false
+  
+  # Number of worker processes (0 = auto-detect based on CPU cores)
+  # Recommended: leave at 0 for automatic detection, or set to number of CPU cores - 1
+  num_workers: 0
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+output:
+  # Output directory for all results
+  dir: "results/sed_AudioSet_EV_v2_epanns_finetuned"
+  
+  # Save per-sample detailed metrics (in addition to aggregated results)
+  save_per_sample: true
+  
+  # Save detected events for each sample to individual files
+  # WARNING: This can create many files (one per sample)
+  save_events: false
+
+# ============================================================================
+# PERFORMANCE SETTINGS
+# ============================================================================
+performance:
+  # Show progress bar during processing
+  progress_bar: true
+
+# ============================================================================
+# LOGGING
+# ============================================================================
+logging:
+  # Logging level
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR
+  
+  # Save log to file (in addition to console output)
+  log_file: "run.log"  # Will be saved in output.dir
