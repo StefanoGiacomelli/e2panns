@@ -1,0 +1,44 @@
+{
+  "dataset": "AudioSet_EV_v2",
+  "model": "epanns",
+  "timestamp": "20260306_211023",
+  "num_samples": 50,
+  "total_audio_duration": 491.8343437500001,
+  "total_inference_time": 527.2489089899464,
+  "aggregated_metrics": {
+    "segment_based": {
+      "precision": 0.9946428571428573,
+      "recall": 0.8457054659899487,
+      "f1": 0.90742473791569,
+      "accuracy": 0.8561800170488919,
+      "balanced_accuracy": 0.47138343474936034,
+      "error_rate": 0.15937389908941632,
+      "deletion_rate": 0.15429453401005128,
+      "insertion_rate": 0.005079365079365079,
+      "std_precision": 0.026305214040457565,
+      "std_recall": 0.13749544855035004,
+      "std_f1": 0.09026649301529707,
+      "std_accuracy": 0.12848331759897075,
+      "std_balanced_accuracy": 0.141904582509393
+    },
+    "event_based": {
+      "precision": 0.3633333333333333,
+      "recall": 0.5,
+      "f1": 0.4046666666666667,
+      "error_rate": 2.4199999999999995,
+      "deletion_rate": 0.49999999999999983,
+      "insertion_rate": 1.9199999999999995,
+      "std_precision": 0.4050925820105819,
+      "std_recall": 0.4898979485566356,
+      "std_f1": 0.418994033370405
+    },
+    "performance": {
+      "mean_throughput": 0.9327430138089752,
+      "std_throughput": 0.006036279859870653,
+      "mean_cpu": 35.4339707935622,
+      "std_cpu": 0.2642415159061721,
+      "mean_ram_mb": 1448.204325763078,
+      "std_ram_mb": 43.560916510173406
+    }
+  }
+}

@@ -1,0 +1,31 @@
+dataset:
+  name: AudioSet_EV_v2
+  mode: detection
+  max_samples: 50
+model:
+  name: epanns
+  checkpoint: checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.pt
+  device: cpu
+inference:
+  threshold: 0.5
+  chunk_duration: 0.31
+  buffer_duration: 20.0
+  adaptive_window:
+    enabled: true
+    frame_duration_max: 1.0
+    adapt_coeff: 0.75
+sed_metrics:
+  segment_time_resolution: 0.31
+  event_tolerance: 2.0
+multiprocessing:
+  enabled: false
+  num_workers: 0
+output:
+  dir: /home/user/Documenti/E2PANNs/results/sed_parametric_study/results/thr_0.5_collar_2.0s_adaptive_0.75
+  save_per_sample: true
+  save_events: false
+performance:
+  progress_bar: true
+logging:
+  level: INFO
+  log_file: run.log

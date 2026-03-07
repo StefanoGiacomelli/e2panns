@@ -1,0 +1,2602 @@
+[
+  {
+    "sample_idx": 0,
+    "segment_id": "uZuEn8mguGE_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/uZuEn8mguGE.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731113388028461,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 138.5,
+        "mean": 35.57570093457943
+      },
+      "ram_mb": {
+        "min": 1328.5078125,
+        "max": 1356.3046875,
+        "mean": 1355.7733644859813
+      },
+      "throughput": 0.9318697546478183,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 1,
+    "segment_id": "dIUthrXjhGM_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/dIUthrXjhGM.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.8484848484848485,
+        "f1": 0.9180327868852458,
+        "accuracy": 0.8484848484848485,
+        "balanced_accuracy": 0.42424242424242425,
+        "sensitivity": 0.8484848484848485,
+        "specificity": 0.0,
+        "error_rate": 0.15151515151515152,
+        "deletion_rate": 0.15151515151515152,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 3.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 2.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730929454031866,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.65700934579438
+      },
+      "ram_mb": {
+        "min": 1351.015625,
+        "max": 1359.01953125,
+        "mean": 1358.7227292640187
+      },
+      "throughput": 0.9318857274047927,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 2,
+    "segment_id": "XHD0sLHWEUU_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/XHD0sLHWEUU.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9090909090909091,
+        "f1": 0.9523809523809523,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.9545454545454546,
+        "sensitivity": 0.9090909090909091,
+        "specificity": 1.0,
+        "error_rate": 0.09090909090909091,
+        "deletion_rate": 0.09090909090909091,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731089562992565,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.7,
+        "mean": 35.761682242990645
+      },
+      "ram_mb": {
+        "min": 1353.16796875,
+        "max": 1363.19140625,
+        "mean": 1362.8806585864486
+      },
+      "throughput": 0.9318718235738322,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 3,
+    "segment_id": "zculW9jrR2g_0",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/zculW9jrR2g.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9696969696969697,
+        "f1": 0.9846153846153847,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.48484848484848486,
+        "sensitivity": 0.9696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.030303030303030304,
+        "deletion_rate": 0.030303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731055564014241,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.579439252336435
+      },
+      "ram_mb": {
+        "min": 1359.453125,
+        "max": 1369.49609375,
+        "mean": 1369.170086156542
+      },
+      "throughput": 0.9318747760037904,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 4,
+    "segment_id": "z_sdhRMMvJA_20000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/z_sdhRMMvJA.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9696969696969697,
+        "f1": 0.9846153846153847,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.48484848484848486,
+        "sensitivity": 0.9696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.030303030303030304,
+        "deletion_rate": 0.030303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731251379009336,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.77663551401868
+      },
+      "ram_mb": {
+        "min": 1365.75,
+        "max": 1373.8046875,
+        "mean": 1373.5635952102805
+      },
+      "throughput": 0.9318577719240007,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 5,
+    "segment_id": "m8t6gPBCxr8_20000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/m8t6gPBCxr8.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9696969696969697,
+        "f1": 0.9846153846153847,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.48484848484848486,
+        "sensitivity": 0.9696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.030303030303030304,
+        "deletion_rate": 0.030303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730822990008164,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.7,
+        "mean": 35.6859813084112
+      },
+      "ram_mb": {
+        "min": 1372.0234375,
+        "max": 1382.07421875,
+        "mean": 1381.7474080023364
+      },
+      "throughput": 0.9318949729495437,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 6,
+    "segment_id": "Y0RTSvdcDuE_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/Y0RTSvdcDuE.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9696969696969697,
+        "f1": 0.9846153846153847,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.48484848484848486,
+        "sensitivity": 0.9696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.030303030303030304,
+        "deletion_rate": 0.030303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730988422001246,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.5,
+        "mean": 35.75700934579439
+      },
+      "ram_mb": {
+        "min": 1378.30859375,
+        "max": 1388.85546875,
+        "mean": 1388.673371787383
+      },
+      "throughput": 0.9318806065895537,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 7,
+    "segment_id": "mbjOa_msQDw_50000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/mbjOa_msQDw.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9090909090909091,
+        "f1": 0.9523809523809523,
+        "accuracy": 0.9090909090909091,
+        "balanced_accuracy": 0.45454545454545453,
+        "sensitivity": 0.9090909090909091,
+        "specificity": 0.0,
+        "error_rate": 0.09090909090909091,
+        "deletion_rate": 0.09090909090909091,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 3.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 2.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731133245979436,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.7,
+        "mean": 35.67570093457943
+      },
+      "ram_mb": {
+        "min": 1386.59765625,
+        "max": 1396.6484375,
+        "mean": 1396.3283075350466
+      },
+      "throughput": 0.9318680302238009,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 8,
+    "segment_id": "mgF-ieQ7rV4_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/mgF-ieQ7rV4.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.8181818181818182,
+        "f1": 0.9,
+        "accuracy": 0.8181818181818182,
+        "balanced_accuracy": 0.4090909090909091,
+        "sensitivity": 0.8181818181818182,
+        "specificity": 0.0,
+        "error_rate": 0.18181818181818182,
+        "deletion_rate": 0.18181818181818182,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.3333333333333333,
+        "recall": 1.0,
+        "f1": 0.5,
+        "error_rate": 1.9999999999999996,
+        "deletion_rate": 0.0,
+        "insertion_rate": 1.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731208194978535,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.86822429906541
+      },
+      "ram_mb": {
+        "min": 1392.87109375,
+        "max": 1404.90625,
+        "mean": 1404.480359228972
+      },
+      "throughput": 0.93186152186287,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 9,
+    "segment_id": "8uBHEGhU5nU_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/8uBHEGhU5nU.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731002402026206,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.395327102803726
+      },
+      "ram_mb": {
+        "min": 1399.15625,
+        "max": 1411.69921875,
+        "mean": 1411.424722546729
+      },
+      "throughput": 0.9318793925637199,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 10,
+    "segment_id": "GjKctchIsAg_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/GjKctchIsAg.wav",
+    "audio_duration": 9.2719375,
+    "num_inferences": 30,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1": 0.9473684210526316,
+        "accuracy": 0.9,
+        "balanced_accuracy": 0.45,
+        "sensitivity": 0.9,
+        "specificity": 0.0,
+        "error_rate": 0.1,
+        "deletion_rate": 0.1,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 9.801223769027274,
+      "total_samples": 98,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.7,
+        "mean": 35.80816326530611
+      },
+      "ram_mb": {
+        "min": 1407.48046875,
+        "max": 1413.7421875,
+        "mean": 1413.3569435586735
+      },
+      "throughput": 0.9459979405122996,
+      "audio_duration": 9.2719375,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 11,
+    "segment_id": "0bnVue36sUs_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/0bnVue36sUs.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 5,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.8181818181818182,
+        "f1": 0.9,
+        "accuracy": 0.8181818181818182,
+        "balanced_accuracy": 0.4090909090909091,
+        "sensitivity": 0.8181818181818182,
+        "specificity": 0.0,
+        "error_rate": 0.18181818181818182,
+        "deletion_rate": 0.18181818181818182,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 5.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 4.999999999999999,
+        "substitution_rate": null
+      },
+      "num_detected": 5,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731108526000753,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.58691588785046
+      },
+      "ram_mb": {
+        "min": 1413.73046875,
+        "max": 1426.26953125,
+        "mean": 1425.9943414135514
+      },
+      "throughput": 0.9318701768573744,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 12,
+    "segment_id": "zJhW4B55Fn4_40000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/zJhW4B55Fn4.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731047269015107,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.7,
+        "mean": 35.67757009345793
+      },
+      "ram_mb": {
+        "min": 1422.03125,
+        "max": 1432.0703125,
+        "mean": 1431.751058703271
+      },
+      "throughput": 0.9318754963342732,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 13,
+    "segment_id": "aPWCPjc7bBg_0",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/aPWCPjc7bBg.wav",
+    "audio_duration": 6.9135,
+    "num_inferences": 23,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9545454545454546,
+        "f1": 0.9767441860465117,
+        "accuracy": 0.9545454545454546,
+        "balanced_accuracy": 0.4772727272727273,
+        "sensitivity": 0.9545454545454546,
+        "specificity": 0.0,
+        "error_rate": 0.045454545454545456,
+        "deletion_rate": 0.045454545454545456,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 7.6309654579963535,
+      "total_samples": 77,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.5,
+        "mean": 34.80779220779221
+      },
+      "ram_mb": {
+        "min": 1428.3046875,
+        "max": 1440.33984375,
+        "mean": 1439.6941964285713
+      },
+      "throughput": 0.9059797266878552,
+      "audio_duration": 6.9135,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 14,
+    "segment_id": "V6JZ36ojQkc_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/V6JZ36ojQkc.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 2.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 1.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.73074256000109,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.403738317756996
+      },
+      "ram_mb": {
+        "min": 1434.61328125,
+        "max": 1438.61328125,
+        "mean": 1438.4263653621495
+      },
+      "throughput": 0.9319019577708502,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 15,
+    "segment_id": "Gs5B-PtJl6Q_9000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/Gs5B-PtJl6Q.wav",
+    "audio_duration": 9.2535,
+    "num_inferences": 30,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9666666666666667,
+        "f1": 0.983050847457627,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.48333333333333334,
+        "sensitivity": 0.9666666666666667,
+        "specificity": 0.0,
+        "error_rate": 0.03333333333333333,
+        "deletion_rate": 0.03333333333333333,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 9.801205859985203,
+      "total_samples": 98,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.3,
+        "mean": 35.290816326530596
+      },
+      "ram_mb": {
+        "min": 1434.609375,
+        "max": 1440.609375,
+        "mean": 1440.2420280612246
+      },
+      "throughput": 0.9441185229848821,
+      "audio_duration": 9.2535,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 16,
+    "segment_id": "jqqEENGIjLM_0",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/jqqEENGIjLM.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 0.875,
+        "recall": 0.7777777777777778,
+        "f1": 0.823529411764706,
+        "accuracy": 0.9090909090909091,
+        "balanced_accuracy": 0.8680555555555556,
+        "sensitivity": 0.7777777777777778,
+        "specificity": 0.9583333333333334,
+        "error_rate": 0.3333333333333333,
+        "deletion_rate": 0.2222222222222222,
+        "insertion_rate": 0.1111111111111111,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730991630989593,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.67663551401868
+      },
+      "ram_mb": {
+        "min": 1434.60546875,
+        "max": 1446.6484375,
+        "mean": 1446.243757301402
+      },
+      "throughput": 0.931880327920619,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 17,
+    "segment_id": "EU2yVBa1-N8_25000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/EU2yVBa1-N8.wav",
+    "audio_duration": 9.5535,
+    "num_inferences": 31,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0,
+        "balanced_accuracy": 0.5,
+        "sensitivity": 1.0,
+        "specificity": 0.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.110799472022336,
+      "total_samples": 101,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.43168316831682
+      },
+      "ram_mb": {
+        "min": 1440.9140625,
+        "max": 1448.9609375,
+        "mean": 1448.7221534653465
+      },
+      "throughput": 0.9448807709455178,
+      "audio_duration": 9.5535,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 18,
+    "segment_id": "iXGkMnh5hSc_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/iXGkMnh5hSc.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 2,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.8181818181818182,
+        "f1": 0.9,
+        "accuracy": 0.8181818181818182,
+        "balanced_accuracy": 0.4090909090909091,
+        "sensitivity": 0.8181818181818182,
+        "specificity": 0.0,
+        "error_rate": 0.18181818181818182,
+        "deletion_rate": 0.18181818181818182,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.3333333333333333,
+        "recall": 0.5,
+        "f1": 0.4,
+        "error_rate": 1.5,
+        "deletion_rate": 0.5,
+        "insertion_rate": 1.0,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 2
+    },
+    "performance": {
+      "total_time": 10.730993075005244,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.7,
+        "mean": 35.49065420560747
+      },
+      "ram_mb": {
+        "min": 1447.19921875,
+        "max": 1449.2109375,
+        "mean": 1449.1170414719627
+      },
+      "throughput": 0.9318802025221802,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 19,
+    "segment_id": "cxRhySahrxo_40000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/cxRhySahrxo.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 2.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 1.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730954189028125,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.5841121495327
+      },
+      "ram_mb": {
+        "min": 1447.1875,
+        "max": 1453.1875,
+        "mean": 1452.9167640186915
+      },
+      "throughput": 0.9318835793954381,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 20,
+    "segment_id": "SG9ohajJmGA_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/SG9ohajJmGA.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.8181818181818182,
+        "f1": 0.9,
+        "accuracy": 0.8181818181818182,
+        "balanced_accuracy": 0.4090909090909091,
+        "sensitivity": 0.8181818181818182,
+        "specificity": 0.0,
+        "error_rate": 0.18181818181818182,
+        "deletion_rate": 0.18181818181818182,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731313203985337,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.310280373831766
+      },
+      "ram_mb": {
+        "min": 1447.43359375,
+        "max": 1459.984375,
+        "mean": 1459.7090756425234
+      },
+      "throughput": 0.9318524033280712,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 21,
+    "segment_id": "zzY0QX0ZJ4Y_19000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/zzY0QX0ZJ4Y.wav",
+    "audio_duration": 9.2335,
+    "num_inferences": 30,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0,
+        "balanced_accuracy": 0.5,
+        "sensitivity": 1.0,
+        "specificity": 0.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 9.800935452978592,
+      "total_samples": 98,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.3,
+        "mean": 35.49285714285714
+      },
+      "ram_mb": {
+        "min": 1455.74609375,
+        "max": 1464.3046875,
+        "mean": 1464.2042012117347
+      },
+      "throughput": 0.9421039495973679,
+      "audio_duration": 9.2335,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 22,
+    "segment_id": "YRxhBnOHh5g_150000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/YRxhBnOHh5g.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 6,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.7272727272727273,
+        "f1": 0.8421052631578948,
+        "accuracy": 0.7272727272727273,
+        "balanced_accuracy": 0.36363636363636365,
+        "sensitivity": 0.7272727272727273,
+        "specificity": 0.0,
+        "error_rate": 0.2727272727272727,
+        "deletion_rate": 0.2727272727272727,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 6.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 5.999999999999999,
+        "substitution_rate": null
+      },
+      "num_detected": 6,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.73129800602328,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.579439252336435
+      },
+      "ram_mb": {
+        "min": 1464.0234375,
+        "max": 1468.03515625,
+        "mean": 1467.8478022780373
+      },
+      "throughput": 0.931853723043306,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 23,
+    "segment_id": "3jH_pyOhBPk_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/3jH_pyOhBPk.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9696969696969697,
+        "f1": 0.9846153846153847,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.48484848484848486,
+        "sensitivity": 0.9696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.030303030303030304,
+        "deletion_rate": 0.030303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.73109082801966,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.590654205607464
+      },
+      "ram_mb": {
+        "min": 1464.01171875,
+        "max": 1476.05078125,
+        "mean": 1475.6183557242991
+      },
+      "throughput": 0.9318717137207777,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 24,
+    "segment_id": "4VJRyGdM3yI_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/4VJRyGdM3yI.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.73099682101747,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.49345794392523
+      },
+      "ram_mb": {
+        "min": 1470.3203125,
+        "max": 1474.33203125,
+        "mean": 1474.1446772780373
+      },
+      "throughput": 0.9318798772183253,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 25,
+    "segment_id": "mfYq1ISxiaU_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/mfYq1ISxiaU.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 5,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.5454545454545454,
+        "f1": 0.7058823529411764,
+        "accuracy": 0.5454545454545454,
+        "balanced_accuracy": 0.2727272727272727,
+        "sensitivity": 0.5454545454545454,
+        "specificity": 0.0,
+        "error_rate": 0.45454545454545453,
+        "deletion_rate": 0.45454545454545453,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 5.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 4.999999999999999,
+        "substitution_rate": null
+      },
+      "num_detected": 5,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731025245971978,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.58411214953269
+      },
+      "ram_mb": {
+        "min": 1470.30859375,
+        "max": 1476.30859375,
+        "mean": 1476.0282199182243
+      },
+      "throughput": 0.9318774088015144,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 26,
+    "segment_id": "0dyfl-736FE_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/0dyfl-736FE.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.7878787878787878,
+        "f1": 0.8813559322033898,
+        "accuracy": 0.7878787878787878,
+        "balanced_accuracy": 0.3939393939393939,
+        "sensitivity": 0.7878787878787878,
+        "specificity": 0.0,
+        "error_rate": 0.21212121212121213,
+        "deletion_rate": 0.21212121212121213,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 1.9999999999999996,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731130275002215,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.67943925233644
+      },
+      "ram_mb": {
+        "min": 1470.296875,
+        "max": 1482.32421875,
+        "mean": 1481.9127117406542
+      },
+      "throughput": 0.9318682882170057,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 27,
+    "segment_id": "9D5zrR8ygd4_160000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/9D5zrR8ygd4.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.7272727272727273,
+        "f1": 0.8421052631578948,
+        "accuracy": 0.7272727272727273,
+        "balanced_accuracy": 0.36363636363636365,
+        "sensitivity": 0.7272727272727273,
+        "specificity": 0.0,
+        "error_rate": 0.2727272727272727,
+        "deletion_rate": 0.2727272727272727,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731133035966195,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.21495327102803
+      },
+      "ram_mb": {
+        "min": 1476.58203125,
+        "max": 1484.58203125,
+        "mean": 1484.2090756425234
+      },
+      "throughput": 0.9318680484608897,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 28,
+    "segment_id": "kGKQO0LY_7Y_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/kGKQO0LY_7Y.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730871853011195,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.5,
+        "mean": 35.305607476635515
+      },
+      "ram_mb": {
+        "min": 1476.59375,
+        "max": 1482.59375,
+        "mean": 1482.3142523364486
+      },
+      "throughput": 0.9318907295676908,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 29,
+    "segment_id": "XQl9q88l95M_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/XQl9q88l95M.wav",
+    "audio_duration": 10.0009375,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 6,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.5151515151515151,
+        "f1": 0.6799999999999999,
+        "accuracy": 0.5151515151515151,
+        "balanced_accuracy": 0.25757575757575757,
+        "sensitivity": 0.5151515151515151,
+        "specificity": 0.0,
+        "error_rate": 0.48484848484848486,
+        "deletion_rate": 0.48484848484848486,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 6.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 5.999999999999999,
+        "substitution_rate": null
+      },
+      "num_detected": 6,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731304266024381,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.49252336448597
+      },
+      "ram_mb": {
+        "min": 1476.60546875,
+        "max": 1482.60546875,
+        "mean": 1482.3252409462616
+      },
+      "throughput": 0.9319405406911494,
+      "audio_duration": 10.0009375,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 30,
+    "segment_id": "8Kvrkek8h_s_15000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/8Kvrkek8h_s.wav",
+    "audio_duration": 9.05696875,
+    "num_inferences": 30,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9666666666666667,
+        "f1": 0.983050847457627,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.48333333333333334,
+        "sensitivity": 0.9666666666666667,
+        "specificity": 0.0,
+        "error_rate": 0.03333333333333333,
+        "deletion_rate": 0.03333333333333333,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 9.801166286983062,
+      "total_samples": 98,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.18469387755101
+      },
+      "ram_mb": {
+        "min": 1476.5859375,
+        "max": 1484.5859375,
+        "mean": 1484.097935267857
+      },
+      "throughput": 0.9240705121010515,
+      "audio_duration": 9.05696875,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 31,
+    "segment_id": "K5_U6mi3TUo_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/K5_U6mi3TUo.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.8484848484848485,
+        "f1": 0.9180327868852458,
+        "accuracy": 0.8484848484848485,
+        "balanced_accuracy": 0.42424242424242425,
+        "sensitivity": 0.8484848484848485,
+        "specificity": 0.0,
+        "error_rate": 0.15151515151515152,
+        "deletion_rate": 0.15151515151515152,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 2.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 1.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731047218956519,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.31495327102804
+      },
+      "ram_mb": {
+        "min": 1476.59765625,
+        "max": 1489.14453125,
+        "mean": 1488.868976343458
+      },
+      "throughput": 0.9318755006813206,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 32,
+    "segment_id": "Z3zGDe25gP4_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/Z3zGDe25gP4.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 4,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.8181818181818182,
+        "f1": 0.9,
+        "accuracy": 0.8181818181818182,
+        "balanced_accuracy": 0.4090909090909091,
+        "sensitivity": 0.8181818181818182,
+        "specificity": 0.0,
+        "error_rate": 0.18181818181818182,
+        "deletion_rate": 0.18181818181818182,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 4.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 3.999999999999999,
+        "substitution_rate": null
+      },
+      "num_detected": 4,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730818882002495,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.495327102803735
+      },
+      "ram_mb": {
+        "min": 1484.88671875,
+        "max": 1490.88671875,
+        "mean": 1490.6069290303737
+      },
+      "throughput": 0.9318953297004938,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 33,
+    "segment_id": "ZftXfAXmTRw_530000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/ZftXfAXmTRw.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 0.8888888888888888,
+        "recall": 0.8,
+        "f1": 0.8421052631578948,
+        "accuracy": 0.85,
+        "balanced_accuracy": 0.8500000000000001,
+        "sensitivity": 0.8,
+        "specificity": 0.9,
+        "error_rate": 0.30000000000000004,
+        "deletion_rate": 0.2,
+        "insertion_rate": 0.1,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.3333333333333333,
+        "recall": 1.0,
+        "f1": 0.5,
+        "error_rate": 1.9999999999999996,
+        "deletion_rate": 0.0,
+        "insertion_rate": 1.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730777474993374,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.679439252336444
+      },
+      "ram_mb": {
+        "min": 1484.890625,
+        "max": 1494.92578125,
+        "mean": 1494.607586156542
+      },
+      "throughput": 0.9318989256187306,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 34,
+    "segment_id": "TxPRX0NbL9E_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/TxPRX0NbL9E.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730921732960269,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.962616822429894
+      },
+      "ram_mb": {
+        "min": 1491.1875,
+        "max": 1499.2265625,
+        "mean": 1499.0098568925234
+      },
+      "throughput": 0.9318863979116326,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 35,
+    "segment_id": "xwVb3n09WaM_1000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/xwVb3n09WaM.wav",
+    "audio_duration": 9.6935,
+    "num_inferences": 32,
+    "num_gt_events": 1,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.875,
+        "f1": 0.9333333333333333,
+        "accuracy": 0.875,
+        "balanced_accuracy": 0.4375,
+        "sensitivity": 0.875,
+        "specificity": 0.0,
+        "error_rate": 0.125,
+        "deletion_rate": 0.125,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.3333333333333333,
+        "recall": 1.0,
+        "f1": 0.5,
+        "error_rate": 1.9999999999999996,
+        "deletion_rate": 0.0,
+        "insertion_rate": 1.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.42127181898104,
+      "total_samples": 104,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.073076923076925
+      },
+      "ram_mb": {
+        "min": 1497.70703125,
+        "max": 1503.70703125,
+        "mean": 1503.4190204326924
+      },
+      "throughput": 0.9301647791533952,
+      "audio_duration": 9.6935,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 36,
+    "segment_id": "FvYr3ekJe_c_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/FvYr3ekJe_c.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 2,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6666666666666666,
+        "accuracy": 0.6206896551724138,
+        "balanced_accuracy": 0.75,
+        "sensitivity": 0.5,
+        "specificity": 1.0,
+        "error_rate": 0.5,
+        "deletion_rate": 0.5,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 2.5,
+        "deletion_rate": 1.0,
+        "insertion_rate": 1.5,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 2
+    },
+    "performance": {
+      "total_time": 10.730955914012156,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.7,
+        "mean": 35.49906542056073
+      },
+      "ram_mb": {
+        "min": 1497.70703125,
+        "max": 1503.70703125,
+        "mean": 1503.4275335864486
+      },
+      "throughput": 0.9318834295966405,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 37,
+    "segment_id": "o-orwtbwGSU_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/o-orwtbwGSU.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 3.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 2.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.73092710901983,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.49626168224298
+      },
+      "ram_mb": {
+        "min": 1497.70703125,
+        "max": 1501.71875,
+        "mean": 1501.5313960280373
+      },
+      "throughput": 0.9318859310482639,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 38,
+    "segment_id": "Y_7tlXONBAw_11000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/Y_7tlXONBAw.wav",
+    "audio_duration": 9.1085,
+    "num_inferences": 30,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9310344827586207,
+        "f1": 0.9642857142857143,
+        "accuracy": 0.9310344827586207,
+        "balanced_accuracy": 0.46551724137931033,
+        "sensitivity": 0.9310344827586207,
+        "specificity": 0.0,
+        "error_rate": 0.06896551724137931,
+        "deletion_rate": 0.06896551724137931,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 9.801063578983303,
+      "total_samples": 98,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.092857142857135
+      },
+      "ram_mb": {
+        "min": 1497.6953125,
+        "max": 1509.734375,
+        "mean": 1509.2130899234694
+      },
+      "throughput": 0.9293379158902318,
+      "audio_duration": 9.1085,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 39,
+    "segment_id": "VpVQSzhSd14_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/VpVQSzhSd14.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9696969696969697,
+        "f1": 0.9846153846153847,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.48484848484848486,
+        "sensitivity": 0.9696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.030303030303030304,
+        "deletion_rate": 0.030303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731035611010157,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.5,
+        "mean": 35.5841121495327
+      },
+      "ram_mb": {
+        "min": 1504.015625,
+        "max": 1506.015625,
+        "mean": 1505.9221670560748
+      },
+      "throughput": 0.9318765087071273,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 40,
+    "segment_id": "-z47zN0YyE4_420000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/balanced_train/-z47zN0YyE4.wav",
+    "audio_duration": 10.000375,
+    "num_inferences": 33,
+    "num_gt_events": 2,
+    "num_detected_events": 3,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.3333333333333333,
+        "recall": 0.5,
+        "f1": 0.4,
+        "error_rate": 1.5,
+        "deletion_rate": 0.5,
+        "insertion_rate": 1.0,
+        "substitution_rate": null
+      },
+      "num_detected": 3,
+      "num_ground_truth": 2
+    },
+    "performance": {
+      "total_time": 10.731358151009772,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.5,
+        "mean": 35.48878504672895
+      },
+      "ram_mb": {
+        "min": 1503.9921875,
+        "max": 1514.04296875,
+        "mean": 1513.7161580023364
+      },
+      "throughput": 0.9318834446932526,
+      "audio_duration": 10.000375,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 41,
+    "segment_id": "zN0wZWtIXzA_2000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/zN0wZWtIXzA.wav",
+    "audio_duration": 9.8935,
+    "num_inferences": 32,
+    "num_gt_events": 1,
+    "num_detected_events": 4,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.696969696969697,
+        "f1": 0.8214285714285715,
+        "accuracy": 0.696969696969697,
+        "balanced_accuracy": 0.3484848484848485,
+        "sensitivity": 0.696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.30303030303030304,
+        "deletion_rate": 0.30303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 4.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 3.999999999999999,
+        "substitution_rate": null
+      },
+      "num_detected": 4,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.421022941009142,
+      "total_samples": 104,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.276923076923076
+      },
+      "ram_mb": {
+        "min": 1510.27734375,
+        "max": 1516.27734375,
+        "mean": 1515.9897836538462
+      },
+      "throughput": 0.9493789674972102,
+      "audio_duration": 9.8935,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 42,
+    "segment_id": "GwCo3-WX3sw_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/GwCo3-WX3sw.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 2.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 1.9999999999999996,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731008927046787,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.303738317756995
+      },
+      "ram_mb": {
+        "min": 1510.2890625,
+        "max": 1516.2890625,
+        "mean": 1516.0086886682243
+      },
+      "throughput": 0.9318788259317977,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 43,
+    "segment_id": "rHaXF6gyVsw_80000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/rHaXF6gyVsw.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731137236987706,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.590654205607464
+      },
+      "ram_mb": {
+        "min": 1510.27734375,
+        "max": 1516.27734375,
+        "mean": 1515.9969699182243
+      },
+      "throughput": 0.9318676836535416,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 44,
+    "segment_id": "wD20jAGWBgM_10000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/wD20jAGWBgM.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "accuracy": 1.0,
+        "balanced_accuracy": 0.5,
+        "sensitivity": 1.0,
+        "specificity": 0.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731056154996622,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.5,
+        "mean": 35.494392523364475
+      },
+      "ram_mb": {
+        "min": 1510.265625,
+        "max": 1518.265625,
+        "mean": 1517.8931074766356
+      },
+      "throughput": 0.9318747246834389,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 45,
+    "segment_id": "5SHCBLMK348_160000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/5SHCBLMK348.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 5,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.696969696969697,
+        "f1": 0.8214285714285715,
+        "accuracy": 0.696969696969697,
+        "balanced_accuracy": 0.3484848484848485,
+        "sensitivity": 0.696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.30303030303030304,
+        "deletion_rate": 0.30303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "error_rate": 5.999999999999999,
+        "deletion_rate": 0.9999999999999998,
+        "insertion_rate": 4.999999999999999,
+        "substitution_rate": null
+      },
+      "num_detected": 5,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731319981976412,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.21028037383177
+      },
+      "ram_mb": {
+        "min": 1510.2890625,
+        "max": 1514.2890625,
+        "mean": 1514.1025846962616
+      },
+      "throughput": 0.9318518147623324,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 46,
+    "segment_id": "IRROtxNE3qU_30000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/IRROtxNE3qU.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9393939393939394,
+        "f1": 0.96875,
+        "accuracy": 0.9393939393939394,
+        "balanced_accuracy": 0.4696969696969697,
+        "sensitivity": 0.9393939393939394,
+        "specificity": 0.0,
+        "error_rate": 0.06060606060606061,
+        "deletion_rate": 0.06060606060606061,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.730947455042042,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 119.7,
+        "mean": 35.58317757009345
+      },
+      "ram_mb": {
+        "min": 1510.27734375,
+        "max": 1516.27734375,
+        "mean": 1515.9969699182243
+      },
+      "throughput": 0.9318841641798741,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 47,
+    "segment_id": "o51WS1A5VjA_20000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/o51WS1A5VjA.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 0.8571428571428571,
+        "recall": 0.8571428571428571,
+        "f1": 0.8571428571428571,
+        "accuracy": 0.8787878787878788,
+        "balanced_accuracy": 0.8759398496240601,
+        "sensitivity": 0.8571428571428571,
+        "specificity": 0.8947368421052632,
+        "error_rate": 0.2857142857142857,
+        "deletion_rate": 0.14285714285714285,
+        "insertion_rate": 0.14285714285714285,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.731046264991164,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.312149532710265
+      },
+      "ram_mb": {
+        "min": 1510.265625,
+        "max": 1518.265625,
+        "mean": 1517.8931074766356
+      },
+      "throughput": 0.9318755835229114,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 48,
+    "segment_id": "YhEQ1nsnAmc_20000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/YhEQ1nsnAmc.wav",
+    "audio_duration": 10.0,
+    "num_inferences": 33,
+    "num_gt_events": 1,
+    "num_detected_events": 1,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.9696969696969697,
+        "f1": 0.9846153846153847,
+        "accuracy": 0.9696969696969697,
+        "balanced_accuracy": 0.48484848484848486,
+        "sensitivity": 0.9696969696969697,
+        "specificity": 0.0,
+        "error_rate": 0.030303030303030304,
+        "deletion_rate": 0.030303030303030304,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "error_rate": 0.0,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.0,
+        "substitution_rate": null
+      },
+      "num_detected": 1,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.73085897200508,
+      "total_samples": 107,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.6,
+        "mean": 35.39999999999999
+      },
+      "ram_mb": {
+        "min": 1510.27734375,
+        "max": 1516.27734375,
+        "mean": 1515.9974080023364
+      },
+      "throughput": 0.9318918481817939,
+      "audio_duration": 10.0,
+      "is_realtime_capable": false
+    }
+  },
+  {
+    "sample_idx": 49,
+    "segment_id": "Z0OHOLrhk9k_9000",
+    "file_path": "/home/user/Documenti/E2PANNs/datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced/Z0OHOLrhk9k.wav",
+    "audio_duration": 9.854625,
+    "num_inferences": 32,
+    "num_gt_events": 1,
+    "num_detected_events": 2,
+    "sed_metrics": {
+      "segment_based": {
+        "precision": 1.0,
+        "recall": 0.71875,
+        "f1": 0.8363636363636363,
+        "accuracy": 0.71875,
+        "balanced_accuracy": 0.359375,
+        "sensitivity": 0.71875,
+        "specificity": 0.0,
+        "error_rate": 0.28125,
+        "deletion_rate": 0.28125,
+        "insertion_rate": 0.0,
+        "substitution_rate": 0.0
+      },
+      "event_based": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6666666666666666,
+        "error_rate": 0.9999999999999998,
+        "deletion_rate": 0.0,
+        "insertion_rate": 0.9999999999999998,
+        "substitution_rate": null
+      },
+      "num_detected": 2,
+      "num_ground_truth": 1
+    },
+    "performance": {
+      "total_time": 10.421245314995758,
+      "total_samples": 104,
+      "cpu": {
+        "min": 0.0,
+        "max": 129.0,
+        "mean": 35.27211538461537
+      },
+      "ram_mb": {
+        "min": 1510.27734375,
+        "max": 1518.28125,
+        "mean": 1517.8945688100962
+      },
+      "throughput": 0.9456283488327049,
+      "audio_duration": 9.854625,
+      "is_realtime_capable": false
+    }
+  }
+]

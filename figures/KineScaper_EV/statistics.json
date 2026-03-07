@@ -1,0 +1,185 @@
+{
+  "overview": {
+    "total_files": 61600,
+    "total_chunks": 246400,
+    "class_distribution": {
+      "wail": 8800,
+      "yelp": 8800,
+      "phaser": 8800,
+      "piercer": 8800,
+      "hi-lo": 8800,
+      "rumbler": 8800,
+      "two-tone": 8800
+    },
+    "files_per_class": {
+      "wail": 8800,
+      "yelp": 8800,
+      "phaser": 8800,
+      "piercer": 8800,
+      "hi-lo": 8800,
+      "rumbler": 8800,
+      "two-tone": 8800
+    }
+  },
+  "temporal": {
+    "onset": {
+      "min": 3.000222757127112,
+      "max": 9.999934269996457,
+      "mean": 6.499854421144645,
+      "median": 6.497978709803812,
+      "std": 2.027299271482835
+    },
+    "offset": {
+      "min": 19.663953354018727,
+      "max": 40.0,
+      "mean": 36.78208390591923,
+      "median": 40.0,
+      "std": 4.436073830299818
+    },
+    "duration": {
+      "min": 16.0065625,
+      "max": 36.99977724287289,
+      "mean": 30.282229484774582,
+      "median": 31.156674768551404,
+      "std": 4.436864815740925
+    }
+  },
+  "acoustic": {
+    "snr_avg": {
+      "overall": {
+        "min": -54.98411440074766,
+        "max": 17.248126469575986,
+        "mean": -20.459837675831643,
+        "median": -20.48047649869495,
+        "std": 12.063791706313301
+      },
+      "per_class": {
+        "hi-lo": {
+          "mean": -20.547151698937856,
+          "std": 12.000212675288608
+        },
+        "phaser": {
+          "mean": -19.81044676842065,
+          "std": 12.031269843820715
+        },
+        "piercer": {
+          "mean": -19.80197524792368,
+          "std": 11.978864834066561
+        },
+        "rumbler": {
+          "mean": -22.65048619729144,
+          "std": 12.097985421605607
+        },
+        "two-tone": {
+          "mean": -20.58287330647742,
+          "std": 12.024712627030246
+        },
+        "wail": {
+          "mean": -19.928349659880386,
+          "std": 12.007628554136673
+        },
+        "yelp": {
+          "mean": -19.897580851890066,
+          "std": 12.049122091705973
+        }
+      }
+    },
+    "spl_targets": {
+      "bg_levels": [
+        50.0,
+        53.0,
+        56.0,
+        59.0,
+        62.0,
+        65.0,
+        68.0,
+        71.0
+      ],
+      "fg_levels": [
+        80.0,
+        83.0,
+        86.0,
+        89.0,
+        92.0,
+        95.0,
+        98.0,
+        101.0,
+        104.0,
+        107.0,
+        110.0
+      ],
+      "bg_count": 8,
+      "fg_count": 11
+    }
+  },
+  "taxonomy": {
+    "siren_types": {
+      "electronic": 48224,
+      "pneumatic": 8800,
+      "mechanical": 4576
+    },
+    "waveforms": {
+      "sine": 12760,
+      "sawtooth": 12584,
+      "trapezoid": 12232,
+      "triangle": 12056,
+      "square": 11968
+    },
+    "iterations": {
+      "min": 0,
+      "max": 19,
+      "unique": 20
+    }
+  },
+  "chunking": {
+    "total_chunks": 246400,
+    "positive_chunks": 234269,
+    "negative_chunks": 12131,
+    "positive_ratio": 0.9507670454545455,
+    "positive_per_class": {
+      "wail": 33514,
+      "yelp": 33467,
+      "phaser": 33438,
+      "piercer": 33438,
+      "hi-lo": 33482,
+      "rumbler": 33479,
+      "two-tone": 33451
+    },
+    "negative_per_class": {
+      "wail": 1686,
+      "yelp": 1733,
+      "phaser": 1762,
+      "piercer": 1762,
+      "hi-lo": 1718,
+      "rumbler": 1721,
+      "two-tone": 1749
+    }
+  },
+  "detection_mode": {
+    "num_windows_per_sample": 130,
+    "window_size": 0.31,
+    "positive_windows": {
+      "mean": 98.92464285714286,
+      "median": 102.0,
+      "min": 53,
+      "max": 121,
+      "std": 14.473055009258427
+    }
+  },
+  "negative_pool": {
+    "kinescaper_internal": 12131,
+    "audioset_ev_v2": 20916,
+    "fsd50k": 21843,
+    "urbansound8k": 7732,
+    "esc50": 1960,
+    "lssiren": 902,
+    "total": 65484
+  },
+  "parameters": {
+    "seed": 42,
+    "chunk_duration": 10.0,
+    "min_overlap": 0.5,
+    "window_size": 0.31,
+    "target_duration_detection": 40.0
+  }
+}

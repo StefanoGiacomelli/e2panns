@@ -12,6 +12,7 @@ The benchmark supports both **binary** (siren vs. non-siren) and **multi-class**
 datasets/
 ├── AudioSet_EV_v1_2025/          # AudioSet-derived EV dataset (2025 release)
 ├── AudioSet_EV_v2PANNs_2020/     # AudioSet-derived EV dataset (2020 PANNs release)
+├── AudioSet_EV_Strong/           # AudioSet_EV-derived Strong annotations (AudioSet Strong parsing)
 ├── sireNNet/                     # sireNNet dataset (urban EV sirens)
 ├── ESC-50/                       # Environmental Sound Classification-50
 ├── FSD50K/                       # Freesound Dataset 50K
@@ -43,6 +44,14 @@ datasets/
 - **Labels**: Binary + Multi-class (same as AudioSet EV v1) with stratified negatives
 - **Duration**: 10-second clips at 32 kHz
 - **Features**: Stratified negative sampling across 39 sound categories
+
+#### **AudioSet EV Strong (v1 & v2)**
+
+- **Source**: AudioSet Strong Metadata parsing over AudioSet-EV v1 and v2
+- **Content**: ~28,000 audio clips (1186 positives, 119,283 negatives)
+- **Labels**: Temporally aligned strong annotations (onset-offset) with negatives balancing procedures
+- **Duration**: 10-second clips at 32 kHz
+- **Features**: Sound Event Detection annotations w. comprehensive contents analysis
 
 #### **sireNNet**
 
@@ -155,8 +164,8 @@ This benchmark represents an updated and extended version of the **EV-Benchmark*
 
 The current release includes:
 
-- ✅ Expanded dataset coverage (v1 and v2)
-- ✅ Multi-class classification support (4-way)
+- ✅ Expanded datasets coverage
+- ✅ Multi-class support (4-way)
 - ✅ Stratified Negatives sampling
 - ✅ Comprehensive PyTorch Lightning DataModules (w. data augmentation & pre-processing integrations)
 

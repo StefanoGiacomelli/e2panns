@@ -1,0 +1,108 @@
+====================================================================================================
+BENCHMARK RESULTS ANALYSIS - BEST MODELS
+====================================================================================================
+Analyzed models: 3 models
+Strategies: finetuned, retrained
+Training datasets: AS-EV_v1, AS-EV_v2
+Evaluation: AudioSet_EV_v2PANNs_2020 + GLOBAL (avg across all datasets)
+====================================================================================================
+
+====================================================================================================
+COMPLETE RESULTS TABLE
+====================================================================================================
+ Model  Strategy Train_Dataset             Eval_Dataset  Accuracy  Precision   Recall       F1    AUROC  Specificity
+epanns finetuned      AS-EV_v2 AudioSet_EV_v2PANNs_2020  0.972800   0.979000 0.965100 0.972000 0.995200     0.980100
+  clap finetuned      AS-EV_v2 AudioSet_EV_v2PANNs_2020  0.969000   0.981400 0.954800 0.967900 0.991700     0.982600
+epanns retrained      AS-EV_v2 AudioSet_EV_v2PANNs_2020  0.965200   0.977400 0.950900 0.964000 0.991200     0.978900
+   ced finetuned      AS-EV_v2 AudioSet_EV_v2PANNs_2020  0.958900   0.967100 0.948300 0.957600 0.990500     0.969000
+   ced finetuned      AS-EV_v1 AudioSet_EV_v2PANNs_2020  0.922200   0.972400 0.865600 0.915900 0.973900     0.976400
+epanns finetuned      AS-EV_v1 AudioSet_EV_v2PANNs_2020  0.912700   0.870600 0.965100 0.915400 0.979500     0.862300
+   ced retrained      AS-EV_v2 AudioSet_EV_v2PANNs_2020  0.887300   0.873400 0.900500 0.886800 0.948900     0.874700
+epanns retrained      AS-EV_v1 AudioSet_EV_v2PANNs_2020  0.880400   0.836600 0.939300 0.885000 0.960600     0.823800
+  clap finetuned      AS-EV_v1 AudioSet_EV_v2PANNs_2020  0.849400   0.894100 0.785500 0.836300 0.912200     0.910700
+   ced retrained      AS-EV_v1 AudioSet_EV_v2PANNs_2020  0.807000   0.921000 0.662800 0.770800 0.895100     0.945400
+epanns finetuned      AS-EV_v2                   GLOBAL  0.926866   0.779797 0.908300 0.832348 0.972114     0.903307
+epanns retrained      AS-EV_v2                   GLOBAL  0.936152   0.771707 0.881210 0.811948 0.952352     0.946172
+   ced finetuned      AS-EV_v2                   GLOBAL  0.879893   0.732538 0.900579 0.800434 0.945952     0.823786
+   ced finetuned      AS-EV_v1                   GLOBAL  0.916610   0.766448 0.865472 0.790376 0.955886     0.896062
+  clap finetuned      AS-EV_v2                   GLOBAL  0.898252   0.706424 0.788245 0.732814 0.886300     0.914469
+  clap finetuned      AS-EV_v1                   GLOBAL  0.850100   0.637900 0.909972 0.731631 0.958683     0.764507
+epanns finetuned      AS-EV_v1                   GLOBAL  0.822355   0.565690 0.895279 0.679962 0.934159     0.727834
+epanns retrained      AS-EV_v1                   GLOBAL  0.831703   0.547345 0.887793 0.657924 0.937852     0.767145
+   ced retrained      AS-EV_v1                   GLOBAL  0.822407   0.565110 0.678752 0.596462 0.888441     0.845031
+   ced retrained      AS-EV_v2                   GLOBAL  0.764945   0.549379 0.642141 0.521145 0.838462     0.850255
+
+====================================================================================================
+BEST MODELS SUMMARY
+====================================================================================================
+
+####################################################################################################
+# AudioSet_EV_v2PANNs_2020
+####################################################################################################
+
+🏆 ACCURACY: 0.9728
+   Model: EPANNS
+   Strategy: FINETUNED
+   Trained on: AS-EV_v2
+   → Most ACCURATE (overall correctness)
+
+🏆 PRECISION: 0.9814
+   Model: CLAP
+   Strategy: FINETUNED
+   Trained on: AS-EV_v2
+   → Most PRECISE (few false positives, high confidence when predicting siren)
+
+🏆 RECALL: 0.9651
+   Model: EPANNS
+   Strategy: FINETUNED
+   Trained on: AS-EV_v1
+   → Most SENSITIVE (few false negatives, catches most sirens)
+
+🏆 F1: 0.9720
+   Model: EPANNS
+   Strategy: FINETUNED
+   Trained on: AS-EV_v2
+   → Most BALANCED (best trade-off precision-recall)
+
+
+####################################################################################################
+# GLOBAL
+####################################################################################################
+
+🏆 ACCURACY: 0.9362
+   Model: EPANNS
+   Strategy: RETRAINED
+   Trained on: AS-EV_v2
+   → Most ACCURATE (overall correctness)
+
+🏆 PRECISION: 0.7798
+   Model: EPANNS
+   Strategy: FINETUNED
+   Trained on: AS-EV_v2
+   → Most PRECISE (few false positives, high confidence when predicting siren)
+
+🏆 RECALL: 0.9100
+   Model: CLAP
+   Strategy: FINETUNED
+   Trained on: AS-EV_v1
+   → Most SENSITIVE (few false negatives, catches most sirens)
+
+🏆 F1: 0.8323
+   Model: EPANNS
+   Strategy: FINETUNED
+   Trained on: AS-EV_v2
+   → Most BALANCED (best trade-off precision-recall)
+
+
+====================================================================================================
+SUMMARY STATISTICS
+====================================================================================================
+
+Number of 'wins' (best metric) per model:
+  epanns_finetuned_AS-EV_v2: 4 wins
+  clap_finetuned_AS-EV_v2: 1 wins
+  epanns_finetuned_AS-EV_v1: 1 wins
+  epanns_retrained_AS-EV_v2: 1 wins
+  clap_finetuned_AS-EV_v1: 1 wins
+
+🎖️  OVERALL CHAMPION: epanns_finetuned_AS-EV_v2 (4 wins out of 8 categories)
