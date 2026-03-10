@@ -19,7 +19,6 @@ from typing import Dict, Any
 import numpy as np
 import json
 import yaml
-import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -40,6 +39,7 @@ from datasets.LSSiren.dataloader import LSSirenDataModule, lssiren_collate_fn
 from datasets.ESC50.dataloader import ESC50DataModule, esc50_collate_fn
 from datasets.FSD50K.dataloader import FSD50KDataModule, fsd50k_collate_fn
 from datasets.UrbanSound8K.dataloader import UrbanSound8KDataModule, urbansound8k_collate_fn
+from datasets.KineScaper_EV.dataloader import KineScaper_EV_DataModule, simple_collate_fn as kinescaper_collate_fn
 
 
 # =============================================================================
@@ -200,7 +200,8 @@ COLLATE_FN_MAP = {'AudioSet_EV_v1_2025': audioset_ev_v1_collate_fn,
                   'LSSiren': lssiren_collate_fn,
                   'ESC50': esc50_collate_fn,
                   'FSD50K': fsd50k_collate_fn,
-                  'UrbanSound8K': urbansound8k_collate_fn}
+                  'UrbanSound8K': urbansound8k_collate_fn,
+                  'KineScaper_EV': kinescaper_collate_fn}
 
 
 def test_with_cv_support(trainer, model, datamodule, dataset_name: str):
@@ -358,10 +359,23 @@ def get_datamodule(config: Dict[str, Any], dataset_name: str = None, mode_overri
                                             min_length=int(data_config.get('target_duration', 4.0) * data_config['target_sr']),
                                             **common_params)
     
+    elif dataset_name == 'KineScaper_EV':
+        datamodule = KineScaper_EV_DataModule(
+            mode=mode,
+            label_type=label_mode,
+            dataset_root='/mnt/ssd/Kinescaper_EV/dataset/',
+            batch_size=data_config['batch_size'],
+            num_workers=common_params.get('num_workers', 4),
+            seed=exp_config['seed'],
+            augmentation=data_config.get('augmentation', {}).get('enabled', False),
+            negative_overlap=0.20,     # 20% overlap for negative chunking
+            use_negatives=True          # Use standalone negatives from Negatives/ folder
+        )
+    
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}. "
                          f"Available: AudioSet_EV_v1_2025, AudioSet_EV_v2PANNs_2020, sireNNet, "
-                         f"LSSiren, ESC50, FSD50K, UrbanSound8K")
+                         f"LSSiren, ESC50, FSD50K, UrbanSound8K, KineScaper_EV")
     
     return datamodule
 
@@ -597,6 +611,7 @@ def main():
                          strategy=strategy,
                          precision=config['training'].get('precision', 32),
                          gradient_clip_val=config['training'].get('gradient_clip_val', None),
+                         accumulate_grad_batches=config['training'].get('accumulate_grad_batches', 1),  # Backward compatible (default=1)
                          val_check_interval=config['training'].get('val_check_interval', 1.0),
                          limit_train_batches=config['training'].get('limit_train_batches', None),
                          limit_val_batches=config['training'].get('limit_val_batches', None),

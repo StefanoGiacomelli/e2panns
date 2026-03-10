@@ -21,6 +21,9 @@ from scipy.ndimage import gaussian_filter1d
 # Add parent directory for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
+# Import new dataloader for dynamic negative pool calculation
+from datasets.KineScaper_EV.dataloader import KineScaper_NegativeChunkGenerator
+
 # Configuration
 SCRIPT_DIR = Path(__file__).parent
 OUTPUT_DIR = SCRIPT_DIR / "analysis_results"
@@ -180,11 +183,9 @@ def analyze_siren_taxonomy(df):
 
 
 def analyze_chunking(df):
-    """Analyze chunking characteristics."""
+    """Analyze chunking characteristics (positives only in new system)."""
     positive_chunks = 0
-    negative_chunks = 0
     positive_chunks_per_class = defaultdict(int)
-    negative_chunks_per_class = defaultdict(int)
     
     for _, row in df.iterrows():
         onset = row['onset']
@@ -200,17 +201,10 @@ def analyze_chunking(df):
             if overlap >= MIN_OVERLAP:
                 positive_chunks += 1
                 positive_chunks_per_class[siren_class] += 1
-            else:
-                negative_chunks += 1
-                negative_chunks_per_class[siren_class] += 1
     
     stats = {
-        'total_chunks': len(df) * 4,
-        'positive_chunks': positive_chunks,
-        'negative_chunks': negative_chunks,
-        'positive_ratio': positive_chunks / (positive_chunks + negative_chunks),
-        'positive_per_class': dict(positive_chunks_per_class),
-        'negative_per_class': dict(negative_chunks_per_class)
+        'total_positive_chunks': positive_chunks,
+        'positive_per_class': dict(positive_chunks_per_class)
     }
     
     return stats
@@ -253,17 +247,66 @@ def analyze_detection_mode(df):
     return stats, positive_windows_per_sample
 
 
-def analyze_negative_pool():
-    """Analyze negative pool composition."""
+def analyze_negative_pool(num_positives: int):
+    """Analyze negative pool composition dynamically from Negatives/ folder."""
+    print("  Computing negative pool statistics from Negatives/ folder...")
+    
+    # Path to Negatives folder
+    negatives_dir = os.path.join(DATASET_ROOT, 'Negatives')
+    
+    # Fallback to repo location if not in dataset root
+    if not os.path.exists(negatives_dir):
+        repo_negatives_dir = os.path.join(SCRIPT_DIR, 'Negatives')
+        if os.path.exists(repo_negatives_dir):
+            negatives_dir = repo_negatives_dir
+    
+    if not os.path.exists(negatives_dir):
+        print(f"    Warning: Negatives directory not found!")
+        return {'error': 'Negatives directory not found'}
+    
+    # Create negative generator to compute statistics
+    neg_generator = KineScaper_NegativeChunkGenerator(
+        negatives_dir=negatives_dir,
+        num_positives=num_positives,
+        chunk_duration=CHUNK_DURATION,
+        overlap=0.20,  # 20% overlap as in dataloader
+        target_sr=32000,
+        seed=SEED
+    )
+    
+    # Collect statistics per city
+    city_stats = {}
+    city_base_chunks = {}
+    
+    for chunk_metadata in neg_generator.base_chunks:
+        audio_path = chunk_metadata['audio_path']
+        city_name = os.path.splitext(os.path.basename(audio_path))[0]
+        
+        if city_name not in city_base_chunks:
+            city_base_chunks[city_name] = 0
+        city_base_chunks[city_name] += 1
+    
+    # Calculate augmented chunks per city
+    for city_name, base_count in city_base_chunks.items():
+        city_stats[city_name] = {
+            'base_chunks': base_count,
+            'augmented_chunks': base_count * neg_generator.augmentation_factor,
+            'augmentation_factor': neg_generator.augmentation_factor
+        }
+    
     stats = {
-        'kinescaper_internal': 12131,
-        'audioset_ev_v2': 20916,
-        'fsd50k': 21843,
-        'urbansound8k': 7732,
-        'esc50': 1960,
-        'lssiren': 902,
-        'total': 65484
+        'cities': city_stats,
+        'total_base_chunks': len(neg_generator.base_chunks),
+        'augmentation_factor': neg_generator.augmentation_factor,
+        'total_augmented_chunks': len(neg_generator),
+        'overlap_ratio': neg_generator.overlap,
+        'num_files': len(neg_generator.negative_files)
     }
+    
+    print(f"    Found {stats['num_files']} negative files")
+    print(f"    Base chunks: {stats['total_base_chunks']:,}")
+    print(f"    Augmentation factor: {stats['augmentation_factor']}x")
+    print(f"    Total augmented: {stats['total_augmented_chunks']:,}")
     
     return stats
 
@@ -273,102 +316,91 @@ def analyze_negative_pool():
 # =============================================================================
 
 def plot_fig1_overview(negative_pool_stats, chunk_stats):
-    """Figure 1: Dataset Overview - 2 Pie Charts."""
-    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+    """Figure 1: Dataset Overview - Bar Chart (Negatives) + Pie Chart (Positives)."""
+    fig, axes = plt.subplots(1, 2, figsize=(18, 8))
     
     # =========================================================================
-    # Plot 1: Binary Negative Pool Sources
+    # Plot 1: Negative Pool - Bar Chart per City (Base + Augmented)
     # =========================================================================
     ax = axes[0]
     
-    # Mapping con nomi corretti e maiuscole
-    source_name_mapping = {
-        'kinescaper_internal': 'KineScaper\n(Internal)',
-        'audioset_ev_v2': 'AudioSet\nEV v2',
-        'fsd50k': 'FSD50K',
-        'urbansound8k': 'UrbanSound8K',
-        'esc50': 'ESC-50',
-        'lssiren': 'LSSiren'
-    }
-    
-    neg_sources = [k for k in negative_pool_stats.keys() if k != 'total']
-    neg_labels = [source_name_mapping.get(src, src) for src in neg_sources]
-    neg_counts = [negative_pool_stats[src] for src in neg_sources]
-    
-    colors_neg = plt.cm.Pastel1(np.linspace(0, 1, len(neg_sources)))
-    
-    def make_autopct(values):
-        def my_autopct(pct):
-            total = sum(values)
-            val = int(round(pct*total/100.0))
-            return f'{pct:.1f}%\n({val:,})'
-        return my_autopct
-    
-    wedges, texts, autotexts = ax.pie(neg_counts, labels=neg_labels,
-                                        autopct=make_autopct(neg_counts),
-                                        colors=colors_neg,
-                                        startangle=90,
-                                        textprops={'fontsize': 11, 'fontweight': 'bold'})
-    
-    # Sposta manualmente le etichette e percentuali di ESC-50 e LSSiren che si sovrappongono
-    for i, (src, text, autotext) in enumerate(zip(neg_sources, texts, autotexts)):
-        if src == 'esc50':
-            # ESC-50
-            pos = text.get_position()
-            text.set_position((pos[0], pos[1]))
-            
-            pos_auto = autotext.get_position()
-            autotext.set_position((pos_auto[0], pos_auto[1] + 0.08))
-            
-        elif src == 'lssiren':
-            # LSSiren
-            pos = text.get_position()
-            text.set_position((pos[0] - 0.15, pos[1]))
-            
-            pos_auto = autotext.get_position()
-            autotext.set_position((pos_auto[0], pos_auto[1] - 0.08))  # Sposta % più in basso
-    
-    ax.set_title(f'Binary Negative Pool Sources\n(Total: {negative_pool_stats["total"]:,})',
-                fontsize=14, fontweight='bold', pad=20)
+    if 'cities' in negative_pool_stats and negative_pool_stats['cities']:
+        cities = sorted(negative_pool_stats['cities'].keys())
+        base_counts = [negative_pool_stats['cities'][city]['base_chunks'] for city in cities]
+        aug_counts = [negative_pool_stats['cities'][city]['augmented_chunks'] for city in cities]
+        
+        x = np.arange(len(cities))
+        width = 0.35
+        
+        bars1 = ax.bar(x - width/2, base_counts, width, label='Base Chunks', 
+                      color='#8DD3C7', edgecolor='black', linewidth=1)
+        bars2 = ax.bar(x + width/2, aug_counts, width, label='Augmented Chunks',
+                      color='#FB8072', edgecolor='black', linewidth=1)
+        
+        ax.set_xlabel('City (Urban Traffic Source)', fontsize=13, fontweight='bold')
+        ax.set_ylabel('Number of Chunks (log scale)', fontsize=13, fontweight='bold')
+        ax.set_title(f'Negative Pool Composition\n'
+                    f'({negative_pool_stats["total_augmented_chunks"]:,} total chunks, '
+                    f'{negative_pool_stats["augmentation_factor"]}x augmentation, '
+                    f'{negative_pool_stats["overlap_ratio"]*100:.0f}% overlap)',
+                    fontsize=14, fontweight='bold', pad=15)
+        ax.set_xticks(x)
+        ax.set_xticklabels(cities, rotation=45, ha='right', fontsize=10)
+        ax.legend(loc='upper right', fontsize=11)
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.set_yscale('log')  # Scala logaritmica sull'asse Y
+        
+        # Add value labels on bars
+        for bars in [bars1, bars2]:
+            for bar in bars:
+                height = bar.get_height()
+                if height > 0:
+                    ax.text(bar.get_x() + bar.get_width()/2., height,
+                           f'{int(height):,}',
+                           ha='center', va='bottom', fontsize=8)
+    else:
+        ax.text(0.5, 0.5, 'No negative pool data available',
+               ha='center', va='center', transform=ax.transAxes,
+               fontsize=14, fontweight='bold')
+        ax.set_title('Negative Pool Composition', fontsize=14, fontweight='bold')
     
     # =========================================================================
-    # Plot 2: Positive Chunks per Class + Native Negatives
+    # Plot 2: Positive Chunks - Pie Chart per Siren Class
     # =========================================================================
     ax = axes[1]
     
-    pos_per_class = chunk_stats['positive_per_class']
-    neg_native = chunk_stats['negative_per_class']
-    
-    # Somma tutti i negativi nativi
-    total_neg_native = sum(neg_native.values())
-    
-    # Crea etichette e valori
-    pie_labels = []
-    pie_values = []
-    
-    # Aggiungi le 7 classi positive
-    for siren_class in sorted(pos_per_class.keys()):
-        pie_labels.append(siren_class)
-        pie_values.append(pos_per_class[siren_class])
-    
-    # Aggiungi negativi nativi
-    pie_labels.append('Negative\n(Native)')
-    pie_values.append(total_neg_native)
-    
-    colors_multi = list(plt.cm.Set3(np.linspace(0, 1, len(pos_per_class)))) + ['#95a5a6']
-    
-    wedges, texts, autotexts = ax.pie(pie_values, labels=pie_labels,
-                                        autopct=make_autopct(pie_values),
-                                        colors=colors_multi,
-                                        startangle=90,
-                                        textprops={'fontsize': 10, 'fontweight': 'bold'})
-    ax.set_title(f'Positive Chunks per Class + Native Negatives\n(Total Chunks: {sum(pie_values):,})',
-                fontsize=14, fontweight='bold', pad=20)
+    if 'positive_per_class' in chunk_stats:
+        pos_classes = sorted(chunk_stats['positive_per_class'].keys())
+        pos_counts = [chunk_stats['positive_per_class'][c] for c in pos_classes]
+        
+        colors_pos = plt.cm.Set3(np.linspace(0, 1, len(pos_classes)))
+        
+        def make_autopct(values):
+            def my_autopct(pct):
+                total = sum(values)
+                val = int(round(pct*total/100.0))
+                return f'{pct:.1f}%\n({val:,})'
+            return my_autopct
+        
+        wedges, texts, autotexts = ax.pie(pos_counts, labels=pos_classes,
+                                            autopct=make_autopct(pos_counts),
+                                            colors=colors_pos,
+                                            startangle=45,
+                                            textprops={'fontsize': 10, 'fontweight': 'bold'})
+        
+        ax.set_title(f'Positive Chunks by Siren Class\n'
+                    f'({chunk_stats["total_positive_chunks"]:,} total positive chunks)',
+                    fontsize=14, fontweight='bold', pad=15)
+    else:
+        ax.text(0.5, 0.5, 'No positive chunk data available',
+               ha='center', va='center', transform=ax.transAxes,
+               fontsize=14, fontweight='bold')
+        ax.set_title('Positive Chunks Distribution', fontsize=14, fontweight='bold')
     
     plt.tight_layout()
     output_path = OUTPUT_DIR / "overview.svg"
-    plt.savefig(output_path, format='svg', dpi=600, bbox_inches='tight')
-    print(f"✓ Saved: {output_path}")
+    plt.savefig(output_path, format='svg', dpi=300, bbox_inches='tight')
+    print(f"  Saved: {output_path}")
     plt.close()
 
 
@@ -616,9 +648,9 @@ def main():
     print("\n[7/8] Analyzing detection mode...")
     detection_stats, positive_windows = analyze_detection_mode(df)
     
-    # Negative pool
+    # Negative pool (dynamic calculation using KineScaper_NegativeChunkGenerator)
     print("\n[8/8] Analyzing negative pool...")
-    negative_pool_stats = analyze_negative_pool()
+    negative_pool_stats = analyze_negative_pool(num_positives=chunk_stats['total_positive_chunks'])
     
     # Combine all statistics
     all_stats = {
@@ -658,12 +690,19 @@ def main():
     print("\nSUMMARY:")
     print(f"  Total files: {overview_stats['total_files']:,}")
     print(f"  Total chunks: {overview_stats['total_chunks']:,}")
-    print(f"  Positive chunks: {chunk_stats['positive_chunks']:,} ({chunk_stats['positive_ratio']*100:.1f}%)")
-    print(f"  Negative chunks: {chunk_stats['negative_chunks']:,}")
+    print(f"  Positive chunks: {chunk_stats['total_positive_chunks']:,}")
     print(f"  7 siren classes (perfectly balanced)")
-    print(f"  Negative pool: {negative_pool_stats['total']:,} samples")
+    
+    if 'total_augmented_chunks' in negative_pool_stats:
+        print(f"\n  Negative pool (NEW SYSTEM - Standalone):")
+        print(f"    Files: {negative_pool_stats['num_files']} urban traffic recordings")
+        print(f"    Base chunks: {negative_pool_stats['total_base_chunks']:,}")
+        print(f"    Augmentation: {negative_pool_stats['augmentation_factor']}x")
+        print(f"    Total negatives: {negative_pool_stats['total_augmented_chunks']:,}")
+        print(f"    Overlap: {negative_pool_stats['overlap_ratio']*100:.0f}%")
+    
     print(f"\n  Generated figures:")
-    print(f"    - overview.svg (2 pie charts)")
+    print(f"    - overview.svg (Negative Bar Chart + Positive Pie Chart)")
     print(f"    - acoustic_features.svg (SNR + SPL heatmap + Duration)")
     print(f"    - siren_taxonomy.svg (3 heatmaps)")
     print(f"    - detection_mode.svg (positive windows distribution, smoothed)")

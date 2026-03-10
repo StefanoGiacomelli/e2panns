@@ -1,0 +1,39 @@
+# =============================================================================
+# EPANNs Finetuned Binary - KineScaper-EV - Benchmark Configuration
+# =============================================================================
+# Benchmark EPANNs finetuned on KineScaper-EV (binary task) across all datasets
+#
+# Training details:
+#   - Dataset: KineScaper_EV
+#   - Task: Binary Emergency Vehicle classification
+#   - Training strategy: Transfer learning from AS-EV_v2 finetuned model
+#   - Best epoch: 0 (val_f1=0.9763)
+#   - Training set: 197,120 chunks (80%)
+#   - Validation set: 24,640 chunks (10%)
+#   - Test set: 24,640 chunks (10%)
+#   - Augmentation: NegativePoolManager with 65,484 negative samples
+#   - Balancing: 50/50 pos/neg in training batches
+#   - Effective batch size: 32 (4 × 8 accumulation)
+#   - Learning rate: 0.001 with exponential decay (gamma=0.98)
+#
+# Performance on KineScaper-EV:
+#   - Validation F1: 97.63%
+#   - Expected improvement on domain-specific emergency vehicle detection
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/finetuned/epanns_finetuned_binary_KineScaper-EV.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "epanns"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/binary_EV/epanns_finetune_KineScaper-EV/epoch=011_val_f1=0.9937.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32                    # Batch size for inference
+  num_workers: 4                    # Number of data loading workers
+  limit_test_batches: null          # Test on full datasets (no limit)
+  datasets_to_test: []              # Empty list = test on ALL available datasets
+  output_dir: "./benchmark_results_kinescaper"  # Output directory for results

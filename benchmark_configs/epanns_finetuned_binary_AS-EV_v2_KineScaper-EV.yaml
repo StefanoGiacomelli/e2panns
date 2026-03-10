@@ -1,0 +1,38 @@
+# =============================================================================
+# EPANNs Finetuned Binary - KineScaper-EV Benchmark Configuration
+# =============================================================================
+# Benchmark EPANNs finetuned on AudioSet_EV_v2 for binary task on KineScaper-EV
+#
+# Model details:
+#   - Model: EPANNs (CNN14)
+#   - Training: Finetuned on AudioSet_EV_v2PANNs_2020
+#   - Task: Binary Emergency Vehicle classification
+#   - Epoch: 002
+#   - Val F1: 0.9625
+#   - Checkpoint: epoch=002_val_f1=0.9625.pt
+#
+# KineScaper-EV benchmark configuration:
+#   - Mode: benchmark (full dataset as test, balanced pos/neg)
+#   - Chunks: ~246,400 (10s chunks from 40s files)
+#   - Positives: ~234,269 (95%)
+#   - Negatives: ~12,131 (5%) + external balancing
+#   - Label mode: binary (siren vs no-siren)
+#   - Augmentation: disabled (test only)
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/epanns_finetuned_KineScaper-EV.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "epanns"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32
+  num_workers: 4
+  limit_test_batches: null
+  datasets_to_test: ["KineScaper_EV"]
+  output_dir: "./benchmark_results_kinescaper"

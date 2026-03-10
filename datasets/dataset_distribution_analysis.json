@@ -1,0 +1,70 @@
+{
+  "existing_datasets": {
+    "AudioSet_EV_v1_2025": {
+      "pos": 7324,
+      "neg": 6702,
+      "total": 14026
+    },
+    "AudioSet_EV_v2PANNs_2020": {
+      "pos": 7900,
+      "neg": 20916,
+      "total": 28816
+    },
+    "sireNNet": {
+      "pos": 1254,
+      "neg": 421,
+      "total": 1675
+    },
+    "LSSiren": {
+      "pos": 932,
+      "neg": 901,
+      "total": 1833
+    },
+    "ESC50": {
+      "pos": 40,
+      "neg": 320,
+      "total": 360
+    },
+    "FSD50K": {
+      "pos": 132,
+      "neg": 51065,
+      "total": 51197
+    },
+    "UrbanSound8K": {
+      "pos": 1000,
+      "neg": 7732,
+      "total": 8732
+    }
+  },
+  "existing_totals": {
+    "positives": 18582,
+    "negatives": 88057,
+    "total": 106639
+  },
+  "kinescaper_available": {
+    "positives": 234269,
+    "negatives": 12180,
+    "total": 246449
+  },
+  "strategy": {
+    "total_negatives": 100237,
+    "needed_positives_from_kinescaper": 81655,
+    "epochs_for_full_coverage": 2.869009858551222,
+    "coverage_per_epoch_percent": 34.855230525592376,
+    "feasible": true,
+    "uses_all_negatives": true,
+    "uses_resampling": true
+  },
+  "unified_final": {
+    "positives": 100237,
+    "positives_from_others": 18582,
+    "positives_from_kinescaper": 81655,
+    "negatives": 100237,
+    "negatives_from_others": 88057,
+    "negatives_from_kinescaper": 12180,
+    "total": 200474,
+    "balance_ratio": 1.0,
+    "balance_difference": 0,
+    "is_balanced": true
+  }
+}

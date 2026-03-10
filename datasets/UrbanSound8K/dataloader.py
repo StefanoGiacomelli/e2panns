@@ -240,6 +240,12 @@ class UrbanSound8KDataset(Dataset):
         label = self.labels[idx]
         
         try:
+            # Check file size (skip corrupted files >100MB)
+            file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+            if file_size_mb > 100:
+                print(f"⚠️  Skipping corrupted file (too large: {file_size_mb:.2f} MB): {file_path}")
+                return None
+            
             # Load audio using soundfile
             waveform_np, sr = sf.read(file_path, dtype='float32')
             

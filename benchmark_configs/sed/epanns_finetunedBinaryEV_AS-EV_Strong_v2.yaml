@@ -16,9 +16,6 @@ dataset:
   # Dataset name (determines folder structure and metadata paths)
   name: "AudioSet_EV_v2"  # Options: AudioSet_EV_v1, AudioSet_EV_v2
   
-  # Processing mode
-  mode: "detection"  # Always 'detection' for inference
-  
   # Maximum number of samples to process (null = all positive samples)
   # Useful for testing: set to small number (e.g., 10) for quick validation
   max_samples: null  # null = process all, or specify number (e.g., 10, 100)
@@ -93,13 +90,6 @@ output:
   # Save detected events for each sample to individual files
   # WARNING: This can create many files (one per sample)
   save_events: false
-
-# ============================================================================
-# PERFORMANCE SETTINGS
-# ============================================================================
-performance:
-  # Show progress bar during processing
-  progress_bar: true
 
 # ============================================================================
 # LOGGING

@@ -47,6 +47,7 @@ from datasets.LSSiren.dataloader import LSSirenDataModule, lssiren_collate_fn
 from datasets.ESC50.dataloader import ESC50DataModule, esc50_collate_fn
 from datasets.FSD50K.dataloader import FSD50KDataModule, fsd50k_collate_fn
 from datasets.UrbanSound8K.dataloader import UrbanSound8KDataModule, urbansound8k_collate_fn
+from datasets.KineScaper_EV.dataloader import KineScaper_EV_DataModule, simple_collate_fn as kinescaper_collate_fn
 
 
 # ============================================================================
@@ -96,6 +97,7 @@ if args.config:
     
     # Benchmark Configuration
     BATCH_SIZE = config['benchmark']['batch_size']
+    NUM_WORKERS = config['benchmark'].get('num_workers', 4)  # Default: 4
     LIMIT_TEST_BATCHES = config['benchmark']['limit_test_batches']
     DATASETS_TO_TEST = config['benchmark']['datasets_to_test']
     OUTPUT_DIR = config['benchmark']['output_dir']
@@ -113,6 +115,7 @@ else:
     
     # Test Configuration
     BATCH_SIZE = 32
+    NUM_WORKERS = 4                                                     # Number of workers for data loading
     LIMIT_TEST_BATCHES = None                                           # Set to a float (e.g., 0.1) to limit to a fraction of the test set
     
     # Output Configuration
@@ -130,10 +133,11 @@ DATASET_TASK_SUPPORT = {'AudioSet_EV_v1_2025': ['binary', 'multiclass'],
                         'LSSiren': ['binary'],
                         'ESC50': ['binary'],
                         'FSD50K': ['binary'],
-                        'UrbanSound8K': ['binary']}
+                        'UrbanSound8K': ['binary'],
+                        'KineScaper_EV': ['binary']}  # Note: multiclass is siren-types, not vehicle-types
 
 # Datasets with cross-validation support
-CV_DATASETS = ['ESC50', 'UrbanSound8K', 'sireNNet']
+CV_DATASETS = ['ESC50', 'UrbanSound8K', 'sireNNet', 'KineScaper_EV']
 
 # Collate function mapping
 COLLATE_FN_MAP = {'AudioSet_EV_v1_2025': audioset_ev_v1_collate_fn,
@@ -142,7 +146,8 @@ COLLATE_FN_MAP = {'AudioSet_EV_v1_2025': audioset_ev_v1_collate_fn,
                   'LSSiren': lssiren_collate_fn,
                   'ESC50': esc50_collate_fn,
                   'FSD50K': fsd50k_collate_fn,
-                  'UrbanSound8K': urbansound8k_collate_fn}
+                  'UrbanSound8K': urbansound8k_collate_fn,
+                  'KineScaper_EV': kinescaper_collate_fn}
 
 
 # ============================================================================
@@ -304,6 +309,21 @@ def initialize_datamodule(dataset_name: str, task: str, model_name: str):
                                             audio_folder=os.path.join(dataset_path, 'audio'),
                                             min_length=int(4.0 * target_sr),
                                             **common_params)
+    
+    elif dataset_name == 'KineScaper_EV':
+        # KineScaper-EV: Use benchmark mode (CV by siren type)
+        # NEW DATALOADER: Uses standalone negatives from Negatives/ folder
+        datamodule = KineScaper_EV_DataModule(
+            mode='benchmark',
+            label_type=label_mode,
+            dataset_root='/mnt/ssd/Kinescaper_EV/dataset/',
+            batch_size=BATCH_SIZE,
+            num_workers=NUM_WORKERS,
+            seed=SEED,
+            augmentation=False,        # No augmentation in benchmark
+            negative_overlap=0.20,     # 20% overlap for negative chunking
+            use_negatives=True         # Use standalone negatives from Negatives/
+        )
     
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")

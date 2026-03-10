@@ -1,39 +1,38 @@
 # =============================================================================
-# Unified Multi-Dataset Training Configuration
+# Unified Multi-Dataset Training Configuration - CLAP
 # =============================================================================
-# Trains EPANNs on unified dataset combining all 7 EV datasets
+# Trains CLAP on unified dataset combining all 8 EV datasets
 # Task: Binary classification (Emergency Vehicle vs Non-EV)
 # Author: Stefano Giacomelli - Ph.D. candidate in ICT (DISIM dpt. - University of L'Aquila)
 
 experiment:
-  name: "epanns_unified_binary_EV"
+  name: "clap_unified_binary_EV"
   task: "binary"
-  model_name: "epanns"
+  model_name: "clap"
   pretrained: true
   seed: 42
 
 data:
   # Audio preprocessing
-  target_sr: 32000
-  target_duration: 10.0  # seconds (fixed length: 320000 samples @ 32kHz)
-  
+  target_sr: 48000             # CLAP requires 48kHz (EPANNs=32k, CED=16k)
+  target_duration: 10.0        # seconds (fixed length: 480000 samples @ 48kHz)
+
   # Training parameters
-  batch_size: 4  # small batch to avoid OOM
-  accumulate_grad_batches: 8  # simulates batch_size=32 (4×8)
+  batch_size: 4
+  accumulate_grad_batches: 8   # simulates batch_size=32 (4×8)
   split_ratios: [0.8, 0.1, 0.1]  # train/val/test
-  
+
   # Batch limits for quick testing (comment out for full training)
   # train_batch_limit: 1
   # val_batch_limit: 1
   # test_batch_limit: 1
-  
+
   # Data augmentation (applied to training set only)
   augmentation:
     enabled: true
-    probability: 0.5  # probability of applying each augmentation technique
-  
+    probability: 0.5
+
   # Datasets to include in unified training
-  # All 8 datasets will be concatenated and split globally
   datasets:
     - AudioSet_EV_v1_2025
     - AudioSet_EV_v2PANNs_2020
@@ -46,33 +45,27 @@ data:
 
 training:
   # Training duration
-  max_epochs: 25
-  patience: 5  # early stopping patience
-  
-  # Optimizer (Adam with fixed learning rate)
+  max_epochs: 25                # SET TO 1 FOR TEST RUN — change to 25 for full training
+  patience: 5
+
+  # Optimizer
   optimizer:
-    lr: 0.001  # fixed learning rate (no scheduler)
+    lr: 0.001
     weight_decay: 1.0e-6
     betas: [0.9, 0.999]
     eps: 1.0e-8
-    
+
   # Scheduler (exponential with gamma=1.0 for fixed LR)
   scheduler:
     type: "exponential"
-    gamma: 1.0  # no decay = fixed learning rate
+    gamma: 1.0
 
 model:
-  # Binary classification threshold
   threshold: 0.5
-  
-  # F-beta score (beta=0.8 weights precision slightly higher than recall)
   f_beta: 0.8
 
 paths:
-  # Data root directory
   data_root: "./datasets"
-  
-  # Results, checkpoints, and logs
-  results: "./results/unified_training_EV"
-  checkpoints: "./checkpoints/unified_training_EV"
-  logs: "./logs/unified_training_EV"
+  results: "./results/unified_training_EV_clap"
+  checkpoints: "./checkpoints/unified_training_EV_clap"
+  logs: "./logs/unified_training_EV_clap"

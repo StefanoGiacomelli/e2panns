@@ -227,6 +227,9 @@ datasets/UrbanSound8K/metadata/
 datasets/UrbanSound8K/FREESOUNDCREDITS.txt
 datasets/UrbanSound8K/UrbanSound8K_README.txt
 
+# KineScaper_EV - Exclude all except Python files
+datasets/KineScaper_EV/Negatives
+
 # Salt submodule (not tracked)
 salt/
 

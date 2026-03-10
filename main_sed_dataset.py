@@ -33,6 +33,7 @@ from tqdm import tqdm
 from sed_system.core import load_inference_model
 from sed_system.pipeline import process_audio_file
 from datasets.AudioSet_EV_Strong.dataloader import AudioSetEV_Strong_Dataset
+from datasets.KineScaper_EV.dataloader import KineScaper_EV_DetectionDataset
 
 
 def setup_logging(level: str = "INFO", log_file: str = None):
@@ -73,9 +74,15 @@ def validate_config(config: dict):
             raise ValueError(f"Missing required config key: {key}")
     
     # Validate dataset name
-    valid_datasets = ['AudioSet_EV_v1', 'AudioSet_EV_v2']
+    valid_datasets = ['AudioSet_EV_v1', 'AudioSet_EV_v2', 'KineScaper_EV']
     if config['dataset']['name'] not in valid_datasets:
         raise ValueError(f"Invalid dataset name. Must be one of: {valid_datasets}")
+    
+    # Validate device
+    valid_devices = ['cpu', 'cuda', 'mps']
+    device = config['model'].get('device', 'cpu')
+    if device not in valid_devices:
+        raise ValueError(f"Invalid device. Must be one of: {valid_devices}")
     
     # Validate adaptive window params
     if config['inference']['adaptive_window']['enabled']:
@@ -91,11 +98,17 @@ def validate_config(config: dict):
 
 
 def extract_ground_truth_events(sample_events: List[Dict], ev_mids: List[str]) -> List:
-    """Extract EV ground truth events from sample metadata."""
+    """Extract EV ground truth events from sample metadata.
+    
+    Supports both AudioSet Strong (filter by MID) and KineScaper (all events are EV).
+    """
     gt_events = []
     
     for event in sample_events:
-        if event['mid'] in ev_mids:
+        mid = event.get('mid', '')
+        # KineScaper events use 'kinescaper_ev' as MID - always include
+        # AudioSet events: filter by EV MIDs
+        if mid == 'kinescaper_ev' or mid in ev_mids:
             gt_events.append((event['start'], event['end']))
     
     return gt_events
@@ -303,6 +316,16 @@ def main():
     
     setup_logging(log_level, log_file)
     
+    # Validate model device availability
+    import torch
+    device = config['model'].get('device', 'cpu')
+    if device == 'cuda' and not torch.cuda.is_available():
+        print(f"WARNING: CUDA requested but not available, falling back to CPU")
+        config['model']['device'] = 'cpu'
+    elif device == 'mps' and not (hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()):
+        print(f"WARNING: MPS requested but not available, falling back to CPU")
+        config['model']['device'] = 'cpu'
+    
     # Print configuration header
     print("\n" + "="*80)
     print("SED DATASET PROCESSING")
@@ -348,56 +371,89 @@ def main():
     
     # Load dataset
     project_root = Path(__file__).parent
-    dataset_version = 'v2' if config['dataset']['name'] == 'AudioSet_EV_v2' else 'v1'
+    dataset_name = config['dataset']['name']
     
-    # Strong metadata
-    strong_metadata = [
-        project_root / "datasets/AudioSet_EV_Strong/audioset_strong_metadata/audioset_train_strong.tsv",
-        project_root / "datasets/AudioSet_EV_Strong/audioset_strong_metadata/audioset_eval_strong.tsv"
-    ]
-    
-    # Audio folders
-    if dataset_version == 'v2':
-        audio_folders = [
-            project_root / "datasets/AudioSet_EV_v2PANNs_2020/Positive_files/balanced_train",
-            project_root / "datasets/AudioSet_EV_v2PANNs_2020/Positive_files/eval",
-            project_root / "datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced",
-            project_root / "datasets/AudioSet_EV_v2PANNs_2020/Negative_files/balanced_train",
-            project_root / "datasets/AudioSet_EV_v2PANNs_2020/Negative_files/eval"
+    if dataset_name == 'KineScaper_EV':
+        # Load KineScaper-EV detection dataset
+        dataset_root = config['dataset'].get('dataset_root', '/mnt/ssd/Kinescaper_EV/dataset/')
+        
+        dataset = KineScaper_EV_DetectionDataset(
+            dataset_root=dataset_root,
+            metadata_format=config['dataset'].get('metadata_format', 'json'),
+            window_size=config['inference']['chunk_duration'],
+            target_sr=32000,
+            target_duration=config['dataset'].get('target_duration', 40.0),
+            is_positive=True,
+            seed=42
+        )
+        
+        total_samples = len(dataset.samples)
+        max_samples = config['dataset'].get('max_samples')
+        num_samples = min(total_samples, max_samples) if max_samples else total_samples
+        
+        # Warn if processing a very large number of samples
+        estimated_hours = num_samples * config['dataset'].get('target_duration', 40.0) / 3600
+        print(f"Total samples: {total_samples:,}")
+        if estimated_hours > 1.0:
+            print(f"WARNING: {num_samples:,} samples = ~{estimated_hours:.1f}h of audio. Consider setting max_samples in config.")
+        print(f"Processing: {num_samples} samples")
+        print("="*80 + "\n")
+        
+        # KineScaper: all events are EV, no MID filtering needed
+        ev_mids = []
+        
+    else:
+        # AudioSet EV (v1 or v2)
+        dataset_version = 'v2' if dataset_name == 'AudioSet_EV_v2' else 'v1'
+        
+        # Strong metadata
+        strong_metadata = [
+            project_root / "datasets/AudioSet_EV_Strong/audioset_strong_metadata/audioset_train_strong.tsv",
+            project_root / "datasets/AudioSet_EV_Strong/audioset_strong_metadata/audioset_eval_strong.tsv"
         ]
-    else:  # v1
-        audio_folders = [
-            project_root / "datasets/AudioSet_EV_v1_2025/Positive_files",
-            project_root / "datasets/AudioSet_EV_v1_2025/Negative_files"
+        
+        # Audio folders
+        if dataset_version == 'v2':
+            audio_folders = [
+                project_root / "datasets/AudioSet_EV_v2PANNs_2020/Positive_files/balanced_train",
+                project_root / "datasets/AudioSet_EV_v2PANNs_2020/Positive_files/eval",
+                project_root / "datasets/AudioSet_EV_v2PANNs_2020/Positive_files/unbalanced",
+                project_root / "datasets/AudioSet_EV_v2PANNs_2020/Negative_files/balanced_train",
+                project_root / "datasets/AudioSet_EV_v2PANNs_2020/Negative_files/eval"
+            ]
+        else:  # v1
+            audio_folders = [
+                project_root / "datasets/AudioSet_EV_v1_2025/Positive_files",
+                project_root / "datasets/AudioSet_EV_v1_2025/Negative_files"
+            ]
+        
+        # EV MIDs
+        ev_mids = [
+            '/m/03j1ly',  # Emergency vehicle
+            '/m/04qvtq',  # Police car (siren)
+            '/m/012n7d',  # Ambulance (siren)
+            '/m/012ndj'   # Fire engine
         ]
-    
-    # EV MIDs
-    ev_mids = [
-        '/m/03j1ly',  # Emergency vehicle
-        '/m/04qvtq',  # Police car (siren)
-        '/m/012n7d',  # Ambulance (siren)
-        '/m/012ndj'   # Fire engine
-    ]
-    
-    # Initialize dataset (positives only)
-    dataset = AudioSetEV_Strong_Dataset(
-        strong_metadata_paths=[str(p) for p in strong_metadata],
-        audio_folders=[str(p) for p in audio_folders],
-        ev_mids=ev_mids,
-        window_size=config['inference']['chunk_duration'],
-        target_sr=32000,
-        target_duration=10.0,
-        is_positive=True,  # Only positives
-        seed=42
-    )
-    
-    total_samples = len(dataset.samples)
-    max_samples = config['dataset'].get('max_samples')
-    num_samples = min(total_samples, max_samples) if max_samples else total_samples
-    
-    print(f"Total positive samples: {total_samples}")
-    print(f"Processing: {num_samples} samples")
-    print("="*80 + "\n")
+        
+        # Initialize dataset (positives only)
+        dataset = AudioSetEV_Strong_Dataset(
+            strong_metadata_paths=[str(p) for p in strong_metadata],
+            audio_folders=[str(p) for p in audio_folders],
+            ev_mids=ev_mids,
+            window_size=config['inference']['chunk_duration'],
+            target_sr=32000,
+            target_duration=10.0,
+            is_positive=True,  # Only positives
+            seed=42
+        )
+        
+        total_samples = len(dataset.samples)
+        max_samples = config['dataset'].get('max_samples')
+        num_samples = min(total_samples, max_samples) if max_samples else total_samples
+        
+        print(f"Total positive samples: {total_samples}")
+        print(f"Processing: {num_samples} samples")
+        print("="*80 + "\n")
     
     # Load model
     print("Loading model...")

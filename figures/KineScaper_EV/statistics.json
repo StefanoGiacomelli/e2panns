@@ -132,10 +132,7 @@
     }
   },
   "chunking": {
-    "total_chunks": 246400,
-    "positive_chunks": 234269,
-    "negative_chunks": 12131,
-    "positive_ratio": 0.9507670454545455,
+    "total_positive_chunks": 234269,
     "positive_per_class": {
       "wail": 33514,
       "yelp": 33467,
@@ -144,15 +141,6 @@
       "hi-lo": 33482,
       "rumbler": 33479,
       "two-tone": 33451
-    },
-    "negative_per_class": {
-      "wail": 1686,
-      "yelp": 1733,
-      "phaser": 1762,
-      "piercer": 1762,
-      "hi-lo": 1718,
-      "rumbler": 1721,
-      "two-tone": 1749
     }
   },
   "detection_mode": {
@@ -167,13 +155,63 @@
     }
   },
   "negative_pool": {
-    "kinescaper_internal": 12131,
-    "audioset_ev_v2": 20916,
-    "fsd50k": 21843,
-    "urbansound8k": 7732,
-    "esc50": 1960,
-    "lssiren": 902,
-    "total": 65484
+    "cities": {
+      "Austin": {
+        "base_chunks": 203,
+        "augmented_chunks": 2030,
+        "augmentation_factor": 10
+      },
+      "Bangkok": {
+        "base_chunks": 128,
+        "augmented_chunks": 1280,
+        "augmentation_factor": 10
+      },
+      "Beijing": {
+        "base_chunks": 8,
+        "augmented_chunks": 80,
+        "augmentation_factor": 10
+      },
+      "Bogota\u0300": {
+        "base_chunks": 70,
+        "augmented_chunks": 700,
+        "augmentation_factor": 10
+      },
+      "Instabul": {
+        "base_chunks": 25,
+        "augmented_chunks": 250,
+        "augmentation_factor": 10
+      },
+      "London": {
+        "base_chunks": 535,
+        "augmented_chunks": 5350,
+        "augmentation_factor": 10
+      },
+      "Mumbai": {
+        "base_chunks": 43,
+        "augmented_chunks": 430,
+        "augmentation_factor": 10
+      },
+      "Naples": {
+        "base_chunks": 35,
+        "augmented_chunks": 350,
+        "augmentation_factor": 10
+      },
+      "New Delhi": {
+        "base_chunks": 149,
+        "augmented_chunks": 1490,
+        "augmentation_factor": 10
+      },
+      "Paris": {
+        "base_chunks": 22,
+        "augmented_chunks": 220,
+        "augmentation_factor": 10
+      }
+    },
+    "total_base_chunks": 1218,
+    "augmentation_factor": 10,
+    "total_augmented_chunks": 12180,
+    "overlap_ratio": 0.2,
+    "num_files": 10
   },
   "parameters": {
     "seed": 42,

@@ -112,3 +112,100 @@ class ModelCheckpoint(_ModelCheckpoint):
             except Exception as e:
                 if trainer.is_global_zero:
                     print(f"Warning: Failed to remove {pt_filepath}: {e}")
+
+# =============================================================================
+# EPOCH RESAMPLING CALLBACK (for KineScaper unified training)
+# =============================================================================
+
+class EpochResamplingCallback(_ModelCheckpoint.__bases__[0]):
+    """
+    Callback to re-sample KineScaper positive chunks at the start of each epoch.
+    
+    This enables epoch-to-epoch diversity in unified training by randomly
+    sampling different positive chunks from KineScaper-EV while maintaining
+    stratification across siren classes.
+    
+    The callback looks for datasets with a set_epoch() method and calls it
+    with the current epoch number. This triggers re-sampling in:
+    - KineScaper_PositiveChunkDataset
+    
+    Usage:
+        callbacks = [
+            EpochResamplingCallback(),
+            ModelCheckpoint(...)
+        ]
+    
+    Benefits:
+    - Increases diversity of seen samples over training
+    - Prevents overfitting to specific subset
+    - Maintains class balance through stratified sampling
+    
+    Example:
+        With 234K available positives, using 82K per epoch:
+        - Epoch 0: samples indices [1,5,9,...]
+        - Epoch 1: samples indices [3,8,12,...]  (different!)
+        - Epoch 2: samples indices [2,7,10,...]  (different again!)
+        
+        Over ~3 epochs, all 234K samples seen at least once.
+        Over 50 epochs, each sample seen ~17x on average.
+    """
+    
+    def on_train_epoch_start(self, trainer, pl_module):
+        """
+        Called at the start of each training epoch.
+        Triggers re-sampling in datasets that support it.
+        
+        Args:
+            trainer: PyTorch Lightning Trainer
+            pl_module: LightningModule being trained
+        """
+        current_epoch = trainer.current_epoch
+        
+        # Get train dataloader
+        if hasattr(trainer, 'train_dataloader') and trainer.train_dataloader is not None:
+            train_dataloader = trainer.train_dataloader
+            
+            # Handle DataLoader or DataLoaderIterator
+            if hasattr(train_dataloader, 'dataset'):
+                dataset = train_dataloader.dataset
+            elif hasattr(train_dataloader, 'loaders'):
+                # CombinedLoader case
+                dataset = train_dataloader.loaders.dataset if hasattr(train_dataloader.loaders, 'dataset') else None
+            else:
+                dataset = None
+            
+            # Recursively search for datasets with set_epoch method
+            self._trigger_resampling(dataset, current_epoch, trainer)
+    
+    def _trigger_resampling(self, dataset, epoch: int, trainer):
+        """
+        Recursively trigger re-sampling in nested datasets.
+        
+        Handles:
+        - ConcatDataset (searches sub-datasets)
+        - Subset (searches underlying dataset)
+        - Custom datasets with set_epoch() method
+        
+        Args:
+            dataset: Dataset to check/trigger
+            epoch: Current epoch number
+            trainer: Trainer instance for logging
+        """
+        if dataset is None:
+            return
+        
+        # Check if dataset has set_epoch method
+        if hasattr(dataset, 'set_epoch') and callable(dataset.set_epoch):
+            dataset.set_epoch(epoch)
+            if trainer.is_global_zero:
+                dataset_name = dataset.__class__.__name__
+                print(f"  ↻ Re-sampled {dataset_name} for epoch {epoch}")
+        
+        # Handle ConcatDataset (search all sub-datasets)
+        if hasattr(dataset, 'datasets'):
+            for sub_dataset in dataset.datasets:
+                self._trigger_resampling(sub_dataset, epoch, trainer)
+        
+        # Handle Subset (check underlying dataset)
+        if hasattr(dataset, 'dataset'):
+            self._trigger_resampling(dataset.dataset, epoch, trainer)

@@ -1,0 +1,169 @@
+# =============================================================================
+# E-PANNs Fine-tuning on KineScaper-EV Dataset
+# =============================================================================
+# Fine-tune EPANNs (pre-trained on AudioSet, finetuned on AS-EV_v2) 
+# on KineScaper-EV to adapt to low-SNR urban traffic scenarios
+#
+# Starting checkpoint: epoch=002_val_f1=0.9625.ckpt (from AS-EV_v2 finetuning)
+# Learning strategy: Exponential LR decay (2% per epoch) + gradient accumulation
+#
+# KineScaper-EV characteristics:
+#   - 246,400 chunks (10s each, from 61,600 40s files)
+#   - 95% positives (234,269), 5% negatives (12,131) - native
+#   - NegativePool balancing (AudioSet_EV_v2 + FSD50K + US8K + ESC50 + LSSiren)
+#   - SNR average: -20.46 dB (challenging, realistic urban scenarios)
+#   - 80/10/10 split: 197K train, 25K val, 25K test
+#
+# Usage:
+#   python main.py --config configs/binary_EV/epanns_finetune_KineScaper-EV.yaml
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# EXPERIMENT
+# -----------------------------------------------------------------------------
+experiment:
+  name: "epanns_finetune_KineScaper-EV"           # Experiment name (used for folders)
+  task: "binary"                                  # binary | multiclass
+  model_name: "epanns"                            # epanns | ced | clap
+  pretrained: false                               # We load from Lightning checkpoint
+  lightning_ckpt_path: "./checkpoints/binary_EV/epanns_finetune_fixedLR_AS-EV_v2/epoch=002_val_f1=0.9625.ckpt"
+  seed: 42                                        # Random seed for reproducibility
+
+# -----------------------------------------------------------------------------
+# PATHS
+# -----------------------------------------------------------------------------
+paths:
+  data_root: "./datasets"                                               # Root folder for datasets
+  checkpoints: "./checkpoints/binary_EV/epanns_finetune_KineScaper-EV"  # Model checkpoints
+  logs: "./logs/binary_EV/epanns_finetune_KineScaper-EV"                # TensorBoard logs
+  results: "./results/binary_EV/epanns_finetune_KineScaper-EV"          # Metrics and predictions
+
+# -----------------------------------------------------------------------------
+# DATA
+# -----------------------------------------------------------------------------
+data:
+  # Single dataset mode (same for train/dev/test)
+  dataset: "KineScaper_EV"                        # Dataset name
+  mode: "train"                                   # train | benchmark
+  
+  # DataLoader parameters
+  batch_size: 4                                   # Small batch for memory safety (uses gradient accumulation)
+  
+  # Audio preprocessing
+  target_sr: 32000                                # Must match model: 32k=epanns, 16k=ced, 48k=clap
+  target_duration: 10.0                           # Target audio duration in seconds (KineScaper chunks)
+  
+  # Data augmentation (managed by KineScaper DataModule)
+  augmentation:
+    enabled: true                                 # Enable augmentation for domain adaptation
+
+# -----------------------------------------------------------------------------
+# TRAINING
+# -----------------------------------------------------------------------------
+training:
+  max_epochs: 20                                  # Maximum number of epochs to train 
+  val_check_interval: 1.0                         # Validate every N epochs (1.0 = every epoch)
+  gradient_clip_val: 1.0                          # Gradient clipping value
+  precision: 32                                   # 32 for full precision, 16 for mixed precision
+  accumulate_grad_batches: 8                      # Gradient accumulation (4×8 = effective batch_size 32)
+  # limit_train_batches: 10                         # DRY-RUN: 10 batches per epoch
+  # limit_val_batches: 5                            # DRY-RUN: 5 batches for validation
+  # limit_test_batches: 5                           # DRY-RUN: 5 batches for testing
+
+  # Optimizer (Adam)
+  optimizer:
+    lr: 0.001                                     # Learning rate (will decay with scheduler)
+    weight_decay: 0.000001                        # L2 regularization
+    betas: [0.9, 0.999]                           # Adam beta parameters
+    eps: 0.00000001                               # Epsilon for numerical stability
+    amsgrad: true                                 # Use AMSGrad variant
+  
+  # Learning rate scheduler
+  scheduler:
+    type: "exponential"                           # exponential | cyclic_cosine
+    # ExponentialLR parameters
+    gamma: 0.98                                   # Decay factor (2% decay per epoch, very smooth)
+    # CyclicCosineLR parameters (not used)
+    # init_decay_epochs: 10                       # Number of epochs for initial decay phase
+    # min_decay_lr: 0.0001                        # Minimum learning rate
+    # restart_interval: 10                        # Number of epochs between restarts (cycle length)
+    # restart_interval_multiplier: None           # Multiplier for restart intervals (geometric increase)
+    # restart_lr: 0.01                            # Learning rate at restarts (if None, uses initial lr)
+    # warmup_epochs: 5                            # Number of warmup epochs at the start of training
+    # warmup_start_lr: 0.001                      # Starting learning rate for warmup (must be set if warmup_epochs > 0)
+
+
+# -----------------------------------------------------------------------------
+# MODEL
+# -----------------------------------------------------------------------------
+model:
+  threshold: 0.5                                  # Classification threshold (binary only)
+  f_beta: 0.8                                     # For F-beta score (binary only, beta < 1 emphasizes precision, beta > 1 emphasizes recall)
+
+# -----------------------------------------------------------------------------
+# TENSORBOARD
+# -----------------------------------------------------------------------------
+tensorboard:
+  log_every_n_steps: 1                            # Log metrics every N training steps
+  log_lr: true                                    # Log learning rate
+  log_grad_norm: false                            # Log gradient norms (useful for debugging)
+
+# -----------------------------------------------------------------------------
+# CALLBACKS
+# -----------------------------------------------------------------------------
+callbacks:
+  # Early stopping
+  early_stopping:
+    monitor: "val_f1"                             # Metric to monitor
+    patience: 10                                  # Stop if no improvement for 10 epochs
+    mode: "max"                                   # max for metrics to maximize
+    min_delta: 0.01                               # Minimum improvement to consider
+  
+  # Model checkpoint
+  model_checkpoint:
+    monitor: "val_f1"                             # Metric to monitor
+    save_top_k: 1                                 # Save only best model
+    mode: "max"                                   # max for metrics to maximize
+    save_last: true                               # Save last checkpoint for test
+    filename: "{epoch:03d}_{val_f1:.4f}"          # Format: epoch=xxx-val_f1=y.yyyy
+
+# -----------------------------------------------------------------------------
+# HARDWARE
+# -----------------------------------------------------------------------------
+hardware:
+  accelerator: "auto"                             # auto | gpu | cpu | mps (Apple Silicon)
+  devices: 1                                      # Number of devices to use
+  strategy: null                                  # null for single device, ddp for distributed
+
+# =============================================================================
+# NOTES
+# =============================================================================
+# Available datasets (must exist in data_root):
+#   - AudioSet_EV_v1_2025      (binary, multiclass)
+#   - AudioSet_EV_v2PANNs_2020 (binary, multiclass)
+#   - sireNNet                 (binary, multiclass)
+#   - LSSiren                  (binary only)
+#   - ESC50                    (binary only)
+#   - FSD50K                   (binary only)
+#   - UrbanSound8K             (binary only)
+#   - KineScaper_EV            (binary only) - NEW!
+#
+# Available models:
+#   - epanns: 24M params, 32kHz, fast
+#   - ced:    86M params, 16kHz, medium
+#   - clap:  158M params, 48kHz, slow
+#
+# Execution modes:
+#   --mode fit         : Train + validate only
+#   --mode test        : Test only split (requires checkpoint)
+#   --mode fit+test    : Train, validate, then test
+#   --mode benchmark   : Test only with benchmark splits (pre-defined partitions)
+#
+# KineScaper-EV Training Strategy:
+#   - Fine-tune from AS-EV_v2 checkpoint (already optimized for EV detection)
+#   - Gradient accumulation: 4×8 = effective batch_size 32
+#   - Exponential LR decay: 2% per epoch (smooth, stable convergence)
+#   - Early stopping: patience=10 on val_f1
+#   - Expected improvement: Large domain shift (AS-EV_v2 F1=97% → KineScaper F1=42%)
+#     should improve significantly after fine-tuning
+# =============================================================================

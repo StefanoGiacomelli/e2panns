@@ -1,0 +1,94 @@
+# ============================================================================
+# Dataset SED Processing Configuration - AudioSet-EV
+# ============================================================================
+# SED benchmark using EPANNs model fine-tuned on the unified EV dataset.
+# Runs on the AudioSet-EV dataset (full 40s samples with temporal annotations).
+#
+# Usage:
+#   python main_sed_dataset.py benchmark_configs/sed/epanns_unifiedBinaryEV_AS-EV_Strong_v2.yaml
+#
+# ============================================================================
+
+# ============================================================================
+# DATASET CONFIGURATION
+# ============================================================================
+dataset:
+  # Dataset name
+  name: "AudioSet_EV_v2" # Options: AudioSet_EV_v1, AudioSet_EV_v2, KineScaper_EV
+  
+  # Path to KineScaper-EV dataset root (contains audio/, json/, csv/)
+  # dataset_root: "/mnt/ssd/Kinescaper_EV/dataset/"
+  
+  # Metadata format: "json" (recommended) or "tsv"
+  # metadata_format: "json"
+  
+  # Target audio duration for full samples (seconds)
+  #target_duration: 40.0
+  
+  # Maximum number of samples to process (null = all samples)
+  # WARNING: full dataset = 61,600 samples × 40s ≈ 684h of audio
+  # Recommended for testing: 100 or 500
+  max_samples: null   # null: for full dataset, or specify number (e.g., 100, 500) for quick testing
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  name: "epanns"
+  checkpoint: "checkpoints/unified_training_EV/epoch=001_val_f1=0.9424.pt"
+  device: "cpu"   # Options: cpu, cuda, mps
+
+# ============================================================================
+# INFERENCE SETTINGS
+# ============================================================================
+inference:
+  # Detection threshold (0.0-1.0)
+  threshold: 0.5
+  
+  # Minimum chunk duration for inference (seconds)
+  chunk_duration: 0.310
+  
+  # Circular buffer duration for audio processing (seconds)
+  buffer_duration: 20.0
+  
+  # Adaptive window configuration
+  adaptive_window:
+    enabled: true
+    frame_duration_max: 1.0       # Max window duration when confidence is high
+    adapt_coeff: 0.4              # Adaptation coefficient (0.0-1.0)
+
+# ============================================================================
+# SED METRICS CONFIGURATION
+# ============================================================================
+sed_metrics:
+  # Segment-based metrics time resolution (seconds)
+  segment_time_resolution: 0.310
+  
+  # Event-based metrics onset/offset tolerance (seconds)
+  event_tolerance: 0.500
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+output:
+  dir: "results/sed_AudioSet_EV_v2_epanns_unified"
+  
+  # Save per-sample detailed metrics
+  save_per_sample: true
+  
+  # Save detected events for each sample
+  save_events: false
+
+# ============================================================================
+# MULTIPROCESSING
+# ============================================================================
+multiprocessing:
+  enabled: false
+  num_workers: 0
+
+# ============================================================================
+# LOGGING
+# ============================================================================
+logging:
+  level: "INFO"
+  log_file: "run.log"

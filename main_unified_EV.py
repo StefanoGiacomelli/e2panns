@@ -27,10 +27,11 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, ConcatDataset, random_split
+from tqdm import tqdm
 
 # Import Lightning modules
 from models.lightning_models import BinaryEVClassifier
-from models.callbacks import ModelCheckpoint
+from models.callbacks import ModelCheckpoint, EpochResamplingCallback
 
 # Import dataset classes (NOT DataModules)
 from datasets.AudioSet_EV_v1_2025.dataloader import AudioSetEV_v1_Dataset
@@ -40,6 +41,7 @@ from datasets.LSSiren.dataloader import LSSirenDataset
 from datasets.ESC50.dataloader import ESC50Dataset
 from datasets.FSD50K.dataloader import FSD50KDataset
 from datasets.UrbanSound8K.dataloader import UrbanSound8KDataset
+from datasets.KineScaper_EV.dataloader import create_kinescaper_dataset_for_unified
 
 
 # =============================================================================
@@ -67,8 +69,9 @@ def validate_config(config: Dict[str, Any]):
         raise ValueError(f"This script only supports binary classification. Got: {config['experiment']['task']}")
     
     # Check model
-    if config['experiment']['model_name'] != 'epanns':
-        raise ValueError(f"This script only supports EPANNs. Got: {config['experiment']['model_name']}")
+    valid_models = ['epanns', 'ced', 'clap']
+    if config['experiment']['model_name'] not in valid_models:
+        raise ValueError(f"Invalid model_name. Must be one of: {valid_models}. Got: {config['experiment']['model_name']}")
     
     print("✓ Configuration validated successfully")
 
@@ -84,7 +87,88 @@ def load_datasets_mapping(data_root: str) -> Dict:
         return json.load(f)
 
 
-def create_audioset_ev_v1_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> ConcatDataset:
+def count_labels_from_metadata(dataset_name: str, config: Dict) -> tuple:
+    """
+    Count positives and negatives directly from metadata/CSV files.
+    NO audio loading — reads only filenames, CSV rows, or folder contents.
+
+    Returns:
+        (num_positive, num_negative) as exact integers
+    """
+    import pandas as pd
+    data_root = config['paths']['data_root']
+
+    if dataset_name == 'sireNNet':
+        # Folder structure: ambulance/firetruck/police = pos, traffic = neg
+        base = os.path.join(data_root, 'sireNNet')
+        pos = sum(len([f for f in os.listdir(os.path.join(base, d)) if f.endswith('.wav')])
+                  for d in ['ambulance', 'firetruck', 'police'])
+        neg = len([f for f in os.listdir(os.path.join(base, 'traffic')) if f.endswith('.wav')])
+        return pos, neg
+
+    elif dataset_name == 'LSSiren':
+        # Two CSV files: Ambulance_final.csv (pos), Road_final.csv (neg)
+        base = os.path.join(data_root, 'LSSiren')
+        pos_df = pd.read_csv(os.path.join(base, 'Ambulance_final.csv'))
+        neg_df = pd.read_csv(os.path.join(base, 'Road_final.csv'))
+        # Each CSV row = one sample; Road_final has first row as data (no real header)
+        pos = len(pos_df)
+        neg = len(neg_df)
+        return pos, neg
+
+    elif dataset_name == 'ESC50':
+        # esc50.csv with 'category' column; only 'siren' is positive
+        # Filter to only categories present in mapping (not all 50 ESC50 classes)
+        base = os.path.join(data_root, 'ESC50')
+        df = pd.read_csv(os.path.join(base, 'esc50.csv'))
+        mapping = load_datasets_mapping(data_root)['ESC50']
+        df_used = df[df['category'].isin(mapping.keys())]  # Only rows used by the dataset
+        pos = int((df_used['category'].map(mapping) == 1).sum())
+        neg = len(df_used) - pos
+        return pos, neg
+
+    elif dataset_name == 'FSD50K':
+        # Four pre-split CSVs: dev/eval × positives/negatives
+        base = os.path.join(data_root, 'FSD50K')
+        pos = (len(pd.read_csv(os.path.join(base, 'FSD-dev_positives.csv')))
+             + len(pd.read_csv(os.path.join(base, 'FSD-eval_positives.csv'))))
+        neg = (len(pd.read_csv(os.path.join(base, 'FSD-dev_negatives.csv')))
+             + len(pd.read_csv(os.path.join(base, 'FSD-eval_negatives.csv'))))
+        return pos, neg
+
+    elif dataset_name == 'UrbanSound8K':
+        # metadata/UrbanSound8K.csv with 'class' column; only 'siren' is positive
+        base = os.path.join(data_root, 'UrbanSound8K')
+        df = pd.read_csv(os.path.join(base, 'metadata', 'UrbanSound8K.csv'))
+        pos = int((df['class'] == 'siren').sum())
+        neg = len(df) - pos
+        return pos, neg
+
+    elif dataset_name == 'AudioSet_EV_v1_2025':
+        # Count actual downloaded files in Positive_files/ and Negative_files/
+        base = os.path.join(data_root, 'AudioSet_EV_v1_2025')
+        pos = len([f for f in os.listdir(os.path.join(base, 'Positive_files')) if f.endswith('.wav')])
+        neg = len([f for f in os.listdir(os.path.join(base, 'Negative_files')) if f.endswith('.wav')])
+        return pos, neg
+
+    elif dataset_name == 'AudioSet_EV_v2PANNs_2020':
+        # Count positives from CSV (downloaded==True); negatives balanced 1:1
+        base = os.path.join(data_root, 'AudioSet_EV_v2PANNs_2020')
+        pos_csv = pd.read_csv(os.path.join(base, 'EV_Positives.csv'))
+        pos = int((pos_csv['downloaded'] == True).sum())
+        neg = pos  # Negatives are balanced to match positives at runtime
+        return pos, neg
+
+    elif dataset_name == 'KineScaper_EV':
+        # Already known from dataloader: returned as tuple (dataset, pos, neg)
+        # This function won't be called for KineScaper (handled separately)
+        return None, None
+
+    else:
+        return None, None
+
+
+def create_audioset_ev_v1_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> tuple:
     """Create AudioSet_EV_v1_2025 dataset."""
     data_root = config['paths']['data_root']
     dataset_path = os.path.join(data_root, 'AudioSet_EV_v1_2025')
@@ -116,13 +200,15 @@ def create_audioset_ev_v1_dataset(config: Dict, augmentation: bool, aug_prob: fl
     
     # Concatenate
     combined = ConcatDataset([pos_dataset, neg_dataset])
+    pos_count = len(pos_dataset)
+    neg_count = len(neg_dataset)
     if verbose:
         aug_str = " [AUG]" if augmentation else ""
-        print(f"    Loaded: {len(combined):,} samples ({len(pos_dataset):,} pos + {len(neg_dataset):,} neg){aug_str}")
-    return combined
+        print(f"    Loaded: {len(combined):,} samples ({pos_count:,} pos + {neg_count:,} neg){aug_str}")
+    return combined, pos_count, neg_count
 
 
-def create_audioset_ev_v2_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> ConcatDataset:
+def create_audioset_ev_v2_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> tuple:
     """Create AudioSet_EV_v2PANNs_2020 dataset."""
     data_root = config['paths']['data_root']
     dataset_path = os.path.join(data_root, 'AudioSet_EV_v2PANNs_2020')
@@ -221,7 +307,7 @@ def create_lssiren_dataset(config: Dict, augmentation: bool, aug_prob: float, se
     return dataset
 
 
-def create_esc50_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> ESC50Dataset:
+def create_esc50_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> tuple:
     """Create ESC50 dataset."""
     data_root = config['paths']['data_root']
     dataset_path = os.path.join(data_root, 'ESC50')
@@ -247,7 +333,7 @@ def create_esc50_dataset(config: Dict, augmentation: bool, aug_prob: float, seed
     return dataset
 
 
-def create_fsd50k_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> FSD50KDataset:
+def create_fsd50k_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> tuple:
     """Create FSD50K dataset."""
     data_root = config['paths']['data_root']
     dataset_path = os.path.join(data_root, 'FSD50K')
@@ -309,6 +395,62 @@ def create_urbansound8k_dataset(config: Dict, augmentation: bool, aug_prob: floa
     return dataset
 
 
+def create_kinescaper_dataset(config: Dict, augmentation: bool, aug_prob: float, seed: int, verbose: bool = True) -> tuple:
+    """
+    Create KineScaper-EV dataset for unified training.
+    
+    NOTE: This is different from the DataModule used for cross-validation.
+    Here we create a standalone dataset that will be split globally.
+    
+    Uses stratified re-sampling for positives to increase diversity.
+    """
+    # KineScaper dataset is on external SSD mount
+    dataset_root = '/mnt/ssd/Kinescaper_EV/dataset/'
+    
+    # From analysis (datasets/dataset_distribution_analysis.json):
+    # - Other 7 datasets contribute: 18,582 pos + 88,057 neg
+    # - Target: 50/50 balance → 100,237 pos + 100,237 neg
+    # - Needed from KineScaper: 81,655 pos (= 100,237 - 18,582) + ALL negatives (12,180)
+    # - KineScaper positives use stratified re-sampling each epoch
+    num_positive_samples = 81655  # Stratified, re-sampled each epoch
+    
+    # Create positive chunks dataset
+    pos_dataset = create_kinescaper_dataset_for_unified(
+        dataset_root=dataset_root,
+        num_positive_samples=num_positive_samples,
+        chunk_type='positive',
+        augmentation=augmentation,
+        aug_prob=aug_prob,
+        target_sr=config['data']['target_sr'],
+        target_duration=config['data']['target_duration'],
+        seed=seed
+    )
+    
+    # Create negative chunks dataset
+    neg_dataset = create_kinescaper_dataset_for_unified(
+        dataset_root=dataset_root,
+        num_positive_samples=num_positive_samples,
+        chunk_type='negative',
+        augmentation=False,  # Negatives already augmented by generator
+        aug_prob=aug_prob,
+        target_sr=config['data']['target_sr'],
+        target_duration=config['data']['target_duration'],
+        seed=seed
+    )
+    
+    # Concatenate positives and negatives
+    combined = ConcatDataset([pos_dataset, neg_dataset])
+    
+    if verbose:
+        aug_str = " [AUG]" if augmentation else ""
+        print(f"    Loaded: {len(combined):,} samples ({len(pos_dataset):,} pos + {len(neg_dataset):,} neg){aug_str}")
+        if augmentation:
+            print(f"    Note: Positives use stratified re-sampling across 7 siren classes")
+    
+    # Return dataset with counts
+    return combined, len(pos_dataset), len(neg_dataset)
+
+
 def create_unified_datasets(config: Dict) -> tuple:
     """
     Create unified dataset by concatenating all individual datasets.
@@ -340,10 +482,17 @@ def create_unified_datasets(config: Dict) -> tuple:
     print(f"Target duration: {config['data']['target_duration']}s @ {config['data']['target_sr']}Hz")
     print(f"Split ratios: {split_ratios[0]*100:.0f}% train / {split_ratios[1]*100:.0f}% val / {split_ratios[2]*100:.0f}% test")
     
-    # Lists to collect splits
+    # Lists to collect splits AND counts
     all_train_splits = []
     all_val_splits = []
     all_test_splits = []
+    
+    # Track pos/neg counts per dataset per split
+    dataset_counts = {
+        'train': [],  # [(dataset_name, total, pos, neg), ...]
+        'val': [],
+        'test': []
+    }
     
     # Process each dataset
     dataset_names = config['data']['datasets']
@@ -353,21 +502,31 @@ def create_unified_datasets(config: Dict) -> tuple:
         
         # Create dataset WITHOUT augmentation first
         if dataset_name == 'AudioSet_EV_v1_2025':
-            dataset_no_aug = create_audioset_ev_v1_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+            result = create_audioset_ev_v1_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
         elif dataset_name == 'AudioSet_EV_v2PANNs_2020':
-            dataset_no_aug = create_audioset_ev_v2_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+            result = create_audioset_ev_v2_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
         elif dataset_name == 'sireNNet':
-            dataset_no_aug = create_sirennet_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+            result = create_sirennet_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
         elif dataset_name == 'LSSiren':
-            dataset_no_aug = create_lssiren_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+            result = create_lssiren_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
         elif dataset_name == 'ESC50':
-            dataset_no_aug = create_esc50_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+            result = create_esc50_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
         elif dataset_name == 'FSD50K':
-            dataset_no_aug = create_fsd50k_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+            result = create_fsd50k_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
         elif dataset_name == 'UrbanSound8K':
-            dataset_no_aug = create_urbansound8k_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+            result = create_urbansound8k_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
+        elif dataset_name == 'KineScaper_EV':
+            result = create_kinescaper_dataset(config, augmentation=False, aug_prob=aug_prob, seed=seed, verbose=False)
         else:
             continue
+        
+        # Handle return value (dataset or tuple with counts)
+        if isinstance(result, tuple):
+            dataset_no_aug, ds_pos, ds_neg = result
+        else:
+            dataset_no_aug = result
+            # Count pos/neg directly from metadata — no audio loading!
+            ds_pos, ds_neg = count_labels_from_metadata(dataset_name, config)
         
         # Split this dataset
         total_size = len(dataset_no_aug)
@@ -384,23 +543,46 @@ def create_unified_datasets(config: Dict) -> tuple:
         
         print(f"    Total: {total_size:,} samples | Split: {train_size:,} train / {val_size:,} val / {test_size:,} test")
         
+        # Store counts per split (calculated from total counts + split ratios)
+        if ds_pos is not None and ds_neg is not None:
+            train_pos = int(ds_pos * split_ratios[0])
+            train_neg = int(ds_neg * split_ratios[0])
+            val_pos   = int(ds_pos * split_ratios[1])
+            val_neg   = int(ds_neg * split_ratios[1])
+            test_pos  = ds_pos - train_pos - val_pos
+            test_neg  = ds_neg - train_neg - val_neg
+        else:
+            train_pos = train_neg = val_pos = val_neg = test_pos = test_neg = None
+
+        dataset_counts['train'].append((dataset_name, train_size, train_pos, train_neg))
+        dataset_counts['val'].append((dataset_name, val_size,   val_pos,   val_neg))
+        dataset_counts['test'].append((dataset_name, test_size,  test_pos,  test_neg))
+        
         # For TRAINING split: create dataset WITH augmentation if enabled
         if aug_enabled:
             print(f"    Augmentation: ENABLED for training split")
             if dataset_name == 'AudioSet_EV_v1_2025':
-                dataset_with_aug = create_audioset_ev_v1_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+                result_aug = create_audioset_ev_v1_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
             elif dataset_name == 'AudioSet_EV_v2PANNs_2020':
-                dataset_with_aug = create_audioset_ev_v2_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+                result_aug = create_audioset_ev_v2_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
             elif dataset_name == 'sireNNet':
-                dataset_with_aug = create_sirennet_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+                result_aug = create_sirennet_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
             elif dataset_name == 'LSSiren':
-                dataset_with_aug = create_lssiren_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+                result_aug = create_lssiren_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
             elif dataset_name == 'ESC50':
-                dataset_with_aug = create_esc50_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+                result_aug = create_esc50_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
             elif dataset_name == 'FSD50K':
-                dataset_with_aug = create_fsd50k_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+                result_aug = create_fsd50k_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
             elif dataset_name == 'UrbanSound8K':
-                dataset_with_aug = create_urbansound8k_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+                result_aug = create_urbansound8k_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+            elif dataset_name == 'KineScaper_EV':
+                result_aug = create_kinescaper_dataset(config, augmentation=True, aug_prob=aug_prob, seed=seed, verbose=True)
+            
+            # Handle return value (dataset or tuple)
+            if isinstance(result_aug, tuple):
+                dataset_with_aug = result_aug[0]  # Extract dataset from tuple
+            else:
+                dataset_with_aug = result_aug
             
             # Create Subset with same indices but using augmented dataset
             from torch.utils.data import Subset
@@ -428,6 +610,63 @@ def create_unified_datasets(config: Dict) -> tuple:
     print(f"✓ Unified test set:        {len(unified_test):,} samples (augmentation: OFF)")
     print(f"✓ Total samples:           {len(unified_train) + len(unified_val) + len(unified_test):,}")
     
+    # Print label distribution — computed from metadata, no audio loading
+    print(f"\n{'='*80}")
+    print("LABEL DISTRIBUTION (Positive vs Negative):")
+    print(f"{'='*80}")
+    print()
+
+    # Aggregate totals across all datasets per split
+    train_pos_total = sum(p for _, _, p, _ in dataset_counts['train'] if p is not None)
+    train_neg_total = sum(n for _, _, _, n in dataset_counts['train'] if n is not None)
+    val_pos_total   = sum(p for _, _, p, _ in dataset_counts['val']   if p is not None)
+    val_neg_total   = sum(n for _, _, _, n in dataset_counts['val']   if n is not None)
+    test_pos_total  = sum(p for _, _, p, _ in dataset_counts['test']  if p is not None)
+    test_neg_total  = sum(n for _, _, _, n in dataset_counts['test']  if n is not None)
+
+    overall_pos   = train_pos_total + val_pos_total + test_pos_total
+    overall_neg   = train_neg_total + val_neg_total + test_neg_total
+    overall_total = overall_pos + overall_neg
+
+    def fmt_row(name, total_ds, pos, neg):
+        p_pct = pos / (pos + neg) * 100 if (pos + neg) > 0 else 0
+        n_pct = neg / (pos + neg) * 100 if (pos + neg) > 0 else 0
+        print(f"{name:<12} {total_ds:>10,}  {pos:>12,} {p_pct:>5.1f}%  {neg:>12,} {n_pct:>5.1f}%")
+
+    print(f"{'Split':<12} {'Total':>10}  {'Positives':>12} {'%':>6}  {'Negatives':>12} {'%':>6}")
+    print(f"{'─'*80}")
+    fmt_row("Train",      len(unified_train), train_pos_total, train_neg_total)
+    fmt_row("Validation", len(unified_val),   val_pos_total,   val_neg_total)
+    fmt_row("Test",       len(unified_test),  test_pos_total,  test_neg_total)
+    print(f"{'─'*80}")
+    fmt_row("TOTAL",      overall_total,      overall_pos,     overall_neg)
+
+    # Detailed breakdown by dataset
+    print(f"\n{'='*80}")
+    print("DETAILED BREAKDOWN BY DATASET:")
+    print(f"{'='*80}")
+
+    for split_name, split_data in [('TRAIN',      dataset_counts['train']),
+                                    ('VALIDATION', dataset_counts['val']),
+                                    ('TEST',       dataset_counts['test'])]:
+        print(f"\n{split_name}:")
+        print(f"{'  Dataset':<30} {'Total':>10}  {'Pos':>10}  {'Neg':>10}  {'Balance':>12}")
+        print(f"  {'─'*78}")
+        for ds_name, total, pos, neg in split_data:
+            if pos is not None and neg is not None and (pos + neg) > 0:
+                balance = f"{pos/(pos+neg)*100:.1f}% / {neg/(pos+neg)*100:.1f}%"
+            else:
+                balance = "N/A"
+                pos = pos or 0
+                neg = neg or 0
+            print(f"  {ds_name:<28} {total:>10,}  {pos:>10,}  {neg:>10,}  {balance:>12}")
+        split_t = sum(t for _, t, _, _ in split_data)
+        split_p = sum(p for _, _, p, _ in split_data if p is not None)
+        split_n = sum(n for _, _, _, n in split_data if n is not None)
+        bal = f"{split_p/(split_p+split_n)*100:.1f}% / {split_n/(split_p+split_n)*100:.1f}%" if (split_p+split_n) > 0 else "N/A"
+        print(f"  {'─'*78}")
+        print(f"  {'TOTAL':<28} {split_t:>10,}  {split_p:>10,}  {split_n:>10,}  {bal:>12}")
+
     return unified_train, unified_val, unified_test
 
 
@@ -448,27 +687,28 @@ def unified_collate_fn(batch):
     # Separate waveforms and labels
     waveforms, labels = zip(*batch)
     
-    # Check if all waveforms have the same shape
-    shapes = [w.shape for w in waveforms]
-    if len(set(shapes)) > 1:
-        # Different shapes - need padding
-        # Find max length
-        max_length = max(w.shape[1] for w in waveforms)
-        
-        # Pad all waveforms to max length
-        padded_waveforms = []
+    # Normalize all waveforms to 2D [1, samples]
+    normalized = []
+    for w in waveforms:
+        if w.dim() == 1:
+            w = w.unsqueeze(0)  # [samples] → [1, samples]
+        normalized.append(w)
+    waveforms = normalized
+    
+    # Check if all waveforms have the same length
+    lengths = [w.shape[1] for w in waveforms]
+    if len(set(lengths)) > 1:
+        # Different lengths - pad to max
+        max_length = max(lengths)
+        padded = []
         for w in waveforms:
             if w.shape[1] < max_length:
-                pad_size = max_length - w.shape[1]
-                w = torch.nn.functional.pad(w, (0, pad_size), value=0.0)
-            padded_waveforms.append(w)
-        
-        waveforms = torch.stack(padded_waveforms)
-    else:
-        # All same shape - can stack directly
-        waveforms = torch.stack(waveforms)
+                w = torch.nn.functional.pad(w, (0, max_length - w.shape[1]), value=0.0)
+            padded.append(w)
+        waveforms = padded
     
-    labels = torch.tensor(labels, dtype=torch.long)
+    waveforms = torch.stack(waveforms)
+    labels = torch.stack([l if isinstance(l, torch.Tensor) else torch.tensor(l, dtype=torch.long) for l in labels])
     
     return waveforms, labels
 
@@ -572,6 +812,9 @@ def get_callbacks(config: Dict):
     checkpoint_dir = config['paths']['checkpoints']
     patience = config['training']['patience']
     
+    # Epoch re-sampling callback (for KineScaper stratified sampling)
+    resampling_callback = EpochResamplingCallback()
+    
     # Model checkpoint
     checkpoint_callback = ModelCheckpoint(dirpath=checkpoint_dir,
                                           filename="{epoch:03d}_{val_f1:.4f}",
@@ -587,7 +830,7 @@ def get_callbacks(config: Dict):
                                    patience=patience,
                                    verbose=True)
     
-    return [checkpoint_callback, early_stopping]
+    return [resampling_callback, checkpoint_callback, early_stopping]
 
 
 def get_logger(config: Dict):

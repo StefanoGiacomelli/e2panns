@@ -50,7 +50,7 @@ import json
 import random
 import re
 from collections import Counter
-from typing import List, Optional, Dict
+from typing import List, Optional, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -128,130 +128,209 @@ def parse_kinescaper_filename(filename: str) -> Optional[Dict]:
 # NEGATIVE POOL MANAGER
 # =============================================================================
 
-class KineScaper_NegativeChunkGenerator:
+class NegativePoolManager:
     """
-    Generate negative chunks from KineScaper_EV/Negatives/ urban traffic recordings.
+    Manages hierarchical negative sample pool with augmentation.
+    
+    Hierarchy (in order):
+      1. KineScaper negative chunks
+      2. AudioSet_EV_v2 negatives
+      3. FSD50K negatives
+      4. UrbanSound8K negatives
+      5. ESC50 negatives
+      6. LSSiren negatives
     
     Features:
-    - Load WAV files from Negatives/ directory (10 city recordings)
-    - Extract overlapping 10s chunks
-    - Apply augmentation to generate multiple versions
-    - Lazy loading for memory efficiency
-    
-    Augmentation factor is calculated automatically to match the number
-    of positives in the dataset while maintaining the ~5% negative ratio.
+    - Load and cache all negative samples
+    - Sample with priority to original samples
+    - Apply augmentation on-the-fly to fill gaps
     """
     
     def __init__(self,
-                 negatives_dir: str,
-                 num_positives: int,
-                 chunk_duration: float = 10.0,
-                 overlap: float = 0.20,
+                 kinescaper_negatives: List[Tuple[str, int]],
+                 use_audioset_v2: bool = True,
+                 use_other_datasets: bool = True,
                  target_sr: int = 32000,
+                 target_size: int = 320000,
                  augmentation_prob: float = 0.7,
                  seed: int = 42):
         """
-        Initialize negative chunk generator.
+        Initialize negative pool manager.
         
         Args:
-            negatives_dir: Path to Negatives/ directory with urban traffic WAV files
-            num_positives: Number of positive samples (to calculate augmentation factor)
-            chunk_duration: Duration of each chunk in seconds
-            overlap: Overlap ratio between chunks (e.g., 0.20 = 20%)
-            target_sr: Target sample rate for audio
+            kinescaper_negatives: List of (audio_path, label) from KineScaper
+            use_audioset_v2: Whether to include AudioSet_EV_v2 negatives
+            use_other_datasets: Whether to include other dataset negatives
+            target_sr: Target sample rate
+            target_size: Target audio size in samples
             augmentation_prob: Probability of applying each augmentation
-            seed: Random seed for reproducibility
+            seed: Random seed
         """
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
         
-        self.negatives_dir = negatives_dir
-        self.num_positives = num_positives
-        self.chunk_duration = chunk_duration
-        self.overlap = overlap
+        self.kinescaper_negatives = kinescaper_negatives
         self.target_sr = target_sr
-        self.target_size = int(chunk_duration * target_sr)
+        self.target_size = target_size
         self.augmentation_prob = augmentation_prob
         self.seed = seed
         
-        # Load negative files and extract chunk metadata
-        self.negative_files = self._discover_negative_files()
-        self.base_chunks = self._extract_chunk_metadata()
-        
-        # Calculate augmentation factor to match positive/negative ratio
-        # Original ratio: 234,269 pos / 12,131 neg = ~19.3:1
-        target_negatives = int(num_positives * 0.0518)  # 5.18% negatives
-        self.augmentation_factor = max(1, int(np.ceil(target_negatives / len(self.base_chunks))))
-        
-        # Total chunks = base chunks × augmentation factor
-        self.total_chunks = len(self.base_chunks) * self.augmentation_factor
+        # Build negative pool
+        self.negative_pool = []
+        self._load_negatives(use_audioset_v2, use_other_datasets)
         
         # Define augmentations
         self.augmentations = self._define_augmentations()
         
-        print(f"  KineScaper Negative Generator initialized:")
-        print(f"    Negative files: {len(self.negative_files)}")
-        print(f"    Base chunks (overlap {overlap*100:.0f}%): {len(self.base_chunks):,}")
-        print(f"    Augmentation factor: {self.augmentation_factor}x")
-        print(f"    Total negative chunks: {self.total_chunks:,}")
-        print(f"    Ratio pos/neg: {num_positives/self.total_chunks:.1f}:1")
+        print(f"  NegativePoolManager initialized with {len(self.negative_pool):,} samples")
     
-    def _discover_negative_files(self) -> List[str]:
-        """Discover all WAV files in Negatives/ directory."""
-        wav_files = []
-        if not os.path.exists(self.negatives_dir):
-            print(f"Warning: Negatives directory not found: {self.negatives_dir}")
-            return wav_files
+    def _load_negatives(self, use_audioset_v2: bool, use_other_datasets: bool):
+        """Load negatives from all sources in hierarchy order."""
+        # 1. KineScaper negatives
+        self.negative_pool.extend(self.kinescaper_negatives)
+        print(f"    Loaded {len(self.kinescaper_negatives):,} KineScaper negatives")
         
-        for filename in sorted(os.listdir(self.negatives_dir)):
-            if filename.endswith('.wav'):
-                filepath = os.path.join(self.negatives_dir, filename)
-                wav_files.append(filepath)
+        # 2. AudioSet_EV_v2
+        if use_audioset_v2:
+            audioset_v2_negatives = self._load_audioset_v2_negatives()
+            self.negative_pool.extend(audioset_v2_negatives)
+            print(f"    Loaded {len(audioset_v2_negatives):,} AudioSet_EV_v2 negatives")
         
-        return wav_files
+        # 3. Other datasets
+        if use_other_datasets:
+            fsd50k_negatives = self._load_fsd50k_negatives()
+            us8k_negatives = self._load_us8k_negatives()
+            esc50_negatives = self._load_esc50_negatives()
+            lssiren_negatives = self._load_lssiren_negatives()
+            
+            self.negative_pool.extend(fsd50k_negatives)
+            self.negative_pool.extend(us8k_negatives)
+            self.negative_pool.extend(esc50_negatives)
+            self.negative_pool.extend(lssiren_negatives)
+            
+            print(f"    Loaded {len(fsd50k_negatives):,} FSD50K negatives")
+            print(f"    Loaded {len(us8k_negatives):,} UrbanSound8K negatives")
+            print(f"    Loaded {len(esc50_negatives):,} ESC50 negatives")
+            print(f"    Loaded {len(lssiren_negatives):,} LSSiren negatives")
     
-    def _extract_chunk_metadata(self) -> List[Dict]:
-        """
-        Extract chunk metadata from all negative files using sliding window.
+    def _load_audioset_v2_negatives(self) -> List[Tuple[str, int]]:
+        """Load AudioSet_EV_v2 negative samples (lazy - no existence check)."""
+        negatives = []
+        base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
+                                "AudioSet_EV_v2PANNs_2020")
         
-        Returns:
-            List of dicts with {'audio_path', 'start_time', 'end_time', 'chunk_idx'}
-        """
-        chunks = []
-        stride = self.chunk_duration * (1 - self.overlap)
+        csv_path = os.path.join(base_dir, "EV_Negatives.csv")
+        if not os.path.exists(csv_path):
+            return negatives
         
-        for audio_path in self.negative_files:
-            try:
-                # Get file duration without loading entire file
-                info = sf.info(audio_path)
-                duration = info.duration
-                
-                # Extract overlapping chunks
-                start_time = 0.0
-                chunk_idx = 0
-                
-                while start_time + self.chunk_duration <= duration:
-                    end_time = start_time + self.chunk_duration
-                    
-                    chunks.append({
-                        'audio_path': audio_path,
-                        'start_time': start_time,
-                        'end_time': end_time,
-                        'chunk_idx': chunk_idx,
-                        'file_sr': info.samplerate
-                    })
-                    
-                    start_time += stride
-                    chunk_idx += 1
-                    
-            except Exception as e:
-                print(f"Warning: Could not process {os.path.basename(audio_path)}: {e}")
+        # Only read downloaded column to speed up
+        df = pd.read_csv(csv_path, usecols=['yt_id', 'segment_type', 'downloaded'])
+        df_downloaded = df[df['downloaded'] == True]
         
-        return chunks
+        # Segment mapping
+        segment_mapping = {
+            'balanced_train': 'balanced_train',
+            'eval': 'eval'
+        }
+        
+        # Build path list WITHOUT checking existence (lazy verification)
+        for _, row in df_downloaded.iterrows():
+            yt_id = row['yt_id']
+            segment_type = row.get('segment_type', 'eval')
+            mapped_segment = segment_mapping.get(segment_type, segment_type)
+            
+            audio_path = os.path.join(base_dir, "Negative_files", mapped_segment, f"{yt_id}.wav")
+            negatives.append((audio_path, 0))  # Verification done in __getitem__
+        
+        return negatives
+    
+    def _load_fsd50k_negatives(self) -> List[Tuple[str, int]]:
+        """Load FSD50K negative samples (lazy - no existence check)."""
+        negatives = []
+        base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "FSD50K")
+        
+        # Dev negatives
+        dev_csv = os.path.join(base_dir, "FSD-dev_negatives.csv")
+        if os.path.exists(dev_csv):
+            df_dev = pd.read_csv(dev_csv, usecols=['fname'])
+            for _, row in df_dev.iterrows():
+                fname = row['fname']
+                audio_path = os.path.join(base_dir, "FSD50K.dev_audio", f"{fname}.wav")
+                negatives.append((audio_path, 0))
+        
+        # Eval negatives
+        eval_csv = os.path.join(base_dir, "FSD-eval_negatives.csv")
+        if os.path.exists(eval_csv):
+            df_eval = pd.read_csv(eval_csv, usecols=['fname'])
+            for _, row in df_eval.iterrows():
+                fname = row['fname']
+                audio_path = os.path.join(base_dir, "FSD50K.eval_audio", f"{fname}.wav")
+                negatives.append((audio_path, 0))
+        
+        return negatives
+    
+    def _load_us8k_negatives(self) -> List[Tuple[str, int]]:
+        """Load UrbanSound8K negative samples (lazy - no existence check)."""
+        negatives = []
+        base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "UrbanSound8K")
+        
+        metadata_path = os.path.join(base_dir, "metadata", "UrbanSound8K.csv")
+        if not os.path.exists(metadata_path):
+            return negatives
+        
+        df = pd.read_csv(metadata_path, usecols=['fold', 'slice_file_name', 'classID'])
+        # Class 9 is siren (positive), rest are negatives
+        df_neg = df[df['classID'] != 9]
+        
+        for _, row in df_neg.iterrows():
+            fold = f"fold{row['fold']}"
+            fname = row['slice_file_name']
+            audio_path = os.path.join(base_dir, "audio", fold, fname)
+            negatives.append((audio_path, 0))
+        
+        return negatives
+    
+    def _load_esc50_negatives(self) -> List[Tuple[str, int]]:
+        """Load ESC50 negative samples (lazy - no existence check)."""
+        negatives = []
+        base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ESC50")
+        
+        metadata_path = os.path.join(base_dir, "esc50.csv")
+        if not os.path.exists(metadata_path):
+            return negatives
+        
+        df = pd.read_csv(metadata_path, usecols=['filename', 'category'])
+        # Only 'siren' is positive
+        df_neg = df[df['category'] != 'siren']
+        
+        for _, row in df_neg.iterrows():
+            fname = row['filename']
+            audio_path = os.path.join(base_dir, "original_audio", fname)
+            negatives.append((audio_path, 0))
+        
+        return negatives
+    
+    def _load_lssiren_negatives(self) -> List[Tuple[str, int]]:
+        """Load LSSiren (road noises) negative samples (lazy - no existence check)."""
+        negatives = []
+        base_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "LSSiren")
+        
+        csv_path = os.path.join(base_dir, "Road_final.csv")
+        if not os.path.exists(csv_path):
+            return negatives
+        
+        # CSV has no header, first column is filename
+        df = pd.read_csv(csv_path, header=None, usecols=[0])
+        for _, row in df.iterrows():
+            filename = row[0]  # First column
+            audio_path = os.path.join(base_dir, "Road_Noises", filename)
+            negatives.append((audio_path, 0))
+        
+        return negatives
     
     def _define_augmentations(self) -> dict:
-        """Define augmentation functions (same as used for positives)."""
+        """Define augmentation functions."""
         return {
             "add_noise": self._add_random_noise,
             "time_roll": self._time_roll,
@@ -260,6 +339,7 @@ class KineScaper_NegativeChunkGenerator:
         }
     
     def _add_random_noise(self, waveform: torch.Tensor, scale: float = 0.1) -> torch.Tensor:
+        """Add random noise to waveform."""
         noise_type = random.choice(["white", "gaussian"])
         noise = torch.randn_like(waveform) if noise_type == "white" else torch.normal(0, 1, size=waveform.shape)
         noisy = waveform + noise * scale
@@ -269,21 +349,32 @@ class KineScaper_NegativeChunkGenerator:
         return noisy
     
     def _time_roll(self, waveform: torch.Tensor) -> torch.Tensor:
-        if waveform.size(0) > 1:
+        """Apply circular time shift."""
+        if waveform.ndim == 1 and waveform.size(0) > 1:
             shift = random.randint(1, waveform.size(0))
             return torch.roll(waveform, shifts=shift, dims=0)
+        elif waveform.ndim == 2 and waveform.size(1) > 1:
+            shift = random.randint(1, waveform.size(1))
+            return torch.roll(waveform, shifts=shift, dims=1)
         return waveform
     
     def _polarity_inversion(self, waveform: torch.Tensor) -> torch.Tensor:
-        return -waveform
+        """Invert waveform polarity."""
+        return waveform * -1
     
-    def _random_amplification(self, waveform: torch.Tensor, min_gain: float = 0.5, max_gain: float = 1.5) -> torch.Tensor:
-        gain = random.uniform(min_gain, max_gain)
-        amplified = waveform * gain
-        max_val = torch.max(torch.abs(amplified))
-        if max_val > 1.0:
-            return amplified / max_val
-        return amplified
+    def _random_amplification(self, waveform: torch.Tensor) -> torch.Tensor:
+        """Apply random amplitude scaling."""
+        if random.random() > 0.5:
+            scalar = random.uniform(0.1, 1.0)
+            return waveform * scalar
+        else:
+            # Handle both 1D and 2D tensors
+            if waveform.ndim == 1:
+                vector = torch.rand(waveform.size(0))
+                return waveform * vector
+            else:
+                vector = torch.rand(waveform.size(1))
+                return waveform * vector.unsqueeze(0)
     
     def _apply_augmentations(self, waveform: torch.Tensor) -> torch.Tensor:
         """Apply random augmentations to waveform."""
@@ -296,86 +387,97 @@ class KineScaper_NegativeChunkGenerator:
         
         return waveform
     
-    def _load_chunk(self, chunk_metadata: Dict) -> torch.Tensor:
-        """
-        Load a single chunk from file with proper audio processing.
+    def sample_original(self) -> Tuple[torch.Tensor, int]:
+        """Sample a random original negative (no augmentation)."""
+        audio_path, label = random.choice(self.negative_pool)
+        waveform = self._load_audio(audio_path)
+        return waveform, label
+    
+    def sample_augmented(self) -> Tuple[torch.Tensor, int]:
+        """Sample a random negative and apply augmentation."""
+        audio_path, label = random.choice(self.negative_pool)
+        waveform = self._load_audio(audio_path)
+        waveform = self._apply_augmentations(waveform)
+        return waveform, label
+    
+    def _load_audio(self, audio_path: str) -> torch.Tensor:
+        """Load and process audio to target format (with lazy existence check)."""
+        # Check existence only when loading
+        if not os.path.exists(audio_path):
+            print(f"Warning: File not found: {audio_path}")
+            return torch.zeros(self.target_size)
         
-        Args:
-            chunk_metadata: Dict with audio_path, start_time, end_time, file_sr
+        # Check file size to avoid corrupted files (max 100MB for 10s @ 32kHz)
+        try:
+            file_size = os.path.getsize(audio_path)
+            max_size = 100 * 1024 * 1024  # 100MB
+            if file_size > max_size:
+                print(f"⚠️  Skipping corrupted file (too large: {file_size / 1024 / 1024:.1f} MB): {audio_path}")
+                return torch.zeros(self.target_size)
+        except Exception as e:
+            print(f"Warning: Cannot check file size for {audio_path}: {e}")
+            return torch.zeros(self.target_size)
         
-        Returns:
-            1D tensor of shape [target_size]
-        """
-        audio_path = chunk_metadata['audio_path']
-        start_time = chunk_metadata['start_time']
-        end_time = chunk_metadata['end_time']
-        file_sr = chunk_metadata['file_sr']
+        # ADDITIONAL CHECK: Use soundfile.info() to verify file integrity BEFORE loading
+        # This prevents C++ memory allocation errors that bypass Python try/except
+        try:
+            info = sf.info(audio_path)
+            expected_samples = int(info.duration * info.samplerate)
+            expected_size_mb = (expected_samples * 4) / (1024 * 1024)  # float32 = 4 bytes
+            
+            if expected_size_mb > 50:  # Conservative limit: 50MB for audio data
+                print(f"⚠️  Skipping file with excessive duration ({info.duration:.1f}s, {expected_size_mb:.1f}MB): {audio_path}")
+                return torch.zeros(self.target_size)
+        except Exception as e:
+            print(f"⚠️  Cannot read file metadata (likely corrupted): {audio_path} - {e}")
+            return torch.zeros(self.target_size)
         
         try:
-            # Calculate sample indices
-            start_sample = int(start_time * file_sr)
-            num_samples = int(self.chunk_duration * file_sr)
+            waveform_np, sr = sf.read(audio_path, dtype='float32')
             
-            # Load only the required chunk (memory efficient)
-            waveform_np, sr = sf.read(audio_path, start=start_sample, frames=num_samples, dtype='float32')
-           
-            # Convert to torch
+            # Convert numpy to torch - handle both mono and stereo correctly
+            # soundfile returns: mono=[samples], stereo=[samples, channels]
             if waveform_np.ndim == 1:
+                # Mono: [samples]
                 waveform = torch.from_numpy(waveform_np).float()
             else:
-                # Multi-channel: transpose and convert to mono
+                # Multi-channel: [samples, channels] -> transpose to [channels, samples]
                 waveform = torch.from_numpy(waveform_np.T).float()
-                waveform = torch.mean(waveform, dim=0)
             
-            # Resample if needed
+            # Convert to mono if multi-channel
+            if waveform.ndim == 2:
+                # waveform is [channels, samples] -> average channels to get [samples]
+                waveform = torch.mean(waveform, dim=0)  # NO keepdim! Result: [samples]
+            
+            # At this point, waveform is ALWAYS 1D: [samples]
+            assert waveform.ndim == 1, f"Expected 1D tensor after mono conversion, got shape {waveform.shape}"
+            
+            # Resample if needed - resampler expects [channels=1, samples]
             if sr != self.target_sr:
                 resampler = torchaudio.transforms.Resample(sr, self.target_sr)
-                waveform = resampler(waveform.unsqueeze(0)).squeeze(0)
+                waveform = resampler(waveform.unsqueeze(0)).squeeze(0)  # Add/remove channel dim
             
-            # Pad or trim to exact target size
+            # Pad or trim to target size
             current_length = waveform.shape[0]
             if current_length < self.target_size:
+                # Pad
                 waveform = F.pad(waveform, (0, self.target_size - current_length))
             elif current_length > self.target_size:
+                # Trim
                 waveform = waveform[:self.target_size]
             
-            # Final guarantee
-            assert waveform.ndim == 1 and waveform.shape[0] == self.target_size
+            # Final guarantee: ALWAYS return 1D tensor of exact target size
+            assert waveform.ndim == 1 and waveform.shape[0] == self.target_size, \
+                f"Expected shape [{self.target_size}], got {waveform.shape}"
             
             return waveform
-            
+        
         except Exception as e:
-            print(f"Error loading chunk from {os.path.basename(audio_path)}: {e}")
-            return torch.zeros(self.target_size)
-    
-    def get_chunk(self, idx: int) -> torch.Tensor:
-        """
-        Get negative chunk by global index with augmentation.
-        
-        Args:
-            idx: Global index (0 to total_chunks-1)
-        
-        Returns:
-            1D tensor of shape [target_size]
-        """
-        # Map global index to base chunk and augmentation version
-        base_idx = idx % len(self.base_chunks)
-        aug_version = idx // len(self.base_chunks)
-        
-        # Load base chunk
-        chunk_metadata = self.base_chunks[base_idx]
-        waveform = self._load_chunk(chunk_metadata)
-        
-        # Apply augmentation for versions > 0
-        if aug_version > 0:
-            waveform = self._apply_augmentations(waveform)
-        
-        return waveform
+            print(f"Error loading {audio_path}: {e}")
+            return torch.zeros(self.target_size)  # Always 1D of correct size
     
     def __len__(self):
-        return self.total_chunks
-
-
+        return len(self.negative_pool)
 
 
 # =============================================================================
@@ -402,8 +504,6 @@ class KineScaper_EV_ChunkDataset(Dataset):
                  chunk_duration: float = 10.0,
                  augmentation: bool = False,
                  aug_prob: float = 0.7,
-                 negative_overlap: float = 0.20,
-                 use_negatives: bool = True,
                  seed: int = 42):
         """
         Initialize KineScaper chunk dataset.
@@ -415,10 +515,8 @@ class KineScaper_EV_ChunkDataset(Dataset):
             min_overlap: Minimum overlap for positive label (seconds)
             target_sr: Target sample rate
             chunk_duration: Chunk duration in seconds
-            augmentation: Whether to apply augmentation on positives
+            augmentation: Whether to apply augmentation
             aug_prob: Augmentation probability
-            negative_overlap: Overlap ratio for negative chunking (0.20 = 20%)
-            use_negatives: Whether to include negatives from Negatives/ folder
             seed: Random seed
         """
         super().__init__()
@@ -436,66 +534,15 @@ class KineScaper_EV_ChunkDataset(Dataset):
         self.target_size = int(target_sr * chunk_duration)
         self.augmentation = augmentation
         self.aug_prob = aug_prob
-        self.negative_overlap = negative_overlap
-        self.use_negatives = use_negatives
         self.seed = seed
         
         if self.augmentation:
             self.augmentations = self._define_augmentations()
         
-        # Load positive chunks from metadata
-        positive_chunks = self._load_and_chunk_metadata()
-        print(f"  Loaded {len(positive_chunks):,} positive chunks")
+        # Load metadata and create chunk list
+        self.chunks = self._load_and_chunk_metadata()
         
-        # Initialize negative generator if enabled
-        self.negative_generator = None
-        negative_chunks = []
-        
-        if self.use_negatives:
-            # Try to find Negatives directory:
-            # 1. First in dataset_root (e.g., /mnt/ssd/KineScaper_EV/dataset/Negatives)
-            # 2. If not found, try in repo (e.g., ./datasets/KineScaper_EV/Negatives)
-            negatives_dir = os.path.join(self.dataset_root, "Negatives")
-            
-            if not os.path.exists(negatives_dir):
-                # Fallback to repo location
-                repo_negatives_dir = os.path.join(
-                    os.path.dirname(os.path.dirname(__file__)),
-                    "KineScaper_EV", "Negatives"
-                )
-                if os.path.exists(repo_negatives_dir):
-                    negatives_dir = repo_negatives_dir
-                    print(f"  Using Negatives from repository: {negatives_dir}")
-            
-            if os.path.exists(negatives_dir):
-                self.negative_generator = KineScaper_NegativeChunkGenerator(
-                    negatives_dir=negatives_dir,
-                    num_positives=len(positive_chunks),
-                    chunk_duration=chunk_duration,
-                    overlap=negative_overlap,
-                    target_sr=target_sr,
-                    augmentation_prob=aug_prob,
-                    seed=seed
-                )
-                
-                # Add negative chunk metadata
-                for neg_idx in range(len(self.negative_generator)):
-                    negative_chunks.append({
-                        'type': 'negative',
-                        'generator_idx': neg_idx,
-                        'label': 0 if label_type == "binary" else 7,
-                        'siren_class': 'negative',
-                        'overlap': 0.0
-                    })
-            else:
-                print(f"  Warning: Negatives directory not found in:")
-                print(f"    - Primary: {os.path.join(self.dataset_root, 'Negatives')}")
-                print(f"    - Fallback: {repo_negatives_dir if 'repo_negatives_dir' in locals() else 'N/A'}")
-        
-        # Combine positive and negative chunks
-        self.chunks = positive_chunks + negative_chunks
-        
-        print(f"  Total chunks: {len(self.chunks):,}")
+        print(f"  Loaded {len(self.chunks):,} chunks")
         self._print_statistics()
     
     def _load_metadata(self) -> pd.DataFrame:
@@ -510,14 +557,9 @@ class KineScaper_EV_ChunkDataset(Dataset):
             return pd.read_csv(tsv_path, sep='\t')
     
     def _load_and_chunk_metadata(self) -> List[Dict]:
-        """
-        Load metadata and create chunk entries.
-        
-        NOTE: This now loads ONLY POSITIVE chunks (with sirens).
-        Negative chunks are handled by KineScaper_NegativeChunkGenerator.
-        """
+        """Load metadata and create chunk entries (lazy - no file existence check)."""
         df = self._load_metadata()
-        positive_chunks = []
+        chunks = []
         
         audio_dir = os.path.join(self.dataset_root, "audio")
         
@@ -528,6 +570,7 @@ class KineScaper_EV_ChunkDataset(Dataset):
             siren_class = row['siren_class']
             
             audio_path = os.path.join(audio_dir, filename)
+            # Removed existence check - verification done in __getitem__
             
             # Create 4 chunks per file
             for chunk_idx in range(4):
@@ -537,24 +580,30 @@ class KineScaper_EV_ChunkDataset(Dataset):
                 # Calculate overlap
                 overlap = calculate_overlap(chunk_start, chunk_end, onset, offset)
                 
-                # ONLY add chunks with sufficient overlap (positives)
+                # Determine label
                 if overlap >= self.min_overlap:
+                    # Positive chunk
                     if self.label_type == "binary":
                         label = 1
                     else:  # multiclass
                         label = SIREN_CLASS_MAPPING[siren_class]
-                    
-                    positive_chunks.append({
-                        'type': 'positive',  # Mark as positive chunk
-                        'audio_path': audio_path,
-                        'chunk_start': chunk_start,
-                        'chunk_end': chunk_end,
-                        'label': label,
-                        'siren_class': siren_class,
-                        'overlap': overlap
-                    })
+                else:
+                    # Negative chunk
+                    if self.label_type == "binary":
+                        label = 0
+                    else:
+                        label = 7  # negative class
+                
+                chunks.append({
+                    'audio_path': audio_path,
+                    'chunk_start': chunk_start,
+                    'chunk_end': chunk_end,
+                    'label': label,
+                    'siren_class': siren_class if overlap >= self.min_overlap else 'negative',
+                    'overlap': overlap
+                })
         
-        return positive_chunks
+        return chunks
     
     def _print_statistics(self):
         """Print dataset statistics."""
@@ -629,73 +678,66 @@ class KineScaper_EV_ChunkDataset(Dataset):
     
     def __getitem__(self, idx):
         chunk_info = self.chunks[idx]
-        chunk_type = chunk_info['type']
+        audio_path = chunk_info['audio_path']
+        chunk_start = chunk_info['chunk_start']
+        chunk_end = chunk_info['chunk_end']
         label = chunk_info['label']
         
-        # Handle negative chunks from generator
-        if chunk_type == 'negative' and self.negative_generator is not None:
-            generator_idx = chunk_info['generator_idx']
-            waveform = self.negative_generator.get_chunk(generator_idx)
-            return waveform, label
+        # Lazy file existence check
+        if not os.path.exists(audio_path):
+            # Return zero waveform with correct label
+            return torch.zeros(self.target_size), label
         
-        # Handle positive chunks from audio files
-        elif chunk_type == 'positive':
-            audio_path = chunk_info['audio_path']
-            chunk_start = chunk_info['chunk_start']
-            chunk_end = chunk_info['chunk_end']
+        try:
+            # Load full audio
+            waveform_np, sr = sf.read(audio_path, dtype='float32')
             
-            # Lazy file existence check
-            if not os.path.exists(audio_path):
-                return torch.zeros(self.target_size), label
+            # Convert numpy to torch - handle both mono and stereo correctly
+            # soundfile returns: mono=[samples], stereo=[samples, channels]
+            if waveform_np.ndim == 1:
+                # Mono: [samples]
+                waveform = torch.from_numpy(waveform_np).float()
+            else:
+                # Multi-channel: [samples, channels] -> transpose to [channels, samples]
+                waveform = torch.from_numpy(waveform_np.T).float()
             
-            try:
-                # Load full audio
-                waveform_np, sr = sf.read(audio_path, dtype='float32')
-                
-                # Convert numpy to torch - handle both mono and stereo correctly
-                if waveform_np.ndim == 1:
-                    waveform = torch.from_numpy(waveform_np).float()
-                else:
-                    waveform = torch.from_numpy(waveform_np.T).float()
-                
-                # Convert to mono if multi-channel
-                if waveform.ndim == 2:
-                    waveform = torch.mean(waveform, dim=0)
-                
-                # At this point, waveform is ALWAYS 1D: [samples]
-                assert waveform.ndim == 1, f"Expected 1D tensor, got shape {waveform.shape}"
-                
-                # Resample if needed
-                if sr != self.target_sr:
-                    resampler = torchaudio.transforms.Resample(sr, self.target_sr)
-                    waveform = resampler(waveform.unsqueeze(0)).squeeze(0)
-                
-                # Extract chunk - waveform is 1D [samples]
-                start_sample = int(chunk_start * self.target_sr)
-                end_sample = int(chunk_end * self.target_sr)
-                chunk_waveform = waveform[start_sample:end_sample]
-                
-                # Pad or trim to target size
-                current_length = chunk_waveform.shape[0]
-                if current_length < self.target_size:
-                    chunk_waveform = F.pad(chunk_waveform, (0, self.target_size - current_length))
-                elif current_length > self.target_size:
-                    chunk_waveform = chunk_waveform[:self.target_size]
-                
-                # Apply augmentation if enabled (only for positives)
-                if self.augmentation:
-                    chunk_waveform = self._apply_augmentations(chunk_waveform)
-                
-                # Final guarantee
-                assert chunk_waveform.ndim == 1 and chunk_waveform.shape[0] == self.target_size
-                
-                return chunk_waveform, label
+            # Convert to mono if multi-channel
+            if waveform.ndim == 2:
+                # waveform is [channels, samples] -> average channels to get [samples]
+                waveform = torch.mean(waveform, dim=0)  # NO keepdim! Result: [samples]
             
-            except Exception as e:
-                return torch.zeros(self.target_size), label
+            # At this point, waveform is ALWAYS 1D: [samples]
+            assert waveform.ndim == 1, f"Expected 1D tensor, got shape {waveform.shape}"
+            
+            # Resample if needed
+            if sr != self.target_sr:
+                resampler = torchaudio.transforms.Resample(sr, self.target_sr)
+                waveform = resampler(waveform.unsqueeze(0)).squeeze(0)  # Add/remove channel dim
+            
+            # Extract chunk - waveform is 1D [samples]
+            start_sample = int(chunk_start * self.target_sr)
+            end_sample = int(chunk_end * self.target_sr)
+            chunk_waveform = waveform[start_sample:end_sample]
+            
+            # Pad or trim to target size
+            current_length = chunk_waveform.shape[0]
+            if current_length < self.target_size:
+                chunk_waveform = F.pad(chunk_waveform, (0, self.target_size - current_length))
+            elif current_length > self.target_size:
+                chunk_waveform = chunk_waveform[:self.target_size]
+            
+            # Apply augmentation if enabled
+            if self.augmentation:
+                chunk_waveform = self._apply_augmentations(chunk_waveform)
+            
+            # Final guarantee: ALWAYS return 1D tensor of exact target size
+            assert chunk_waveform.ndim == 1 and chunk_waveform.shape[0] == self.target_size, \
+                f"Expected shape [{self.target_size}], got {chunk_waveform.shape}"
+            
+            return chunk_waveform, label
         
-        # Fallback for unknown type
-        else:
+        except Exception as e:
+            # Return zeros on error
             return torch.zeros(self.target_size), label
 
 
@@ -765,19 +807,7 @@ class KineScaper_EV_DetectionDataset(Dataset):
         print(f"  Loaded {len(self.samples)} {'positive' if is_positive else 'negative'} samples")
     
     def _load_metadata(self) -> List[Dict]:
-        """Load metadata and filter by is_positive flag.
-        
-        Returns samples in a format compatible with AudioSet_EV_Strong interface:
-            {
-                'segment_id': str,
-                'file_path': str,
-                'audio_path': str,   # same as file_path (for backward compat)
-                'onset': float,
-                'offset': float,
-                'filename': str,
-                'events': [{'mid': 'kinescaper_ev', 'start': onset, 'end': offset}]
-            }
-        """
+        """Load metadata and filter by is_positive flag."""
         if self.metadata_format == "json":
             json_path = os.path.join(self.dataset_root, "json", "metadata.json")
             with open(json_path, 'r') as f:
@@ -797,17 +827,11 @@ class KineScaper_EV_DetectionDataset(Dataset):
             offset = row['offset']
             
             audio_path = os.path.join(audio_dir, filename)
-            segment_id = os.path.splitext(filename)[0]  # filename without extension
             
             # For now, all KineScaper samples are positives (contain siren)
             # We can add negative samples from other datasets if needed
             if self.is_positive:
                 samples.append({
-                    # AudioSet Strong compatible interface
-                    'segment_id': segment_id,
-                    'file_path': audio_path,
-                    'events': [{'mid': 'kinescaper_ev', 'start': onset, 'end': offset}],
-                    # KineScaper-specific (kept for backward compatibility)
                     'audio_path': audio_path,
                     'onset': onset,
                     'offset': offset,
@@ -957,18 +981,19 @@ class KineScaper_EV_DetectionDataset(Dataset):
 # CUSTOM COLLATE FUNCTION
 # =============================================================================
 
-def kinescaper_collate_fn_balanced(batch, negative_generator=None, label_type="binary"):
+def kinescaper_collate_fn_with_augmentation(batch, negative_pool_manager, augmentation_ratio=0.69, label_type="binary"):
     """
-    Collate function with guaranteed 50/50 balancing and fixed batch size.
+    Custom collate function with batch-wise negative augmentation.
     
     Strategy:
-    - Target: EXACTLY batch_size samples
-    - Balance: 50% positives / 50% negatives
-    - If batch lacks negatives, sample from negative_generator
+    - Target: EXACTLY batch_size samples (not doubled!)
+    - Balance 50% positives / 50% negatives
+    - Negatives: mix ~31% original from batch + ~69% augmented from pool
     
     Args:
         batch: List of (waveform, label) tuples from DataLoader
-        negative_generator: KineScaper_NegativeChunkGenerator instance (optional)
+        negative_pool_manager: NegativePoolManager instance
+        augmentation_ratio: Ratio of augmented negatives (default: 0.69)
         label_type: "binary" or "multiclass"
     
     Returns:
@@ -989,44 +1014,38 @@ def kinescaper_collate_fn_balanced(batch, negative_generator=None, label_type="b
     target_pos = batch_size // 2
     target_neg = batch_size - target_pos
     
-    # Sample positives
-    if len(pos_indices) >= target_pos:
-        selected_pos = random.sample(pos_indices, target_pos)
-    else:
-        # Take all available positives
-        selected_pos = pos_indices
-        # Adjust negative target to fill batch
-        target_neg = batch_size - len(selected_pos)
+    # Sample positives (if too many, downsample to target_pos)
+    if len(pos_indices) > target_pos:
+        pos_indices = random.sample(pos_indices, target_pos)
     
-    # Build positive part of batch
-    final_waveforms = [waveforms[i] for i in selected_pos]
-    final_labels = [labels[i] for i in selected_pos]
+    final_waveforms = [waveforms[i] for i in pos_indices]
+    final_labels = [labels[i] for i in pos_indices]
     
-    # Sample negatives from batch
-    if len(neg_indices) >= target_neg:
-        selected_neg = random.sample(neg_indices, target_neg)
-        final_waveforms.extend([waveforms[i] for i in selected_neg])
-        final_labels.extend([labels[i] for i in selected_neg])
-    else:
-        # Take all available negatives from batch
-        final_waveforms.extend([waveforms[i] for i in neg_indices])
-        final_labels.extend([labels[i] for i in neg_indices])
-        
-        # Fill remaining with negatives from generator
-        remaining_neg = target_neg - len(neg_indices)
-        if remaining_neg > 0 and negative_generator is not None:
-            for _ in range(remaining_neg):
-                # Sample random negative from generator
-                neg_idx = random.randint(0, len(negative_generator) - 1)
-                neg_waveform = negative_generator.get_chunk(neg_idx)
-                neg_label = 0 if label_type == "binary" else 7
-                
-                final_waveforms.append(neg_waveform)
-                final_labels.append(neg_label)
+    # Calculate negatives needed to reach batch_size
+    num_pos_actual = len(pos_indices)
+    num_neg_needed = batch_size - num_pos_actual  # Fill remaining slots to batch_size
     
-    # Guarantee: batch_size maintained
+    # Split negatives: ~31% original from batch + ~69% augmented from pool
+    num_original = int(num_neg_needed * (1 - augmentation_ratio))
+    
+    # Sample original negatives from batch
+    if len(neg_indices) > 0:
+        original_neg = random.sample(neg_indices, min(num_original, len(neg_indices)))
+        final_waveforms.extend([waveforms[i] for i in original_neg])
+        final_labels.extend([labels[i] for i in original_neg])
+    
+    # Fill remaining with augmented negatives from pool
+    negatives_already_added = len(final_waveforms) - num_pos_actual
+    remaining = num_neg_needed - negatives_already_added
+    
+    for _ in range(remaining):
+        neg_waveform, neg_label = negative_pool_manager.sample_augmented()
+        final_waveforms.append(neg_waveform)
+        final_labels.append(neg_label if label_type == "binary" else 7)
+    
+    # GUARANTEE: len(final_waveforms) == batch_size
     assert len(final_waveforms) == batch_size, \
-        f"Expected {batch_size} samples, got {len(final_waveforms)}"
+        f"Collate function produced {len(final_waveforms)} samples, expected {batch_size}"
     
     # Stack tensors
     waveforms_tensor = torch.stack(final_waveforms)
@@ -1035,12 +1054,6 @@ def kinescaper_collate_fn_balanced(batch, negative_generator=None, label_type="b
     # Shuffle batch
     perm = torch.randperm(len(labels_tensor))
     return waveforms_tensor[perm], labels_tensor[perm]
-
-
-# DEPRECATED: Old collate function with NegativePoolManager (kept for reference)
-def kinescaper_collate_fn_with_augmentation_DEPRECATED(batch, negative_pool_manager, augmentation_ratio=0.69, label_type="binary"):
-    """DEPRECATED: Use kinescaper_collate_fn_balanced instead."""
-    raise NotImplementedError("This function is deprecated. Use kinescaper_collate_fn_balanced instead.")
 
 
 def simple_collate_fn(batch):
@@ -1084,9 +1097,10 @@ class KineScaper_EV_DataModule(pl.LightningDataModule):
                  split_ratios: List[float] = [0.8, 0.1, 0.1],
                  min_overlap: float = 0.5,
                  window_size: float = 0.310,
+                 use_audioset_v2_negatives: bool = True,
+                 use_other_negatives: bool = True,
                  augmentation: bool = False,
-                 negative_overlap: float = 0.20,
-                 use_negatives: bool = True,
+                 augmentation_ratio: float = 0.69,
                  seed: int = 42,
                  **kwargs):
         """
@@ -1103,9 +1117,10 @@ class KineScaper_EV_DataModule(pl.LightningDataModule):
             split_ratios: [train, val, test] ratios (for "train" mode)
             min_overlap: Minimum overlap for positive label (seconds)
             window_size: Window duration for detection mode label tracks (seconds, default: 0.310)
-            augmentation: Whether to apply augmentation on positives
-            negative_overlap: Overlap ratio for negative chunking (0.20 = 20%)
-            use_negatives: Whether to use negatives from Negatives/ folder
+            use_audioset_v2_negatives: Whether to use AudioSet_EV_v2 negatives
+            use_other_negatives: Whether to use other dataset negatives
+            augmentation: Whether to apply augmentation
+            augmentation_ratio: Ratio of augmented negatives in batch
             seed: Random seed
         """
         super().__init__()
@@ -1120,9 +1135,10 @@ class KineScaper_EV_DataModule(pl.LightningDataModule):
         self.split_ratios = split_ratios
         self.min_overlap = min_overlap
         self.window_size = window_size
+        self.use_audioset_v2_negatives = use_audioset_v2_negatives
+        self.use_other_negatives = use_other_negatives
         self.augmentation = augmentation
-        self.negative_overlap = negative_overlap
-        self.use_negatives = use_negatives
+        self.augmentation_ratio = augmentation_ratio
         self.seed = seed
         
         seed_everything(seed)
@@ -1131,6 +1147,7 @@ class KineScaper_EV_DataModule(pl.LightningDataModule):
         self.val_ds = None
         self.test_ds = None
         self.test_datasets = {}  # For benchmark mode CV (siren-type folds)
+        self.negative_pool_manager = None
     
     def setup(self, stage=None):
         """Setup datasets based on mode."""
@@ -1147,20 +1164,32 @@ class KineScaper_EV_DataModule(pl.LightningDataModule):
         """Setup for train/benchmark modes with chunking."""
         print("\n1. Loading KineScaper chunks...")
         
-        # Load full dataset with integrated negative generation
+        # Load full dataset
         full_dataset = KineScaper_EV_ChunkDataset(
             dataset_root=self.dataset_root,
             label_type=self.label_type,
             min_overlap=self.min_overlap,
-            augmentation=self.augmentation,
-            negative_overlap=self.negative_overlap,
-            use_negatives=self.use_negatives,
+            augmentation=False,  # Augmentation via collate_fn
+            seed=self.seed
+        )
+        
+        # Extract negative chunk info for pool manager
+        kinescaper_negatives = []
+        for chunk in full_dataset.chunks:
+            if chunk['label'] == 0 or chunk['label'] == 7:  # negative
+                kinescaper_negatives.append((chunk['audio_path'], 0))
+        
+        print(f"\n2. Initializing NegativePoolManager...")
+        self.negative_pool_manager = NegativePoolManager(
+            kinescaper_negatives=kinescaper_negatives,
+            use_audioset_v2=self.use_audioset_v2_negatives,
+            use_other_datasets=self.use_other_negatives,
             seed=self.seed
         )
         
         # Split dataset
         if self.mode == "train":
-            print(f"\n2. Splitting dataset ({self.split_ratios[0]}/{self.split_ratios[1]}/{self.split_ratios[2]})...")
+            print(f"\n3. Splitting dataset ({self.split_ratios[0]}/{self.split_ratios[1]}/{self.split_ratios[2]})...")
             
             train_size = int(self.split_ratios[0] * len(full_dataset))
             val_size = int(self.split_ratios[1] * len(full_dataset))
@@ -1178,7 +1207,7 @@ class KineScaper_EV_DataModule(pl.LightningDataModule):
             print(f"  Test:  {len(self.test_ds):,} chunks")
         
         else:  # benchmark
-            print(f"\n2. Creating CV folds by siren type...")
+            print(f"\n3. Creating CV folds by siren type...")
             
             # Group chunks by siren class
             siren_types = ['hi-lo', 'two-tone', 'wail', 'phaser', 'piercer', 'rumbler', 'yelp']
@@ -1238,22 +1267,10 @@ class KineScaper_EV_DataModule(pl.LightningDataModule):
         if self.train_ds is None:
             return None
         
-        # Create collate function with balancing
-        if self.mode == "train":
-            # Access negative_generator from underlying dataset
-            # train_ds is a Subset, so we need to access .dataset
-            negative_generator = None
-            if hasattr(self.train_ds, 'dataset'):
-                # train_ds is a Subset
-                underlying_dataset = self.train_ds.dataset
-                if hasattr(underlying_dataset, 'negative_generator'):
-                    negative_generator = underlying_dataset.negative_generator
-            elif hasattr(self.train_ds, 'negative_generator'):
-                # train_ds is the dataset directly
-                negative_generator = self.train_ds.negative_generator
-            
-            collate_fn = lambda batch: kinescaper_collate_fn_balanced(
-                batch, negative_generator, self.label_type
+        # Create collate function with negative pool
+        if self.negative_pool_manager is not None:
+            collate_fn = lambda batch: kinescaper_collate_fn_with_augmentation(
+                batch, self.negative_pool_manager, self.augmentation_ratio, self.label_type
             )
         else:
             collate_fn = simple_collate_fn
@@ -1311,13 +1328,13 @@ if __name__ == "__main__":
     from collections import Counter
     
     print("=" * 80)
-    print("DATALOADER TEST - KineScaper Emergency Vehicles Dataset (REFACTORED)")
+    print("DATALOADER TEST - KineScaper Emergency Vehicles Dataset")
     print("=" * 80)
     
     # Configuration
-    DATASET_ROOT = "/mnt/ssd/KineScaper_EV/dataset/"
-    BATCH_SIZE = 16
-    NUM_WORKERS = 0  # Single process for testing
+    DATASET_ROOT = "/mnt/ssd/Kinescaper_EV/dataset/"
+    BATCH_SIZE = 16  # Reduced to avoid memory issues
+    NUM_WORKERS = 0  # Start with 0 to avoid multiprocessing overhead
     
     # Test 1: Train mode - Binary classification
     print("\n" + "=" * 80)
@@ -1331,9 +1348,9 @@ if __name__ == "__main__":
         batch_size=BATCH_SIZE,
         num_workers=NUM_WORKERS,
         split_ratios=[0.8, 0.1, 0.1],
-        augmentation=True,          # Apply augmentation to positives
-        negative_overlap=0.20,       # 20% overlap for negative chunking
-        use_negatives=True,          # Use negatives from Negatives/ folder
+        use_audioset_v2_negatives=True,
+        use_other_negatives=True,
+        augmentation_ratio=0.69,
         seed=42
     )
     
@@ -1342,21 +1359,11 @@ if __name__ == "__main__":
     # Test train dataloader
     print("\nTesting train dataloader...")
     train_loader = dm_train_binary.train_dataloader()
-    
-    # Test multiple batches to verify balancing
-    print("  Testing 5 batches to verify balancing:")
-    for i, (batch_waveforms, batch_labels) in enumerate(train_loader):
-        if i >= 5:
-            break
-        pos_count = (batch_labels == 1).sum().item()
-        neg_count = (batch_labels == 0).sum().item()
-        print(f"    Batch {i}: shape {list(batch_waveforms.shape)}, "
-              f"{pos_count} pos + {neg_count} neg = {batch_waveforms.shape[0]} total, "
-              f"range [{batch_waveforms.min():.3f}, {batch_waveforms.max():.3f}]")
-        
-        # Verify batch size is maintained
-        assert batch_waveforms.shape[0] == BATCH_SIZE, \
-            f"Batch size mismatch: expected {BATCH_SIZE}, got {batch_waveforms.shape[0]}"
+    batch_waveforms, batch_labels = next(iter(train_loader))
+    print(f"  Batch shape: {batch_waveforms.shape}")
+    print(f"  Labels shape: {batch_labels.shape}")
+    print(f"  Label distribution: {Counter(batch_labels.tolist())}")
+    print(f"  Waveform range: [{batch_waveforms.min():.3f}, {batch_waveforms.max():.3f}]")
     
     # Test val dataloader
     print("\nTesting val dataloader...")
@@ -1365,7 +1372,6 @@ if __name__ == "__main__":
     print(f"  Batch shape: {batch_waveforms.shape}")
     print(f"  Labels shape: {batch_labels.shape}")
     print(f"  Label distribution: {Counter(batch_labels.tolist())}")
-    print(f"  (Val uses real distribution, not balanced)")
     
     # Test 2: Train mode - Multiclass classification
     print("\n" + "=" * 80)
@@ -1379,9 +1385,9 @@ if __name__ == "__main__":
         batch_size=BATCH_SIZE,
         num_workers=NUM_WORKERS,
         split_ratios=[0.8, 0.1, 0.1],
-        augmentation=True,
-        negative_overlap=0.20,
-        use_negatives=True,
+        use_audioset_v2_negatives=True,
+        use_other_negatives=True,
+        augmentation_ratio=0.69,
         seed=42
     )
     
@@ -1409,7 +1415,8 @@ if __name__ == "__main__":
         dataset_root=DATASET_ROOT,
         batch_size=BATCH_SIZE,
         num_workers=NUM_WORKERS,
-        use_negatives=True,  # Included in benchmark
+        use_audioset_v2_negatives=False,  # Not used in benchmark test
+        use_other_negatives=False,         # Not used in benchmark test
         seed=42
     )
     
@@ -1473,406 +1480,17 @@ if __name__ == "__main__":
     print(f"  Total val chunks:   {len(dm_train_binary.val_ds):,}")
     print(f"  Total test chunks:  {len(dm_train_binary.test_ds):,}")
     
-    # Access underlying dataset to get statistics
-    underlying_dataset = dm_train_binary.train_ds.dataset
-    pos_chunks = sum(1 for c in underlying_dataset.chunks if c['type'] == 'positive')
-    neg_chunks = sum(1 for c in underlying_dataset.chunks if c['type'] == 'negative')
+    print("\nNegative pool statistics:")
+    if dm_train_binary.negative_pool_manager:
+        print(f"  Total negatives available: {len(dm_train_binary.negative_pool_manager):,}")
+        print(f"  Augmentation ratio: {dm_train_binary.augmentation_ratio:.1%}")
     
-    print(f"\nFull dataset composition:")
-    print(f"  Positive chunks: {pos_chunks:,} ({pos_chunks/len(underlying_dataset.chunks)*100:.1f}%)")
-    print(f"  Negative chunks: {neg_chunks:,} ({neg_chunks/len(underlying_dataset.chunks)*100:.1f}%)")
-    print(f"  Ratio pos:neg = {pos_chunks/neg_chunks if neg_chunks > 0 else 'inf'}:1")
-    
-    if hasattr(underlying_dataset, 'negative_generator') and underlying_dataset.negative_generator:
-        gen = underlying_dataset.negative_generator
-        print(f"\nNegative Generator statistics:")
-        print(f"  Negative files: {len(gen.negative_files)}")
-        print(f"  Base chunks (overlap {gen.overlap*100:.0f}%): {len(gen.base_chunks):,}")
-        print(f"  Augmentation factor: {gen.augmentation_factor}x (auto-calculated)")
-        print(f"  Total negative chunks generated: {len(gen):,}")
-    
-    print(f"\nDetection mode:")
+    print("\nDetection mode:")
     print(f"  Total samples: {len(dm_detection.test_ds):,}")
     print(f"  Sample duration: 40s")
-    print(f"  Window size: {dm_detection.window_size}s")
+    print(f"  Window size: 0.310s")
     print(f"  Windows per sample: {dm_detection.test_ds.num_windows}")
     
     print("\n" + "=" * 80)
     print("✓ ALL TESTS COMPLETED SUCCESSFULLY")
     print("=" * 80)
-    print("\nKEY IMPROVEMENTS IN REFACTORED VERSION:")
-    print("  - Negatives standalone from Negatives/ folder (no external datasets)")
-    print("  - Automatic augmentation factor calculation")
-    print("  - Guaranteed balanced batches (50/50 pos/neg) in training")
-    print("  - Simplified architecture without NegativePoolManager")
-    print("  - Lazy loading for memory efficiency")
-    print("=" * 80)
-
-# =============================================================================
-# STANDALONE DATASET FOR UNIFIED TRAINING
-# =============================================================================
-
-def get_stratified_sample_indices(metadata: List[Dict], 
-                                   num_samples_per_class: int,
-                                   seed: int = 42) -> List[int]:
-    """
-    Get stratified sample indices balanced across siren classes.
-    
-    Args:
-        metadata: List of metadata entries (dataset_metadata from JSON)
-        num_samples_per_class: Number of samples to get per siren class
-        seed: Random seed for reproducibility
-    
-    Returns:
-        List of sample indices (into metadata list)
-    """
-    random.seed(seed)
-    np.random.seed(seed)
-    
-    # Group metadata indices by siren class
-    class_indices = {class_name: [] for class_name in SIREN_CLASS_NAMES[:-1]}  # Exclude 'negative'
-    
-    for idx, entry in enumerate(metadata):
-        siren_class = entry['siren_class']
-        if siren_class in class_indices:
-            class_indices[siren_class].append(idx)
-    
-    # Sample from each class
-    sampled_indices = []
-    for siren_class, indices in class_indices.items():
-        if len(indices) < num_samples_per_class:
-            # If not enough samples, use all and repeat
-            sampled = random.choices(indices, k=num_samples_per_class)
-        else:
-            # Sample without replacement
-            sampled = random.sample(indices, num_samples_per_class)
-        
-        sampled_indices.extend(sampled)
-    
-    # Shuffle to mix classes
-    random.shuffle(sampled_indices)
-    
-    return sampled_indices
-
-
-class KineScaper_PositiveChunkDataset(Dataset):
-    """
-    Standalone dataset for KineScaper positive chunks.
-    Used for unified training with stratified  re-sampling.
-    
-    Features:
-    - Loads only positive chunks (overlap >= 0.5s)
-    - Stratified sampling by siren class
-    - Re-sampling via set_epoch() for epoch-to-epoch diversity
-    - No balancing (handled externally by unified training)
-    """
-    
-    def __init__(self,
-                 dataset_root: str,
-                 num_samples: int,
-                 augmentation: bool = False,
-                 aug_prob: float = 0.5,
-                 target_sr: int = 32000,
-                 target_duration: float = 10.0,
-                 seed: int = 42):
-        """
-        Args:
-            dataset_root: Path to KineScaper dataset root
-            num_samples: Number of positive samples to use (will be stratified)
-            augmentation: Enable augmentation
-            aug_prob: Augmentation probability per technique
-            target_sr: Target sample rate
-            target_duration: Target chunk duration in seconds
-            seed: Random seed
-        """
-        super().__init__()
-        
-        self.dataset_root = dataset_root
-        self.num_samples = num_samples
-        self.augmentation = augmentation
-        self.aug_prob = aug_prob
-        self.target_sr = target_sr
-        self.target_duration = target_duration
-        self.target_length = int(target_duration * target_sr)
-        self.seed = seed
-        self.current_epoch = 0
-        
-        # Load metadata
-        metadata_path = os.path.join(dataset_root, 'json', 'metadata.json')
-        with open(metadata_path, 'r') as f:
-            data = json.load(f)
-            self.full_metadata = data['dataset_metadata']
-        
-        # Extract all positive chunks (overlap >= 0.5s)
-        self.positive_chunks = []
-        for entry in self.full_metadata:
-            onset = entry['onset']
-            offset = entry['offset']
-            siren_class = entry['siren_class']
-            filename = entry['filename']
-            audio_path = os.path.join(dataset_root, 'audio', filename)
-            
-            # Check 4 chunks
-            for chunk_idx in range(4):
-                chunk_start = chunk_idx * 10.0
-                chunk_end = (chunk_idx + 1) * 10.0
-                
-                overlap = calculate_overlap(chunk_start, chunk_end, onset, offset)
-                
-                if overlap >= 0.5:
-                    self.positive_chunks.append({
-                        'chunk_idx': chunk_idx,
-                        'audio_path': audio_path,
-                        'siren_class': siren_class,
-                        'onset': onset,
-                        'offset': offset
-                    })
-        
-        # Initial sampling
-        self._resample()
-    
-    def _resample(self):
-        """Re-sample indices with stratification."""
-        # Calculate samples per class
-        num_classes = len(SIREN_CLASS_NAMES) - 1  # exclude negative
-        samples_per_class = self.num_samples // num_classes
-        
-        # Group by siren class
-        class_chunks = {class_name: [] for class_name in SIREN_CLASS_NAMES[:-1]}
-        for idx, chunk in enumerate(self.positive_chunks):
-            class_chunks[chunk['siren_class']].append(idx)
-        
-        # Sample from each class
-        self.sampled_indices = []
-        rng = random.Random(self.seed + self.current_epoch)
-        
-        for siren_class, indices in class_chunks.items():
-            if len(indices) < samples_per_class:
-                sampled = rng.choices(indices, k=samples_per_class)
-            else:
-                sampled = rng.sample(indices, samples_per_class)
-            self.sampled_indices.extend(sampled)
-        
-        # Shuffle
-        rng.shuffle(self.sampled_indices)
-    
-    def set_epoch(self, epoch: int):
-        """Set current epoch for re-sampling."""
-        self.current_epoch = epoch
-        self._resample()
-    
-    def __len__(self):
-        return len(self.sampled_indices)
-    
-    def __getitem__(self, idx):
-        """Load and return chunk."""
-        chunk_idx = self.sampled_indices[idx]
-        chunk_info = self.positive_chunks[chunk_idx]
-        
-        # Load audio
-        try:
-            waveform, sr = sf.read(chunk_info['audio_path'])
-            if waveform.ndim > 1:
-                waveform = waveform[:, 0]
-            waveform = torch.from_numpy(waveform).float()
-            
-            # Resample if needed
-            if sr != self.target_sr:
-                resampler = torchaudio.transforms.Resample(sr, self.target_sr)
-                waveform = resampler(waveform)
-            
-            # Extract chunk
-            chunk_start_sample = int(chunk_info['chunk_idx'] * 10.0 * self.target_sr)
-            chunk_end_sample = chunk_start_sample + self.target_length
-            waveform = waveform[chunk_start_sample:chunk_end_sample]
-            
-            # Pad if needed
-            if len(waveform) < self.target_length:
-                waveform = F.pad(waveform, (0, self.target_length - len(waveform)))
-            
-            waveform = waveform.unsqueeze(0)  # [1, samples]
-            
-            # Apply augmentation if enabled
-            if self.augmentation and random.random() < self.aug_prob:
-                waveform = self._apply_augmentations(waveform)
-            
-            # Binary label = 1 (positive)
-            label = torch.tensor(1, dtype=torch.long)
-            
-            return waveform, label
-            
-        except Exception as e:
-            print(f"Error loading {chunk_info['audio_path']}: {e}")
-            # Return zero tensor as fallback
-            return torch.zeros(1, self.target_length), torch.tensor(1, dtype=torch.long)
-    
-    def _apply_augmentations(self, waveform: torch.Tensor) -> torch.Tensor:
-        """Apply random augmentations."""
-        # Simple augmentations (same as other datasets)
-        augmentations = []
-        
-        # Add noise
-        if random.random() < self.aug_prob:
-            noise = torch.randn_like(waveform) * 0.005
-            waveform = waveform + noise
-        
-        # Time roll
-        if random.random() < self.aug_prob:
-            shift = random.randint(1, waveform.size(1) // 4)
-            waveform = torch.roll(waveform, shifts=shift, dims=1)
-        
-        # Polarity inversion
-        if random.random() < self.aug_prob:
-            waveform = waveform * -1
-        
-        # Random amplification
-        if random.random() < self.aug_prob:
-            scalar = random.uniform(0.7, 1.3)
-            waveform = waveform * scalar
-        
-        # Normalize
-        max_val = torch.max(torch.abs(waveform))
-        if max_val > 0:
-            waveform = waveform / max_val
-        
-        return waveform
-
-
-class KineScaper_NegativeChunkDataset(Dataset):
-    """
-    Standalone dataset for KineScaper negative chunks.
-    Uses lazy loading from KineScaper_NegativeChunkGenerator.
-    """
-    
-    def __init__(self,
-                 dataset_root: str,
-                 num_positives: int,  # Added: needed for augmentation factor calculation
-                 augmentation: bool = False,
-                 aug_prob: float = 0.5,
-                 target_sr: int = 32000,
-                 target_duration: float = 10.0,
-                 negative_overlap: float = 0.20,
-                 seed: int = 42):
-        """
-        Args:
-            dataset_root: Path to KineScaper dataset root  
-            num_positives: Number of positive samples (for auto augmentation factor)
-            augmentation: Enable augmentation (NOTE: negatives already augmented by generator)
-            aug_prob: Augmentation probability  
-            target_sr: Target sample rate
-            target_duration: Target chunk duration
-            negative_overlap: Overlap for negative chunking
-            seed: Random seed
-        """
-        super().__init__()
-        
-        # Initialize generator for negatives
-        negatives_dir = os.path.join(os.path.dirname(__file__), 'Negatives')
-        
-        # Generator will calculate augmentation factor based on num_positives
-        # BUT we want to use ALL negatives available (max augmentation)
-        # Hack: use a very large num_positives to force max augmentation
-        # This ensures we get all 12,180 negatives (1,218 base × 10 aug factor)
-        self.generator = KineScaper_NegativeChunkGenerator(
-            negatives_dir=negatives_dir,
-            num_positives=250000,  # Large value → forces augmentation_factor=10x → 12,180 total
-            chunk_duration=target_duration,
-            overlap=negative_overlap,
-            target_sr=target_sr,
-            seed=seed
-        )
-        
-        # Augmentation settings (optional, negatives already augmented)
-        self.augmentation = augmentation
-        self.aug_prob = aug_prob
-        self.target_length = int(target_duration * target_sr)
-    
-    def __len__(self):
-        return self.generator.total_chunks
-    
-    def __getitem__(self, idx):
-        """Load negative chunk via generator."""
-        waveform = self.generator.get_chunk(idx)
-        
-        # Additional augmentation if requested (on top of pre-augmented)
-        if self.augmentation and random.random() < self.aug_prob:
-            waveform = self._apply_augmentations(waveform)
-        
-        # Binary label = 0 (negative)
-        label = torch.tensor(0, dtype=torch.long)
-        
-        return waveform, label
-    
-    def _apply_augmentations(self, waveform: torch.Tensor) -> torch.Tensor:
-        """Apply additional augmentations (same as positives)."""
-        if random.random() < self.aug_prob:
-            noise = torch.randn_like(waveform) * 0.005
-            waveform = waveform + noise
-        
-        if random.random() < self.aug_prob:
-            shift = random.randint(1, waveform.size(1) // 4)
-            waveform = torch.roll(waveform, shifts=shift, dims=1)
-        
-        if random.random() < self.aug_prob:
-            waveform = waveform * -1
-        
-        if random.random() < self.aug_prob:
-            scalar = random.uniform(0.7, 1.3)
-            waveform = waveform * scalar
-        
-        max_val = torch.max(torch.abs(waveform))
-        if max_val > 0:
-            waveform = waveform / max_val
-        
-        return waveform
-
-
-def create_kinescaper_dataset_for_unified(dataset_root: str,
-                                           num_positive_samples: int,
-                                           chunk_type: str,
-                                           augmentation: bool = False,
-                                           aug_prob: float = 0.5,
-                                           target_sr: int = 32000,
-                                           target_duration: float = 10.0,
-                                           negative_overlap: float = 0.20,
-                                           seed: int = 42) -> Dataset:
-    """
-    Factory function to create KineScaper dataset for unified training.
-    
-    Args:
-        dataset_root: Path to KineScaper dataset
-        num_positive_samples: Number of positive samples (for stratified sampling AND negative augmentation factor)
-        chunk_type: 'positive' or 'negative'
-        augmentation: Enable augmentation
-        aug_prob: Augmentation probability
-        target_sr: Target sample rate
-        target_duration: Chunk duration in seconds
-        negative_overlap: Overlap for negative chunking
-        seed: Random seed
-    
-    Returns:
-        Dataset instance (either positive or negative)
-    """
-    if chunk_type == 'positive':
-        return KineScaper_PositiveChunkDataset(
-            dataset_root=dataset_root,
-            num_samples=num_positive_samples,
-            augmentation=augmentation,
-            aug_prob=aug_prob,
-            target_sr=target_sr,
-            target_duration=target_duration,
-            seed=seed
-        )
-    elif chunk_type == 'negative':
-        return KineScaper_NegativeChunkDataset(
-            dataset_root=dataset_root,
-            num_positives=num_positive_samples,  # Pass for augmentation factor calculation
-            augmentation=augmentation,
-            aug_prob=aug_prob,
-            target_sr=target_sr,
-            target_duration=target_duration,
-            negative_overlap=negative_overlap,
-            seed=seed
-        )
-    else:
-        raise ValueError(f"chunk_type must be 'positive' or 'negative', got: {chunk_type}")
