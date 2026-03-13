@@ -899,7 +899,7 @@ def main():
                       'callbacks': callbacks,
                       'logger': logger,
                       'log_every_n_steps': 10,
-                      'deterministic': True,
+                      'deterministic': 'warn',  # 'warn' instead of True: avoids crash on ops without deterministic CUDA impl (e.g. CLAP bicubic upsample)
                       'default_root_dir': config['paths']['results']}
     
     # Gradient accumulation to reduce memory usage

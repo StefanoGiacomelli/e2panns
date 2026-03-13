@@ -1,0 +1,32 @@
+# =============================================================================
+# CLAP Unified Multi-Dataset - Binary EV - Benchmark Configuration
+# =============================================================================
+# Benchmark CLAP trained on unified multi-dataset (all 8 EV datasets) for binary task
+#
+# Training details:
+#   - Datasets: AudioSet_EV_v1_2025 + AudioSet_EV_v2PANNs_2020 + sireNNet +
+#               LSSiren + ESC50 + FSD50K + UrbanSound8K + KineScaper_EV
+#   - Task: Binary Emergency Vehicle classification
+#   - Target SR: 48000 Hz
+#   - Training strategy: Per-dataset split (80/10/10) + concatenation
+#   - Augmentation: Enabled (training only, probability=0.5)
+#   - Best epoch: 31 (val_f1=0.9734)
+#   - Learning rate: 0.0001 (fixed)
+#   - Batch size: 4 (effective=32 with gradient accumulation)
+#
+# Usage:
+#   python main_benchmark.py --config benchmark_configs/clap_binary_unified-EV.yaml
+# =============================================================================
+
+# Model Configuration
+model:
+  name: "clap"
+  checkpoint_type: "finetuned"
+  checkpoint_path: "./checkpoints/unified_training_EV_clap/epoch=031_val_f1=0.9734.ckpt"
+
+# Benchmark Configuration
+benchmark:
+  batch_size: 32
+  limit_test_batches: null
+  datasets_to_test: []
+  output_dir: "./benchmark_results_unified_EV"
