@@ -625,6 +625,24 @@ fold_1_metrics.json
 cross_val_metrics.json           # Aggregated statistics
 ```
 
+### Large Artifacts Storage Policy
+
+Some experiment artifacts are too large for practical GitHub versioning (full checkpoints and complete logs).
+
+- Checkpoints external archive (placeholder): `<<ONEDRIVE_CHECKPOINTS_LINK>>`
+- Logs external archive (placeholder): `<<ONEDRIVE_LOGS_LINK>>`
+
+To reconstruct the full local project state:
+
+1. Download the archive(s) from the links above.
+2. Extract each archive in the project root.
+3. Ensure extracted content lands in the matching folder (`checkpoints/`, `logs/`).
+
+Folder-specific instructions are also available in:
+
+- [`checkpoints/README.md`](checkpoints/README.md)
+- [`logs/README.md`](logs/README.md)
+
 ### Benchmark Outputs
 
 **CSV Reports** (`benchmark_results/`):

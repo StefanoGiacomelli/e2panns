@@ -795,6 +795,7 @@ class KineScaper_EV_DetectionDataset(Dataset):
             filename = row['filename']
             onset = row['onset']
             offset = row['offset']
+            siren_class = row.get('siren_class', 'unknown')
             
             audio_path = os.path.join(audio_dir, filename)
             segment_id = os.path.splitext(filename)[0]  # filename without extension
@@ -811,7 +812,8 @@ class KineScaper_EV_DetectionDataset(Dataset):
                     'audio_path': audio_path,
                     'onset': onset,
                     'offset': offset,
-                    'filename': filename
+                    'filename': filename,
+                    'siren_class': siren_class
                 })
         
         return samples

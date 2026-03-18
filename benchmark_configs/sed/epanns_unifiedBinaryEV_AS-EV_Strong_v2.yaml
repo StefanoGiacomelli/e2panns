@@ -35,7 +35,7 @@ dataset:
 # ============================================================================
 model:
   name: "epanns"
-  checkpoint: "checkpoints/unified_training_EV/epoch=001_val_f1=0.9424.pt"
+  checkpoint: "checkpoints/unified_training_EV_epanns/epoch=001_val_f1=0.9424.pt"
   device: "cpu"   # Options: cpu, cuda, mps
 
 # ============================================================================

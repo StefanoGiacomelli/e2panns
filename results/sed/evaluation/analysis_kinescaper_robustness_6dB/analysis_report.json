@@ -1,0 +1,20 @@
+{
+  "bin_width_db": 6.0,
+  "num_models": 3,
+  "num_rows_results": 3003,
+  "num_rows_merged": 3003,
+  "snr_range": [
+    -54.0,
+    18.0
+  ],
+  "metrics": [
+    "seg_precision",
+    "seg_f1",
+    "seg_balanced_accuracy"
+  ],
+  "model_runs": {
+    "EPANNs finetuned AS-EV v2": "/home/user/Documenti/E2PANNs/results/sed/evaluation/sed_KineScaper_EV_epanns_finetuned_AS-EV_v2/results.csv",
+    "EPANNs unified EV": "/home/user/Documenti/E2PANNs/results/sed/evaluation/sed_KineScaper_EV_epanns_unified/results.csv",
+    "CLAP unified EV": "/home/user/Documenti/E2PANNs/results/sed/evaluation/sed_KineScaper_EV_clap_unified/results.csv"
+  }
+}

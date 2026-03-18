@@ -1,0 +1,44 @@
+{
+  "dataset": "KineScaper_EV",
+  "model": "clap",
+  "timestamp": "20260316_132627",
+  "num_samples": 1001,
+  "total_audio_duration": 40040.0,
+  "total_inference_time": 40542.00082655111,
+  "aggregated_metrics": {
+    "segment_based": {
+      "precision": 0.9351134107047147,
+      "recall": 0.15865946815708887,
+      "f1": 0.30980312974326846,
+      "accuracy": 0.30396022846803517,
+      "balanced_accuracy": 0.5731558029412053,
+      "error_rate": 0.8455883394334867,
+      "deletion_rate": 0.8413405318429111,
+      "insertion_rate": 0.004247807590575494,
+      "std_precision": 0.2092680682352019,
+      "std_recall": 0.24300744686122186,
+      "std_f1": 0.29080633889666807,
+      "std_accuracy": 0.20661432464434826,
+      "std_balanced_accuracy": 0.12312750500841833
+    },
+    "event_based": {
+      "precision": 0.002881844380403458,
+      "recall": 0.001998001998001998,
+      "f1": 0.002881844380403458,
+      "error_rate": 3.7002997002996993,
+      "deletion_rate": 0.9980019980019977,
+      "insertion_rate": 2.7022977022977015,
+      "std_precision": 0.05360540414333796,
+      "std_recall": 0.04465433893831569,
+      "std_f1": 0.05360540414333796
+    },
+    "performance": {
+      "mean_throughput": 0.9876177590378815,
+      "std_throughput": 8.870714190216755e-06,
+      "mean_cpu": 698.9642213543909,
+      "std_cpu": 64.25636465738702,
+      "mean_ram_mb": 3675.228024553785,
+      "std_ram_mb": 62.00514325238633
+    }
+  }
+}

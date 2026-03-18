@@ -13,8 +13,9 @@ datasets/
 ├── AudioSet_EV_v1_2025/          # AudioSet-derived EV dataset (2025 release)
 ├── AudioSet_EV_v2PANNs_2020/     # AudioSet-derived EV dataset (2020 PANNs release)
 ├── AudioSet_EV_Strong/           # AudioSet_EV-derived Strong annotations (AudioSet Strong parsing)
+├── KineScaper_EV/                # Synthetic-realistic EV siren dataset with temporal metadata
 ├── sireNNet/                     # sireNNet dataset (urban EV sirens)
-├── ESC-50/                       # Environmental Sound Classification-50
+├── ESC50/                        # Environmental Sound Classification-50
 ├── FSD50K/                       # Freesound Dataset 50K
 ├── LSSiren/                      # Large-Scale Siren dataset
 ├── UrbanSound8K/                 # Urban Sound 8K dataset
@@ -52,6 +53,14 @@ datasets/
 - **Labels**: Temporally aligned strong annotations (onset-offset) with negatives balancing procedures
 - **Duration**: 10-second clips at 32 kHz
 - **Features**: Sound Event Detection annotations w. comprehensive contents analysis
+
+#### **KineScaper EV**
+
+- **Source**: Physics-based siren trajectory simulation with controlled acoustic conditions
+- **Content**: 61,600 samples (7 classes × 8,800 each)
+- **Labels**: Binary, multiclass siren types, temporal onset/offset metadata
+- **Duration**: 40-second clips at 32 kHz
+- **Features**: Rich SNR statistics (`snr_min`, `snr_max`, `snr_avg`, `snr_std`), SPL targets, motion metadata
 
 #### **sireNNet**
 
@@ -168,6 +177,7 @@ The current release includes:
 - ✅ Multi-class support (4-way)
 - ✅ Stratified Negatives sampling
 - ✅ Comprehensive PyTorch Lightning DataModules (w. data augmentation & pre-processing integrations)
+- ✅ KineScaper-EV integration for unified training and SED robustness studies
 
 ---
 

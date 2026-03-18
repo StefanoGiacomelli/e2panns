@@ -173,15 +173,13 @@ hi-lo_electronic_sawtooth_00_3.164_34.409_i0.wav
 
 **TODO: Specify license**
 
-## Acknowledgments
-
-**TODO: Add acknowledgments**
 
 ## Contact
 
 For questions or issues, please contact:
-- **TODO: Add contact information**
+- **Stefano Giacomelli**
+- Open a GitHub issue on the project repository for technical questions about integration and dataloaders.
 
 ---
 
-**Note**: This README will be updated with complete information after the dataset is published on Zenodo.
+**Note**: This README documents the current in-repository integration state. Publication identifiers and final archival links will be added after public release.

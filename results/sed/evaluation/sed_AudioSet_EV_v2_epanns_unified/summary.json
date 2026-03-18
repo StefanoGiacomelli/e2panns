@@ -1,10 +1,10 @@
 {
   "dataset": "AudioSet_EV_v2",
   "model": "epanns",
-  "timestamp": "20260309_231250",
+  "timestamp": "20260317_184627",
   "num_samples": 966,
   "total_audio_duration": 9522.749624999997,
-  "total_inference_time": 10218.308144780807,
+  "total_inference_time": 10218.311294118583,
   "aggregated_metrics": {
     "segment_based": {
       "precision": 0.9473924389223977,
@@ -33,12 +33,12 @@
       "std_f1": 0.3864684823310006
     },
     "performance": {
-      "mean_throughput": 0.9317008581125013,
-      "std_throughput": 0.006953016193387129,
-      "mean_cpu": 56.95150021303103,
-      "std_cpu": 0.6376437171222101,
-      "mean_ram_mb": 1601.6219949094896,
-      "std_ram_mb": 42.55121343814972
+      "mean_throughput": 0.9317005054194946,
+      "std_throughput": 0.006953364584555277,
+      "mean_cpu": 55.83886851417821,
+      "std_cpu": 0.6865922158634814,
+      "mean_ram_mb": 1613.6796873540432,
+      "std_ram_mb": 43.434497609433436
     }
   }
 }

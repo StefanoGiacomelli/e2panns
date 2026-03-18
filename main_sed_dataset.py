@@ -21,9 +21,11 @@ import sys
 import logging
 import argparse
 import json
+import random
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict
+from collections import defaultdict, Counter
 
 import yaml
 import numpy as np
@@ -112,6 +114,57 @@ def extract_ground_truth_events(sample_events: List[Dict], ev_mids: List[str]) -
             gt_events.append((event['start'], event['end']))
     
     return gt_events
+
+
+def select_kinescaper_stratified_samples(samples: List[Dict],
+                                         total_samples: int = 1001,
+                                         seed: int = 42) -> List[Dict]:
+    """
+    Select a deterministic stratified subset from KineScaper samples.
+
+    Strategy:
+    - Use siren_class metadata
+    - Select equal samples per class
+    - Shuffle selected subset deterministically
+
+    For total_samples=1001 and 7 classes -> 143 samples per class.
+    """
+    if not samples:
+        return []
+
+    by_class = defaultdict(list)
+    for sample in samples:
+        siren_class = sample.get('siren_class')
+        if siren_class is None:
+            raise ValueError("KineScaper sample missing 'siren_class' field required for stratified sampling")
+        by_class[siren_class].append(sample)
+
+    class_names = sorted(by_class.keys())
+    num_classes = len(class_names)
+    if num_classes == 0:
+        raise ValueError("No siren classes found in KineScaper samples")
+
+    if total_samples % num_classes != 0:
+        raise ValueError(
+            f"total_samples ({total_samples}) must be divisible by number of classes ({num_classes}) "
+            f"for equal stratification"
+        )
+
+    samples_per_class = total_samples // num_classes
+    rng = random.Random(seed)
+    selected = []
+
+    for class_name in class_names:
+        class_samples = by_class[class_name]
+        if len(class_samples) < samples_per_class:
+            raise ValueError(
+                f"Class '{class_name}' has only {len(class_samples)} samples, "
+                f"cannot draw {samples_per_class}"
+            )
+        selected.extend(rng.sample(class_samples, samples_per_class))
+
+    rng.shuffle(selected)
+    return selected
 
 
 def process_single_sample(args):
@@ -386,14 +439,27 @@ def main():
             is_positive=True,
             seed=42
         )
-        
+
+        # Deterministic stratified sampling for KineScaper:
+        # 1001 total positives = 143 samples per each of 7 siren classes.
+        total_samples_before = len(dataset.samples)
+        dataset.samples = select_kinescaper_stratified_samples(
+            dataset.samples,
+            total_samples=1001,
+            seed=42
+        )
         total_samples = len(dataset.samples)
-        max_samples = config['dataset'].get('max_samples')
-        num_samples = min(total_samples, max_samples) if max_samples else total_samples
+        num_samples = total_samples
+
+        # Print selected class distribution
+        class_counts = Counter(sample['siren_class'] for sample in dataset.samples)
         
         # Warn if processing a very large number of samples
         estimated_hours = num_samples * config['dataset'].get('target_duration', 40.0) / 3600
-        print(f"Total samples: {total_samples:,}")
+        print(f"Total available samples: {total_samples_before:,}")
+        print(f"Stratified selection: {total_samples:,} samples (seed=42, equal per class)")
+        for class_name in sorted(class_counts.keys()):
+            print(f"  - {class_name:<10}: {class_counts[class_name]:>4}")
         if estimated_hours > 1.0:
             print(f"WARNING: {num_samples:,} samples = ~{estimated_hours:.1f}h of audio. Consider setting max_samples in config.")
         print(f"Processing: {num_samples} samples")

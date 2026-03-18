@@ -1,0 +1,47 @@
+# ============================================================================
+# Dataset SED Processing Configuration - KineScaper-EV
+# ============================================================================
+# SED benchmark using CLAP fine-tuned on unified EV training.
+# Runs on the KineScaper-EV dataset (full 40s samples with temporal annotations).
+#
+# Usage:
+#   python main_sed_dataset.py benchmark_configs/sed/clap_unifiedBinaryEV_KineScaper-EV.yaml
+# ============================================================================
+
+dataset:
+  name: "KineScaper_EV"  # Options: AudioSet_EV_v1, AudioSet_EV_v2, KineScaper_EV
+  dataset_root: "/mnt/ssd/Kinescaper_EV/dataset/"
+  metadata_format: "json"
+  target_duration: 40.0
+  max_samples: null
+
+model:
+  name: "clap"
+  checkpoint: "checkpoints/unified_training_EV_clap/epoch=031_val_f1=0.9734.pt"
+  device: "cpu"  # Options: cpu, cuda, mps
+
+inference:
+  threshold: 0.5
+  chunk_duration: 0.500
+  buffer_duration: 20.0
+  adaptive_window:
+    enabled: true
+    frame_duration_max: 2.0
+    adapt_coeff: 0.4
+
+sed_metrics:
+  segment_time_resolution: 0.500
+  event_tolerance: 0.500
+
+output:
+  dir: "results/sed_KineScaper_EV_clap_unified"
+  save_per_sample: true
+  save_events: false
+
+multiprocessing:
+  enabled: false
+  num_workers: 0
+
+logging:
+  level: "INFO"
+  log_file: "run.log"
